@@ -39,6 +39,16 @@ public abstract class Gear_System : Game
 	[DllImport("SDL2.dll", CallingConvention = CallingConvention.Cdecl)]
 	private static extern void SDL_MaximizeWindow(IntPtr window);
 	#endregion
+	#region Show Console
+	private void Form1_Load(object sender, EventArgs e)
+	{
+		AllocConsole();
+	}
+
+	[DllImport("kernel32.dll", SetLastError = true)]
+	[return: MarshalAs(UnmanagedType.Bool)]
+	static extern bool AllocConsole();
+	#endregion
 
 	#region Data
 	private static Point canvas_size = new Point(1920, 1080), screen_size = new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
@@ -737,6 +747,13 @@ public abstract class Gear_System : Game
 		/// </summary>
 		public static bool Window_Unfocused_Pause_Is_Activated_Check() => pause_unfocus;
 
+		public static void Window_Show(bool show)
+		{
+			var form = Control.FromHandle(game.Window.Handle) as Form;
+			if (show) form.Show();
+			else form.Hide();
+		}
+
 		/// <summary>
 		/// - Sets the <paramref name="title"/> of the window.<br></br><br></br>
 		/// - The title can be received with <see cref="Window_Title_Get"/>.
@@ -1274,30 +1291,73 @@ public abstract class Gear_System : Game
 	{
 		private enum Message_Type
 		{
-			Connection
+			Connection, Online_Check, Unique_Name_Change, Client_Disconnected
 		}
 
 		private static Server server;
-		private static string server_last_connected_client;
+		private static bool server_is_running;
+		private static List<string> client_unique_names = new List<string>();
+		private static List<string> client_last_unique_names = new List<string>();
 		private static Client client;
+		private static string client_unique_name;
+		private static bool client_is_connected;
 
 		public static void Server_Start()
 		{
-			server = new Server(IPAddress.Any, server_port);
-			System.Console_Write("font", $"Server: Starging on {server_ip}:{server_port}...\n");
-			server.Start();
-			System.Console_Write("font", $"Server: Running.\n");
+			try
+			{
+				if (server_is_running)
+				{
+					Console.WriteLine("Server trying to start: Already starting/started.");
+					return;
+				}
+				if (client_is_connected)
+				{
+					Console.WriteLine($"Client [{client_unique_name}] trying to start a server: Cannot start a server while connected to one.");
+					return;
+				}
+				server = new Server(IPAddress.Any, server_port);
+				AllocConsole();
+				Console.WriteLine($"Server trying to start: Starging on {server_ip}:{server_port}...");
+				server.Start();
+				Console.WriteLine($"Server: Started.");
+				server_is_running = true;
+			}
+			catch (Exception ex)
+			{
+				Console.WriteLine($"Server received an error: {ex.Message}");
+				return;
+			}
 		}
-		public static string Server_Last_Connected_Client_Get() => server_last_connected_client;
-		public static void Client_Connect()
+		public static void Client_Connect(string unique_name)
 		{
+			if (client_is_connected)
+			{
+				Console.WriteLine($"Client [{client_unique_name}] trying to connect: Already connecting/connected.");
+				return;
+			}
+			if (server_is_running)
+			{
+				Console.WriteLine($"Server trying to connect as client: Cannot connect as a client while a server.");
+				return;
+			}
+			client_is_connected = true;
+			client_unique_name = unique_name;
 			// Create a new TCP client
 			client = new Client(server_ip, server_port);
 			// Connect the client
-			System.Console_Write("font", $"Client: Connecting to {server_ip}:{server_port}...\n");
+			Console.WriteLine($"Client [{client_unique_name}] trying to connect: Connecting to {server_ip}:{server_port}...");
 			client.ConnectAsync();
 		}
-		public static bool Server_Message_Broadcast(string message) => server.Multicast(message);
+		public static void Client_Disconnect()
+		{
+			if (client_is_connected == false)
+			{
+				Console.WriteLine($"Client [{client_unique_name}] trying to disconnect: Cannot disconnect when not connected.");
+				return;
+			}
+			client.DisconnectAndStop();
+		}
 		public static bool Clinet_Message_Send(string message) => client.SendAsync(message);
 
 		private class Session : TcpSession
@@ -1310,25 +1370,66 @@ public abstract class Gear_System : Game
 				//string message = "Hello from TCP! Please send a message!";
 				//SendAsync(message);
 			}
-			protected override void OnDisconnected() => System.Console_Write("font", $"Server: A client just disconnected.\n");
+			protected override void OnDisconnected()
+			{
+				client_last_unique_names = client_unique_names;
+				client_unique_names = new List<string>();
+				server.Multicast($"{(int)Message_Type.Online_Check}");
+			}
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
 				var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Split('|');
-				if (int.Parse(message[0]) == (int)Message_Type.Connection)
+				var message_type = (Message_Type)int.Parse(message[0]);
+				switch (message_type)
 				{
-					server_last_connected_client = message[1];
-					System.Console_Write("font", $"Server: A client just connected with ID [{server_last_connected_client}].\n");
+					case Message_Type.Connection: // A client just connected and sent his ID & unique name
+						{
+							var id = message[1];
+							var unique_name = message[2];
+							if (client_unique_names.Contains(unique_name)) // Is the unique name free?
+							{
+								unique_name = ChangeUniqueName(unique_name);
+								var message_back = $"{(int)Message_Type.Unique_Name_Change}|{id}|{message[2]}|{unique_name}";
+								server.Multicast(message_back); // Broadcast back a free one with the same ID so the client can recognize it's for him
+							}
+							Console.WriteLine($"Server: Client [{unique_name}] just connected.");
+							client_unique_names.Add(unique_name);
+							break;
+						}
+					case Message_Type.Online_Check: // A client is sending a message back to say he's online (hasn't disconnected)
+						{
+							client_unique_names.Add(message[1]);
+							if (server.ConnectedSessions == client_unique_names.Count) // Is this the last checked unique name?
+							{
+								var disconnected_client = client_last_unique_names.Except(client_unique_names).ToList()[0];
+								Console.WriteLine($"Server: Client [{disconnected_client}] just disconnected.");
+								server.Multicast($"{(int)Message_Type.Client_Disconnected}|{disconnected_client}");
+							}
+							break;
+						}
 				}
-				// Multicast message to all connected sessions
-				//server.Multicast(message);
 			}
-			protected override void OnError(SocketError error) => System.Console_Write("font", $"Server: Error {error}\n");
+			protected override void OnError(SocketError error) => Console.WriteLine($"Server received an error: {error}");
+			private string ChangeUniqueName(string unique_name)
+			{
+				var new_unique_name = unique_name;
+				var i = 0;
+				while (true)
+				{
+					i++;
+					new_unique_name = $"{new_unique_name}{i}";
+					if (client_unique_names.Contains(new_unique_name) == false)
+					{
+						return new_unique_name;
+					}
+				}
+			}
 		}
 		private class Server : TcpServer
 		{
 			public Server(IPAddress address, int port) : base(address, port) { }
 			protected override TcpSession CreateSession() { return new Session(this); }
-			protected override void OnError(SocketError error) => System.Console_Write("font", $"Server: Error {error}\n");
+			protected override void OnError(SocketError error) => Console.WriteLine($"Server Error: {error}.");
 		}
 		private class Client : TcpClient
 		{
@@ -1344,12 +1445,14 @@ public abstract class Gear_System : Game
 			}
 			protected override void OnConnected()
 			{
-				System.Console_Write("font", $"Clinet: Connected.\n");
-				client.SendAsync($"{(int)Message_Type.Connection}|{client.Id}");
+				Console.WriteLine($"Client [{client_unique_name}]: Connected.");
+				client_is_connected = true;
+				client.SendAsync($"{(int)Message_Type.Connection}|{client.Id}|{client_unique_name}");
 			}
 			protected override void OnDisconnected()
 			{
-				System.Console_Write("font", $"Client: Disconnected.\n");
+				Console.WriteLine($"Client [{client_unique_name}]: Disconnected.");
+				client_is_connected = false;
 
 				// Wait for a while...
 				Thread.Sleep(1000);
@@ -1357,8 +1460,34 @@ public abstract class Gear_System : Game
 				// Try to connect again
 				if (stop == false) ConnectAsync();
 			}
-			protected override void OnReceived(byte[] buffer, long offset, long size) => System.Console_Write("font", $"Client received a message: {Encoding.UTF8.GetString(buffer, (int)offset, (int)size)}\n");
-			protected override void OnError(SocketError error) => System.Console_Write("font", $"{$"Client: Error {error}"}\n");
+			protected override void OnReceived(byte[] buffer, long offset, long size)
+			{
+				var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Split('|');
+				var message_type = (Message_Type)int.Parse(message[0]);
+				switch (message_type)
+				{
+					case Message_Type.Online_Check: // Server checking who's online
+						{
+							client.SendAsync($"{(int)Message_Type.Online_Check}|{client_unique_name}"); // I'm online
+							break;
+						}
+					case Message_Type.Unique_Name_Change: // Server said someone's unique name is taken and sent a free one
+						{
+							if (message[1] == client.Id.ToString()) // Is this me?
+							{
+								Console.WriteLine($"Client [{client_unique_name}] / [{message[3]}]: My Unique Name [{client_unique_name}] is taken so my new Unique Name is [{message[3]}].");
+								client_unique_name = message[3];
+							}
+							break;
+						}
+					case Message_Type.Client_Disconnected: // Server said some client disconnected
+						{
+							Console.WriteLine($"Client [{client_unique_name}]: Client [{message[1]}] just disconnected.");
+							break;
+						}
+				}
+			}
+			protected override void OnError(SocketError error) => Console.WriteLine($"Client [{client_unique_name}] received an error: {error}");
 		}
 	}
 

@@ -6,8 +6,9 @@
 	{
 		if (Gear_System.System.Ticks_Count_Get() == 1)
 		{
+			Gear_System.System.Window_Show(false);
 			Gear_System.Multiplayer.Server_Start();
-			Gear_System.Multiplayer.Client_Connect();
+			Gear_System.Multiplayer.Client_Connect("test");
 			/*
 			Gear_System.System.Canvas_Pixel_Size_Set(10, 10);
 			var body = Gear_System.Body.Create();
@@ -22,7 +23,7 @@
 		}
 		if (Gear_System.System.Ticks_Count_Get() == 20)
 		{
-			Gear_System.System.Console_Write("font", Gear_System.Multiplayer.Server_Last_Connected_Client_Get() + "\n");
+			//Gear_System.Multiplayer.Client_Disconnect();
 		}
 	}
 }
