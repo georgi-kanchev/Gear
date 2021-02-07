@@ -8,7 +8,6 @@
 		{
 			Gear_System.Multiplayer.Server_Start();
 			Gear_System.Multiplayer.Client_Connect();
-			Gear_System.Multiplayer.Client_Connect();
 			/*
 			Gear_System.System.Canvas_Pixel_Size_Set(10, 10);
 			var body = Gear_System.Body.Create();
@@ -21,10 +20,9 @@
 			Gear_System.System.Console_Write("font", $"{Gear_System.System.Canvas_Background_Blue_Get()}\n", 3);
 			*/
 		}
-		if (Gear_System.System.Ticks_Count_Get() == 500)
+		if (Gear_System.System.Ticks_Count_Get() == 20)
 		{
-			Gear_System.Multiplayer.Clinet_Message_Send("Hello, i am a client XD");
-			//Gear_System.Multiplayer.Server_Message_Broadcast("Hello, i am a server");
+			Gear_System.System.Console_Write("font", Gear_System.Multiplayer.Server_Last_Connected_Client_Get() + "\n");
 		}
 	}
 }

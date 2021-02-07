@@ -62,22 +62,20 @@ public abstract class Gear_System : Game
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
 	private static List<Body> bodies_all = new List<Body>();
 
-	private static string[] main_args;
-	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port;
+	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port = 1111;
 	private static bool console_draw, loading = true, pause_unfocus, render, sleep_prevented;
 	private static float console_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
 	private static DateTime last_tick_time, last_frame_time;
 	private static Color background_color;
-	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots", server_ip;
+	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots", server_ip = "127.0.0.1";
 	#endregion
 	#region Creation
 	private class Creation : Gear_System
 	{
 		[STAThread]
-		public static void Main(string[] args)
+		public static void Main()
 		{
-			main_args = args;
 			using (var game = new Creation())
 			{
 				game.Run();
@@ -1274,46 +1272,33 @@ public abstract class Gear_System : Game
 
 	public static class Multiplayer
 	{
+		private enum Message_Type
+		{
+			Connection
+		}
+
 		private static Server server;
+		private static string server_last_connected_client;
 		private static Client client;
 
 		public static void Server_Start()
 		{
-			server_port = 1111;
-			if (main_args.Length > 0) server_port = int.Parse(main_args[0]);
-			System.Console_Write("font", $"TCP server port: {server_port}\n");
 			server = new Server(IPAddress.Any, server_port);
-			System.Console_Write("font", "Server starting...\n");
+			System.Console_Write("font", $"Server: Starging on {server_ip}:{server_port}...\n");
 			server.Start();
-			System.Console_Write("font", "Done!\n");
+			System.Console_Write("font", $"Server: Running.\n");
 		}
+		public static string Server_Last_Connected_Client_Get() => server_last_connected_client;
 		public static void Client_Connect()
 		{
-			server_ip = "127.0.0.1";
-			if (main_args.Length > 0) server_ip = main_args[0];
-
-			server_port = 1111;
-			if (main_args.Length > 1) server_port = int.Parse(main_args[1]);
-
-			System.Console_Write("font", $"TCP server address: {server_ip}\n");
-			System.Console_Write("font", $"TCP server port: {server_port}\n");
-
 			// Create a new TCP client
 			client = new Client(server_ip, server_port);
-
 			// Connect the client
-			System.Console_Write("font", "Client connecting...\n");
+			System.Console_Write("font", $"Client: Connecting to {server_ip}:{server_port}...\n");
 			client.ConnectAsync();
-			System.Console_Write("font", "Done!\n");
 		}
-		public static void Server_Message_Broadcast(string message)
-		{
-			server.Multicast(message);
-		}
-		public static void Clinet_Message_Send(string message)
-		{
-			client.SendAsync(message);
-		}
+		public static bool Server_Message_Broadcast(string message) => server.Multicast(message);
+		public static bool Clinet_Message_Send(string message) => client.SendAsync(message);
 
 		private class Session : TcpSession
 		{
@@ -1321,58 +1306,59 @@ public abstract class Gear_System : Game
 
 			protected override void OnConnected()
 			{
-				System.Console_Write("font", $"TCP session with Id {Id} connected!\n");
-
 				// Send invite message
-				string message = "Hello from TCP! Please send a message!";
-				SendAsync(message);
+				//string message = "Hello from TCP! Please send a message!";
+				//SendAsync(message);
 			}
-			protected override void OnDisconnected() => System.Console_Write("font", $"TCP session with Id {Id} disconnected!\n");
+			protected override void OnDisconnected() => System.Console_Write("font", $"Server: A client just disconnected.\n");
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
-				string message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-				System.Console_Write("font", $"Server received a message: {message}\n");
-
+				var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Split('|');
+				if (int.Parse(message[0]) == (int)Message_Type.Connection)
+				{
+					server_last_connected_client = message[1];
+					System.Console_Write("font", $"Server: A client just connected with ID [{server_last_connected_client}].\n");
+				}
 				// Multicast message to all connected sessions
-				Server.Multicast(message);
-
-				// If the buffer starts with '!' the disconnect the current session
-				if (message == "!") Disconnect();
+				//server.Multicast(message);
 			}
-			protected override void OnError(SocketError error) => System.Console_Write("font", $"TCP session caught an error with code {error}\n");
+			protected override void OnError(SocketError error) => System.Console_Write("font", $"Server: Error {error}\n");
 		}
 		private class Server : TcpServer
 		{
 			public Server(IPAddress address, int port) : base(address, port) { }
-
 			protected override TcpSession CreateSession() { return new Session(this); }
-			protected override void OnError(SocketError error) => System.Console_Write("font", $"TCP server caught an error with code {error}\n");
+			protected override void OnError(SocketError error) => System.Console_Write("font", $"Server: Error {error}\n");
 		}
 		private class Client : TcpClient
 		{
-			private bool _stop;
+			private bool stop;
 
 			public Client(string address, int port) : base(address, port) { }
 
 			public void DisconnectAndStop()
 			{
-				_stop = true;
+				stop = true;
 				DisconnectAsync();
 				while (IsConnected) Thread.Yield();
 			}
-			protected override void OnConnected() => System.Console_Write("font", $"TCP client connected a new session with Id {Id}\n");
+			protected override void OnConnected()
+			{
+				System.Console_Write("font", $"Clinet: Connected.\n");
+				client.SendAsync($"{(int)Message_Type.Connection}|{client.Id}");
+			}
 			protected override void OnDisconnected()
 			{
-				System.Console_Write("font", $"TCP client disconnected a session with Id {Id}\n");
+				System.Console_Write("font", $"Client: Disconnected.\n");
 
 				// Wait for a while...
 				Thread.Sleep(1000);
 
 				// Try to connect again
-				if (!_stop) ConnectAsync();
+				if (stop == false) ConnectAsync();
 			}
 			protected override void OnReceived(byte[] buffer, long offset, long size) => System.Console_Write("font", $"Client received a message: {Encoding.UTF8.GetString(buffer, (int)offset, (int)size)}\n");
-			protected override void OnError(SocketError error) => System.Console_Write("font", $"{$"TCP client caught an error with code {error}"}\n");
+			protected override void OnError(SocketError error) => System.Console_Write("font", $"{$"Client: Error {error}"}\n");
 		}
 	}
 
