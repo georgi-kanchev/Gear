@@ -17,6 +17,7 @@ using TcpClient = NetCoreServer.TcpClient;
 using System.Net.Sockets;
 using System.Net;
 using System.Threading;
+using Mono.Nat;
 
 public abstract class Gear_System : Game
 {
@@ -76,7 +77,7 @@ public abstract class Gear_System : Game
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
 	private static DateTime last_tick_time, last_frame_time;
 	private static Color background_color;
-	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots", server_ip = "25.9.27.40";
+	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots";
 	#endregion
 	#region Creation
 	private class Creation : Gear_System
@@ -1301,6 +1302,7 @@ public abstract class Gear_System : Game
 		private static string client_unique_name;
 		private static bool client_is_connected;
 		private static string console_log;
+		private static string connect_to_server_info;
 
 		public static void Server_Start()
 		{
@@ -1320,10 +1322,26 @@ public abstract class Gear_System : Game
 				}
 				server = new Server(IPAddress.Any, server_port);
 				AllocConsole();
-				console_log = $"{console_log}\nServer_Start(): Starging server on {server.Endpoint}...";
+				console_log = $"{console_log}\nServer_Start(): Starging a LAN Server on port {server_port}...";
 				server.Start();
 				console_log = $"{console_log}\nServer_Start(): Done!";
+
+				var host_name = Dns.GetHostName();
+				var host_entry = Dns.GetHostEntry(host_name);
+				connect_to_server_info = "Clients can connect through those IPs if they are in the same network\n(device / router / Virtual Private Network programs like Hamachi or Radmin): \nSame device: 127.0.0.1";
+				foreach (var ip in host_entry.AddressList)
+				{
+					if (ip.AddressFamily == AddressFamily.InterNetwork)
+					{
+						var ip_parts = ip.ToString().Split('.');
+						var ip_type = ip_parts[0] == "192" && ip_parts[1] == "168" ? "Same router: " : "Same VPN: ";
+						connect_to_server_info = $"{connect_to_server_info}\n{ip_type}{ip}";
+					}
+				}
+
 				server_is_running = true;
+				NatUtility.DeviceFound += DeviceFound;
+				NatUtility.StartDiscovery();
 				_Console_Update();
 			}
 			catch (Exception ex)
@@ -1349,15 +1367,19 @@ public abstract class Gear_System : Game
 				return;
 			}
 			AllocConsole();
+			NatUtility.DeviceFound += DeviceFound;
+			NatUtility.StartDiscovery();
 			client_is_connected = true;
-			client_unique_name = unique_name;
-			// Create a new TCP client
+
+			Console.Write("Join Server with IP: ");
 			var ip = Console.ReadLine();
 			client = new Client(ip, server_port);
-			// Connect the client
+			Console.Write("With nickname: ");
+			client_unique_name = Console.ReadLine();
 			console_log = $"{console_log}\n{func_name}: Connecting to {ip}:{server_port}...";
 			_Console_Update();
 			client.ConnectAsync();
+
 		}
 		public static void Client_Disconnect()
 		{
@@ -1409,6 +1431,9 @@ public abstract class Gear_System : Game
 			client.SendAsync($"{(int)Message_Type.Message_To_Client}|{client_unique_name}|{receiver_unique_name}|{message}");
 		}
 
+		public static string Console_Read() => Console.ReadLine();
+		private static void DeviceFound(object sender, DeviceEventArgs args) => args.Device.CreatePortMap(new Mapping(Protocol.Tcp, server_port, server_port));
+
 		private static string _Clients_Online_Get()
 		{
 			var result = "";
@@ -1424,10 +1449,11 @@ public abstract class Gear_System : Game
 			Console.Clear();
 			var client_server_str = server_is_running ? "Server" : $"Client [{client_unique_name}]";
 			var connection = client_is_connected == false && server_is_running == false ? "Disconnected" : "Connected";
-			var clients_connected = connection == "Disconnected" ? "" : $"Clients Connected ({client_unique_names.Count}): {_Clients_Online_Get()}"; 
+			var clients_connected = connection == "Disconnected" ? "" : $"Clients Connected ({client_unique_names.Count}): {_Clients_Online_Get()}\n\n";
+			var connect_info = server_is_running ? connect_to_server_info + "\n\n" : "";
 
 			Console.Title = $"{System.Window_Title_Get()} | Network Console | {client_server_str} | {connection}";
-			Console.WriteLine($"{clients_connected}\n{console_log}");
+			Console.WriteLine($"{connect_info}{clients_connected}{console_log}");
 		}
 		private static void _Add_Message(string from, string message)
 		{
@@ -1444,8 +1470,6 @@ public abstract class Gear_System : Game
 
 			protected override void OnConnected()
 			{
-				console_log = $"{console_log}\n{server.FindSession(Id).Socket.RemoteEndPoint}";
-				_Console_Update();
 				// Send invite message
 				//string message = "Hello from TCP! Please send a message!";
 				//SendAsync(message);
@@ -1548,8 +1572,7 @@ public abstract class Gear_System : Game
 			{
 				client_is_connected = true;
 				client_unique_names.Add(client_unique_name);
-				console_log = $"{console_log}\nConnected as [{client_unique_name}].";
-				console_log = $"{console_log}\n{client.Socket.RemoteEndPoint}";
+				console_log = $"{console_log}\nConnected as [{client_unique_name}] to {client.Socket.RemoteEndPoint}.";
 				_Console_Update();
 				client.SendAsync($"~{(int)Message_Type.Connection}|{client.Id}|{client_unique_name}");
 			}

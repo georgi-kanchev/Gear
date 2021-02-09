@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "ll92N0FbfPAjwJ1dET/zdT2DTrc1695P2uaMhWMO0ouYjesOFaw9R3RBePoyPTaVCN6eda33CF7OUkb3Rr2ufA==",
+  "dgSpecHash": "EPmo1qkvn+KkdOF7OXWGESkdLTTfraswdpvKvCEkXdpXGzIEj0TfN1f5XuO4A2L5gd9pF63K2/VVoCJagvRRDw==",
   "success": true,
   "projectFilePath": "D:\\code\\MonoGame\\Gear\\Gear.csproj",
   "expectedPackageFiles": [
@@ -22,6 +22,7 @@
     "C:\\Users\\PC PC\\.nuget\\packages\\microsoft.visualbasic\\10.0.1\\microsoft.visualbasic.10.0.1.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\microsoft.win32.primitives\\4.0.1\\microsoft.win32.primitives.4.0.1.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\microsoft.win32.registry\\4.0.0\\microsoft.win32.registry.4.0.0.nupkg.sha512",
+    "C:\\Users\\PC PC\\.nuget\\packages\\mono.nat\\3.0.1\\mono.nat.3.0.1.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\monogame.framework.windowsdx\\3.8.0.1641\\monogame.framework.windowsdx.3.8.0.1641.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\netcoreserver\\5.0.7\\netcoreserver.5.0.7.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\netstandard.library\\1.6.0\\netstandard.library.1.6.0.nupkg.sha512",

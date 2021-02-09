@@ -311,6 +311,15 @@
           }
         }
       },
+      "Mono.Nat/3.0.1": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.1/Mono.Nat.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.1/Mono.Nat.dll": {}
+        }
+      },
       "MonoGame.Framework.WindowsDX/3.8.0.1641": {
         "type": "package",
         "dependencies": {
@@ -2667,6 +2676,22 @@
         "runtimes/win/lib/net46/Microsoft.Win32.Registry.dll",
         "runtimes/win/lib/netcore50/_._",
         "runtimes/win/lib/netstandard1.3/Microsoft.Win32.Registry.dll"
+      ]
+    },
+    "Mono.Nat/3.0.1": {
+      "sha512": "TLaz/q4i81y5nRyqBlJO2JS73JRyB1y6uhcgxhiyIn3MMIgH1mlTOPZNX7uUB0XYg6+7Igp4tFAqf/u+Unc3tw==",
+      "type": "package",
+      "path": "mono.nat/3.0.1",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "LICENSE.md",
+        "lib/netstandard2.0/Mono.Nat.dll",
+        "lib/netstandard2.0/Mono.Nat.xml",
+        "lib/netstandard2.1/Mono.Nat.dll",
+        "lib/netstandard2.1/Mono.Nat.xml",
+        "mono.nat.3.0.1.nupkg.sha512",
+        "mono.nat.nuspec"
       ]
     },
     "MonoGame.Framework.WindowsDX/3.8.0.1641": {
@@ -7346,6 +7371,7 @@
   },
   "projectFileDependencyGroups": {
     "net5.0-windows7.0": [
+      "Mono.Nat >= 3.0.1",
       "MonoGame.Framework.WindowsDX >= 3.8.0.1641",
       "NetCoreServer >= 5.0.7",
       "Newtonsoft.Json >= 12.0.3"
@@ -7390,6 +7416,10 @@
       "net5.0-windows7.0": {
         "targetAlias": "net5.0-windows",
         "dependencies": {
+          "Mono.Nat": {
+            "target": "Package",
+            "version": "[3.0.1, )"
+          },
           "MonoGame.Framework.WindowsDX": {
             "target": "Package",
             "version": "[3.8.0.1641, )"

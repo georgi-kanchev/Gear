@@ -42,3 +42,4 @@ D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\empty.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\font.spritefont
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\red.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\test.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Mono.Nat.dll

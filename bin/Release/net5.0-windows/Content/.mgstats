@@ -1,5 +1,5 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"D:/code/MonoGame/Gear/Content/empty.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/empty.xnb","TextureProcessor","Texture2DContent",72,89,0.2459189
-"D:/code/MonoGame/Gear/Content/font.spritefont","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/font.xnb","FontDescriptionProcessor","SpriteFontContent",2008,70690,0.165252
-"D:/code/MonoGame/Gear/Content/red.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/red.xnb","TextureProcessor","Texture2DContent",108,4181,0.0147629
-"D:/code/MonoGame/Gear/Content/test.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/test.xnb","TextureProcessor","Texture2DContent",40423,1274069,0.0878101
+"D:/code/MonoGame/Gear/Content/empty.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/empty.xnb","TextureProcessor","Texture2DContent",72,89,0.4768094
+"D:/code/MonoGame/Gear/Content/font.spritefont","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/font.xnb","FontDescriptionProcessor","SpriteFontContent",2008,70690,0.2416028
+"D:/code/MonoGame/Gear/Content/red.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/red.xnb","TextureProcessor","Texture2DContent",108,4181,0.0196665
+"D:/code/MonoGame/Gear/Content/test.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/test.xnb","TextureProcessor","Texture2DContent",40423,1274069,0.0868991
