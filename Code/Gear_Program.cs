@@ -7,8 +7,8 @@
 		if (Gear_System.System.Ticks_Count_Get() == 1)
 		{
 			Gear_System.System.Window_Show(false);
-			Gear_System.Multiplayer.Server_Start();
-			Gear_System.Multiplayer.Client_Connect("test");
+			Gear_System.Network.Server_Start();
+			//Gear_System.Network.Client_Connect("test");
 			/*
 			Gear_System.System.Canvas_Pixel_Size_Set(10, 10);
 			var body = Gear_System.Body.Create();
@@ -21,8 +21,9 @@
 			Gear_System.System.Console_Write("font", $"{Gear_System.System.Canvas_Background_Blue_Get()}\n", 3);
 			*/
 		}
-		if (Gear_System.System.Ticks_Count_Get() == 20)
+		if (Gear_System.System.Ticks_Count_Get() == 100)
 		{
+			//Gear_System.Network.Clinet_Message_Send_To_Client("test1", "Hello :D");
 			//Gear_System.Multiplayer.Client_Disconnect();
 		}
 	}

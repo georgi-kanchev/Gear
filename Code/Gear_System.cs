@@ -62,8 +62,6 @@ public abstract class Gear_System : Game
 
 	private static PerformanceCounter ram_available = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ram_used_percent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
-	private static PerformanceCounter process_time = new PerformanceCounter("Process", "% Processor Time", typeof(Gear_Program).Assembly.GetName().Name);
-	private static PerformanceCounter processor_time = new PerformanceCounter("Processor", "% Processor Time", "_Total");
 
 	private static Dictionary<string, SpriteFont> fonts = new Dictionary<string, SpriteFont>();
 	private static Dictionary<string, Texture2D> sprites = new Dictionary<string, Texture2D>(), sprite_outlines = new Dictionary<string, Texture2D>(), sprite_fills = new Dictionary<string, Texture2D>();
@@ -72,13 +70,13 @@ public abstract class Gear_System : Game
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
 	private static List<Body> bodies_all = new List<Body>();
 
-	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port = 1111;
+	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port = 1234;
 	private static bool console_draw, loading = true, pause_unfocus, render, sleep_prevented;
 	private static float console_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
 	private static DateTime last_tick_time, last_frame_time;
 	private static Color background_color;
-	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots", server_ip = "127.0.0.1";
+	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots", server_ip = "25.9.27.40";
 	#endregion
 	#region Creation
 	private class Creation : Gear_System
@@ -121,7 +119,7 @@ public abstract class Gear_System : Game
 
 		render_target = new RenderTarget2D(game.GraphicsDevice, screen_size.X, screen_size.Y, false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
 
-		game.Window.Title = "Engine";
+		game.Window.Title = "Gear";
 		game.IsMouseVisible = true;
 
 		// start maximized
@@ -1287,20 +1285,22 @@ public abstract class Gear_System : Game
 		}
 	}
 
-	public static class Multiplayer
+	public static class Network
 	{
 		private enum Message_Type
 		{
-			Connection, Online_Check, Unique_Name_Change, Client_Disconnected
+			Connection, Unique_Name_Change, Client_Connected, Client_Disconnected, Client_Online, Message_To_All, Message_To_Client
 		}
 
 		private static Server server;
 		private static bool server_is_running;
+		private static Dictionary<string, string> client_ids = new Dictionary<string, string>();
 		private static List<string> client_unique_names = new List<string>();
-		private static List<string> client_last_unique_names = new List<string>();
 		private static Client client;
+		private static Dictionary<string, List<string>> last_messages = new Dictionary<string, List<string>>();
 		private static string client_unique_name;
 		private static bool client_is_connected;
+		private static string console_log;
 
 		public static void Server_Start()
 		{
@@ -1308,57 +1308,135 @@ public abstract class Gear_System : Game
 			{
 				if (server_is_running)
 				{
-					Console.WriteLine("Server trying to start: Already starting/started.");
+					console_log = $"{console_log}\nServer_Start(): Server is already starting/started.";
+					_Console_Update();
 					return;
 				}
 				if (client_is_connected)
 				{
-					Console.WriteLine($"Client [{client_unique_name}] trying to start a server: Cannot start a server while connected to one.");
+					console_log = $"{console_log}\nServer_Start(): Cannot start a server while connected to one.";
+					_Console_Update();
 					return;
 				}
 				server = new Server(IPAddress.Any, server_port);
 				AllocConsole();
-				Console.WriteLine($"Server trying to start: Starging on {server_ip}:{server_port}...");
+				console_log = $"{console_log}\nServer_Start(): Starging server on {server.Endpoint}...";
 				server.Start();
-				Console.WriteLine($"Server: Started.");
+				console_log = $"{console_log}\nServer_Start(): Done!";
 				server_is_running = true;
+				_Console_Update();
 			}
 			catch (Exception ex)
 			{
-				Console.WriteLine($"Server received an error: {ex.Message}");
+				console_log = $"{console_log}\nServer_Start() Error: {ex.Message}";
+				_Console_Update();
 				return;
 			}
 		}
 		public static void Client_Connect(string unique_name)
 		{
+			var func_name = $"Client_Connect(\"{unique_name}\")";
 			if (client_is_connected)
 			{
-				Console.WriteLine($"Client [{client_unique_name}] trying to connect: Already connecting/connected.");
+				console_log = $"{console_log}\n{func_name}: Already connecting/connected.";
+				_Console_Update();
 				return;
 			}
 			if (server_is_running)
 			{
-				Console.WriteLine($"Server trying to connect as client: Cannot connect as a client while a server.");
+				console_log = $"{console_log}\n{func_name}: Cannot connect as a client while a server.";
+				_Console_Update();
 				return;
 			}
+			AllocConsole();
 			client_is_connected = true;
 			client_unique_name = unique_name;
 			// Create a new TCP client
-			client = new Client(server_ip, server_port);
+			var ip = Console.ReadLine();
+			client = new Client(ip, server_port);
 			// Connect the client
-			Console.WriteLine($"Client [{client_unique_name}] trying to connect: Connecting to {server_ip}:{server_port}...");
+			console_log = $"{console_log}\n{func_name}: Connecting to {ip}:{server_port}...";
+			_Console_Update();
 			client.ConnectAsync();
 		}
 		public static void Client_Disconnect()
 		{
 			if (client_is_connected == false)
 			{
-				Console.WriteLine($"Client [{client_unique_name}] trying to disconnect: Cannot disconnect when not connected.");
+				Console.WriteLine($"Client_Disconnect(): Cannot disconnect when not connected.");
 				return;
 			}
 			client.DisconnectAndStop();
 		}
-		public static bool Clinet_Message_Send(string message) => client.SendAsync(message);
+		public static void Clinet_Message_Send_To_All(string message)
+		{
+			if (client_is_connected == false && server_is_running == false)
+			{
+				console_log = $"{console_log}\nClinet_Message_Send_To_All(): Cannot send a message while disconnected.";
+				_Console_Update();
+				return;
+			}
+			else if (server_is_running)
+			{
+				console_log = $"{console_log}\nClinet_Message_Send_To_All(): Cannot send a message while a server. Only clients can send messages.";
+				_Console_Update();
+				return;
+			}
+			console_log = $"{console_log}\nSending a message to all clients: {message}";
+			_Console_Update();
+			client.SendAsync($"{(int)Message_Type.Message_To_All}|{client_unique_name}|{message}");
+		}
+		public static void Clinet_Message_Send_To_Client(string receiver_unique_name, string message)
+		{
+			if (client_unique_name == receiver_unique_name)
+			{
+				return;
+			}
+			if (client_is_connected == false && server_is_running == false)
+			{
+				console_log = $"{console_log}\nClinet_Message_Send_To_Client(): Cannot send a message while disconnected.";
+				_Console_Update();
+				return;
+			}
+			else if (server_is_running)
+			{
+				console_log = $"{console_log}\nClinet_Message_Send_To_Client(): Cannot send a message while a server. Only clients can send messages.";
+				_Console_Update();
+				return;
+			}
+			console_log = $"{console_log}\nSending a message to client [{receiver_unique_name}]: {message}";
+			_Console_Update();
+			client.SendAsync($"{(int)Message_Type.Message_To_Client}|{client_unique_name}|{receiver_unique_name}|{message}");
+		}
+
+		private static string _Clients_Online_Get()
+		{
+			var result = "";
+			for (int i = 0; i < client_unique_names.Count; i++)
+			{
+				var separator = i == client_unique_names.Count - 1 ? "" : ", ";
+				result = $"{result}[{client_unique_names[i]}]{separator}";
+			}
+			return result;
+		}
+		private static void _Console_Update()
+		{
+			Console.Clear();
+			var client_server_str = server_is_running ? "Server" : $"Client [{client_unique_name}]";
+			var connection = client_is_connected == false && server_is_running == false ? "Disconnected" : "Connected";
+			var clients_connected = connection == "Disconnected" ? "" : $"Clients Connected ({client_unique_names.Count}): {_Clients_Online_Get()}"; 
+
+			Console.Title = $"{System.Window_Title_Get()} | Network Console | {client_server_str} | {connection}";
+			Console.WriteLine($"{clients_connected}\n{console_log}");
+		}
+		private static void _Add_Message(string from, string message)
+		{
+			if (last_messages.ContainsKey(from) == false)
+			{
+				last_messages[from] = new List<string>();
+			}
+			last_messages[from].Add(message);
+		}
 
 		private class Session : TcpSession
 		{
@@ -1366,63 +1444,86 @@ public abstract class Gear_System : Game
 
 			protected override void OnConnected()
 			{
+				console_log = $"{console_log}\n{server.FindSession(Id).Socket.RemoteEndPoint}";
+				_Console_Update();
 				// Send invite message
 				//string message = "Hello from TCP! Please send a message!";
 				//SendAsync(message);
 			}
 			protected override void OnDisconnected()
 			{
-				client_last_unique_names = client_unique_names;
-				client_unique_names = new List<string>();
-				server.Multicast($"{(int)Message_Type.Online_Check}");
+				var disconnected_client = client_ids[Id.ToString()];
+				client_unique_names.Remove(disconnected_client);
+				server.Multicast($"~{(int)Message_Type.Client_Disconnected}|{disconnected_client}");
+				console_log = $"{console_log}\nClient [{disconnected_client}] just disconnected.";
+				_Console_Update();
 			}
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
-				var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Split('|');
-				var message_type = (Message_Type)int.Parse(message[0]);
-				switch (message_type)
+				var raw_messages = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+				var messages = raw_messages.Split('~', StringSplitOptions.RemoveEmptyEntries);
+				var message_back = "";
+				foreach (var message in messages)
 				{
-					case Message_Type.Connection: // A client just connected and sent his ID & unique name
-						{
-							var id = message[1];
-							var unique_name = message[2];
-							if (client_unique_names.Contains(unique_name)) // Is the unique name free?
+					var components = message.Split('|');
+					var message_type = (Message_Type)int.Parse(components[0]);
+					switch (message_type)
+					{
+						case Message_Type.Connection: // A client just connected and sent his ID & unique name
 							{
-								unique_name = ChangeUniqueName(unique_name);
-								var message_back = $"{(int)Message_Type.Unique_Name_Change}|{id}|{message[2]}|{unique_name}";
-								server.Multicast(message_back); // Broadcast back a free one with the same ID so the client can recognize it's for him
+								var id = components[1];
+								var unique_name = components[2];
+								if (client_unique_names.Contains(unique_name)) // Is the unique name free?
+								{
+									unique_name = ChangeUniqueName(unique_name);
+									message_back = $"~{(int)Message_Type.Unique_Name_Change}|{id}|{unique_name}"; // Send a message back with a free one towards the same ID so the client can recognize it's for him
+								}
+								client_ids[Id.ToString()] = unique_name;
+								client_unique_names.Add(unique_name);
+								message_back = $"{message_back}~{(int)Message_Type.Client_Online}|{unique_name}"; // Sticking another message to update the newcoming client about online clients
+								foreach (var client in client_unique_names)
+								{
+									message_back = $"{message_back}|{client}";
+								}
+								message_back = $"{message_back}~{(int)Message_Type.Client_Connected}|{unique_name}"; // Sticking a third message to update online clients about the newcomer.
+								console_log = $"{console_log}\nClient [{unique_name}] just connected.";
+								_Console_Update();
+								break;
 							}
-							Console.WriteLine($"Server: Client [{unique_name}] just connected.");
-							client_unique_names.Add(unique_name);
-							break;
-						}
-					case Message_Type.Online_Check: // A client is sending a message back to say he's online (hasn't disconnected)
-						{
-							client_unique_names.Add(message[1]);
-							if (server.ConnectedSessions == client_unique_names.Count) // Is this the last checked unique name?
+						case Message_Type.Message_To_All: // A client wants to send a message to everyone
 							{
-								var disconnected_client = client_last_unique_names.Except(client_unique_names).ToList()[0];
-								Console.WriteLine($"Server: Client [{disconnected_client}] just disconnected.");
-								server.Multicast($"{(int)Message_Type.Client_Disconnected}|{disconnected_client}");
+								message_back = $"{message_back}~{message}";
+								break;
 							}
-							break;
-						}
+						case Message_Type.Message_To_Client: // A client wants to send a message to another client
+							{
+								message_back = $"{message_back}~{message}";
+								break;
+							}
+					}
+				}
+				if (message_back != "")
+				{
+					server.Multicast(message_back);
 				}
 			}
-			protected override void OnError(SocketError error) => Console.WriteLine($"Server received an error: {error}");
+			protected override void OnError(SocketError error)
+			{
+				console_log = $"{console_log}\nServer Error: {error}";
+				_Console_Update();
+			}
 			private string ChangeUniqueName(string unique_name)
 			{
-				var new_unique_name = unique_name;
 				var i = 0;
 				while (true)
 				{
 					i++;
-					new_unique_name = $"{new_unique_name}{i}";
-					if (client_unique_names.Contains(new_unique_name) == false)
+					if (client_unique_names.Contains($"{unique_name}{i}") == false)
 					{
-						return new_unique_name;
+						break;
 					}
 				}
+				return $"{unique_name}{i}";
 			}
 		}
 		private class Server : TcpServer
@@ -1445,49 +1546,117 @@ public abstract class Gear_System : Game
 			}
 			protected override void OnConnected()
 			{
-				Console.WriteLine($"Client [{client_unique_name}]: Connected.");
 				client_is_connected = true;
-				client.SendAsync($"{(int)Message_Type.Connection}|{client.Id}|{client_unique_name}");
+				client_unique_names.Add(client_unique_name);
+				console_log = $"{console_log}\nConnected as [{client_unique_name}].";
+				console_log = $"{console_log}\n{client.Socket.RemoteEndPoint}";
+				_Console_Update();
+				client.SendAsync($"~{(int)Message_Type.Connection}|{client.Id}|{client_unique_name}");
 			}
 			protected override void OnDisconnected()
 			{
-				Console.WriteLine($"Client [{client_unique_name}]: Disconnected.");
-				client_is_connected = false;
+				if (client_is_connected)
+				{
+					client_is_connected = false;
+					console_log = $"Disconnected.";
+					client_unique_names.Clear();
+				}
 
 				// Wait for a while...
 				Thread.Sleep(1000);
 
 				// Try to connect again
+				console_log = $"{console_log}\nTrying to reconnect...";
 				if (stop == false) ConnectAsync();
+				_Console_Update();
 			}
 			protected override void OnReceived(byte[] buffer, long offset, long size)
 			{
-				var message = Encoding.UTF8.GetString(buffer, (int)offset, (int)size).Split('|');
-				var message_type = (Message_Type)int.Parse(message[0]);
-				switch (message_type)
+				var raw_messages = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+				var messages = raw_messages.Split('~', StringSplitOptions.RemoveEmptyEntries);
+				var message_back = "";
+				foreach (var message in messages)
 				{
-					case Message_Type.Online_Check: // Server checking who's online
-						{
-							client.SendAsync($"{(int)Message_Type.Online_Check}|{client_unique_name}"); // I'm online
-							break;
-						}
-					case Message_Type.Unique_Name_Change: // Server said someone's unique name is taken and sent a free one
-						{
-							if (message[1] == client.Id.ToString()) // Is this me?
+					var components = message.Split('|');
+					var message_type = (Message_Type)int.Parse(components[0]);
+					switch (message_type)
+					{
+						case Message_Type.Unique_Name_Change: // Server said someone's unique name is taken and sent a free one
 							{
-								Console.WriteLine($"Client [{client_unique_name}] / [{message[3]}]: My Unique Name [{client_unique_name}] is taken so my new Unique Name is [{message[3]}].");
-								client_unique_name = message[3];
+								if (components[1] == client.Id.ToString()) // Is this for me?
+								{
+									console_log = $"{console_log}\nMy Unique Name [{client_unique_name}] is taken so my new Unique Name is [{components[2]}].";
+									client_unique_names.Remove(client_unique_name);
+									client_unique_name = components[2];
+									client_unique_names.Add(client_unique_name);
+								}
+								break;
 							}
-							break;
-						}
-					case Message_Type.Client_Disconnected: // Server said some client disconnected
-						{
-							Console.WriteLine($"Client [{client_unique_name}]: Client [{message[1]}] just disconnected.");
-							break;
-						}
+						case Message_Type.Client_Connected: // Server said some client connected
+							{
+								if (components[1] != client_unique_name) // If not me
+								{
+									client_unique_names.Add(components[1]);
+									console_log = $"{console_log}\nClient [{components[1]}] just connected.";
+								}
+								break;
+							}
+						case Message_Type.Client_Disconnected: // Server said some client disconnected
+							{
+								client_unique_names.Remove(components[1]);
+								console_log = $"{console_log}\nClient [{components[1]}] just disconnected.";
+								break;
+							}
+						case Message_Type.Client_Online: // Someone just connected and is getting updated on who is already online
+							{
+								if (components[1] == client_unique_name) // For me?
+								{
+									for (int i = 2; i < components.Length; i++)
+									{
+										if (client_unique_names.Contains(components[i]) == false)
+										{
+											client_unique_names.Add(components[i]);
+										}
+									}
+								}
+								break;
+							}
+						case Message_Type.Message_To_All: // A client is sending a message to everybody
+							{
+								if (components[1] == client_unique_name) // Is this my message coming back to me?
+								{
+									break;
+								}
+								_Add_Message(components[1], components[2]);
+								console_log = $"{console_log}\nClient [{components[1]}] sent everyone a message: {components[2]}";
+								break;
+							}
+						case Message_Type.Message_To_Client: // A client is sending a message to another client
+							{
+								if (components[1] == client_unique_name) // Is this my message coming back to me?
+								{
+									break;
+								}
+								if (components[2] == client_unique_name) // Is it for me?
+								{
+									_Add_Message(components[1], components[3]);
+									console_log = $"{console_log}\nClient [{components[1]}] sent me a message: {components[3]}";
+								}
+								break;
+							}
+					}
+				}
+				_Console_Update();
+				if (message_back != "")
+				{
+					client.SendAsync(message_back);
 				}
 			}
-			protected override void OnError(SocketError error) => Console.WriteLine($"Client [{client_unique_name}] received an error: {error}");
+			protected override void OnError(SocketError error)
+			{
+				console_log = $"{console_log}\nClient Error: {error}";
+				_Console_Update();
+			}
 		}
 	}
 
