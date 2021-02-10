@@ -1,0 +1,83 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj": {}
+  },
+  "projects": {
+    "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
+        "projectName": "Gear_Project",
+        "projectPath": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
+        "packagesPath": "C:\\Users\\PC PC\\.nuget\\packages\\",
+        "outputPath": "D:\\code\\MonoGame\\Gear\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\PC PC\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "net5.0-windows7.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net5.0-windows7.0": {
+            "targetAlias": "net5.0-windows",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net5.0-windows7.0": {
+          "targetAlias": "net5.0-windows",
+          "dependencies": {
+            "Mono.Nat": {
+              "target": "Package",
+              "version": "[3.0.1, )"
+            },
+            "MonoGame.Framework.WindowsDX": {
+              "target": "Package",
+              "version": "[3.8.0.1641, )"
+            },
+            "NetCoreServer": {
+              "target": "Package",
+              "version": "[5.0.7, )"
+            },
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[12.0.3, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            },
+            "Microsoft.WindowsDesktop.App.WindowsForms": {
+              "privateAssets": "none"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.103\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

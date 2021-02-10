@@ -3,7 +3,7 @@
   <SourceFile>D:/code/MonoGame/Gear/Content/test.png</SourceFile>
   <SourceTime>2015-03-27T12:53:44.8417729+02:00</SourceTime>
   <DestFile>D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/test.xnb</DestFile>
-  <DestTime>2021-02-09T19:12:05.4753688+02:00</DestTime>
+  <DestTime>2021-02-10T14:15:17.8237817+02:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2020-08-10T16:17:54+03:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

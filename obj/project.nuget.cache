@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "EPmo1qkvn+KkdOF7OXWGESkdLTTfraswdpvKvCEkXdpXGzIEj0TfN1f5XuO4A2L5gd9pF63K2/VVoCJagvRRDw==",
+  "dgSpecHash": "MdV2m/6Hi2GxXSJRr3GEIV4lkfdxdva52iLKUOwbfcBjWBoMLDpBDc3lfczh9H5nunEFNvX/vwc9PzWRsVe/Eg==",
   "success": true,
-  "projectFilePath": "D:\\code\\MonoGame\\Gear\\Gear.csproj",
+  "projectFilePath": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\PC PC\\.nuget\\packages\\libuv\\1.9.1\\libuv.1.9.1.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\1.1.0\\microsoft.codeanalysis.analyzers.1.1.0.nupkg.sha512",

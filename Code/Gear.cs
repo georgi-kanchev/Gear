@@ -19,8 +19,13 @@ using System.Net;
 using System.Threading;
 using Mono.Nat;
 
-public abstract class Gear_System : Game
+public abstract class Gear : Game
 {
+	///<summary>
+	///text, <paramref name="param"/>, <see cref="char"/>, <typeparamref name="Type"/>
+	///</summary>
+	private static void Summary_Example() { }
+
 	#region Gear
 	#region Sleep Prevention
 	[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
@@ -55,6 +60,7 @@ public abstract class Gear_System : Game
 	private static Point canvas_size = new Point(1920, 1080), screen_size = new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
 
 	private static Game game;
+	private static Program program;
 	private static GraphicsDeviceManager graphics;
 	private static SpriteBatch sprite_batch;
 	private static RenderTarget2D render_target;
@@ -80,19 +86,19 @@ public abstract class Gear_System : Game
 	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots";
 	#endregion
 	#region Creation
-	private class Creation : Gear_System
+	public abstract class Executable : Gear
 	{
 		[STAThread]
 		public static void Main()
 		{
-			using (var game = new Creation())
+			using (var game = new Program())
 			{
+				program = game;
 				game.Run();
 			}
 		}
-		public override Gear_System Create() => this;
 	}
-	public Gear_System()
+	public Gear()
 	{
 		graphics = new GraphicsDeviceManager(this)
 		{
@@ -102,7 +108,32 @@ public abstract class Gear_System : Game
 		Content.RootDirectory = "Content";
 		game = Create();
 	}
-	public abstract Gear_System Create();
+	/// <summary>
+	/// - Example code setup:<br></br>
+	/// <paramref name="public"/> <paramref name="override"/> <see cref="Program"/> <typeparamref name="Create"/>() => <paramref name="this"/>;<br></br>
+	/// </summary>
+	public abstract Executable Create();
+	/// <summary>
+	/// - Has to return a <see cref="string"/>[] containing <paramref name="folder"/>/<paramref name="name"/>.<paramref name="extension"/> for the small amount of content files that need to be loaded before the <typeparamref name="Loading"/> <typeparamref name="Screen"/> so they can be used during <see cref="Each_Loading_Screen_Update"/> while the rest of the content files are being loaded.<br></br>
+	/// - The <paramref name="folder"/> part of the path is skipped if the file is directly inside the Content folder.<br></br><br></br>
+	/// - Example code setup:<br></br>
+	/// // the following code pre-loads two files<br></br>
+	/// // the first with path: Content/folder/name.extension<br></br>
+	/// // the second with path: Content/name.extension<br></br>
+	/// <paramref name="public"/> <paramref name="override"/> <see cref="string"/>[] <typeparamref name="Loading_Screen_Prepare"/>() => <paramref name="new"/> <see cref="string"/>[] { "<typeparamref name="folder"/>/<typeparamref name="name"/>.<typeparamref name="extension"/>", "<typeparamref name="name"/>.<typeparamref name="extension"/>" };<br></br>
+	/// </summary>
+	public abstract string[] Loading_Screen_Prepare();
+	/// <summary>
+	/// - The place for the code that displays and updates the visuals of the <typeparamref name="Loading"/> <typeparamref name="Screen"/> with the small amount of content files loaded through <see cref="Loading_Screen_Prepare"/>. The pre-loaded files can be used by each <see cref="Body"/>.<br></br>
+	/// - The <see cref="int"/> <paramref name="parameter"/> contains the loading %.
+	/// </summary>
+	public abstract void Each_Loading_Screen_Update(int percent_loaded);
+	/// <summary>
+	/// - The place for all program code.<br></br>
+	/// - The <see cref="int"/> <paramref name="parameter"/> contains the tick count.<br></br><br></br>
+	/// - The tick count and information about ticks/frames can be checked through <see cref="System.Ticks_Count_Get"/>.
+	/// </summary>
+	public abstract void Each_Tick(int tick_count);
 	#endregion
 	#region Main
 	protected override void Initialize()
@@ -130,7 +161,7 @@ public abstract class Gear_System : Game
 		//anti pc sleep
 		SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
 
-		var content = Gear_Program.Loading_Screen_Prepare();
+		var content = program.Loading_Screen_Prepare();
 		foreach (var file in content)
 		{
 			LoadFile(file);
@@ -149,13 +180,13 @@ public abstract class Gear_System : Game
 		if (loading)
 		{
 			LoadAllContent();
-			Gear_Program.Each_Loading_Screen_Update(loading_percent);
+			program.Each_Loading_Screen_Update(loading_percent);
 		}
 		else
 		{
 			tick++;
 			Advance_Tick_Time();
-			Gear_Program.Each_Tick();
+			program.Each_Tick(tick);
 		}
 		base.Update(gameTime);
 	}
@@ -510,11 +541,6 @@ public abstract class Gear_System : Game
 	/// </summary>
 	public static class System
 	{
-		///<summary>
-		///text, <paramref name="param"/>, <see cref="char"/>, <typeparamref name="Type"/>
-		///</summary>
-		private static void Summary_Example() { }
-
 		/// <summary>
 		/// - Displays a <paramref name="message"/> on the screen with a <paramref name="font"/> that has a <paramref name="scale"/>. The <paramref name="message"/> may <paramref name="overwrite"/> what is already displayed instead of appending it.<br></br><br></br>
 		/// - The console can be cleared with <see cref="Console_Clear"/>.
@@ -580,21 +606,24 @@ public abstract class Gear_System : Game
 			return average ? tps_average : tps;
 		}
 		/// <summary>
-		/// - Gets the current target tick rate and returns it. <br></br><br></br>- The target tick speed can be changed via <see cref="Ticks_Per_Second_Target_Set"/>.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="Frames_Per_Second_Get"/>.
+		/// - Gets the current target tick rate and returns it. <br></br><br></br>
+		/// - The target tick speed can be changed via <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="Frames_Total_Per_Second_Get"/>.<br></br><br></br>
 		/// </summary>
 		public static float Ticks_Per_Second_Target_Get() => 60 / ((float)game.TargetElapsedTime.TotalSeconds * 60);
 		/// <summary>
-		/// - Checks wether the tick rate is limited to the target tick rate and returns the result.<br></br><br></br>- The limitation of the tick speed and other related changes can be set through <see cref="Ticks_Per_Second_Target_Set"/>.
+		/// - Checks wether the tick rate is limited to the target tick rate and returns the result.<br></br><br></br>- The limitation of the tick speed and other related changes can be set through<br></br> <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.
 		/// </summary>
 		public static bool Ticks_Per_Second_Are_Limited_Check() => game.IsFixedTimeStep;
 		/// <summary>
-		/// - Checks wether the tick rate is limited by the user's monitor refresh rate and returns the result.<br></br><br></br>- The vertical synchronization and other related changes can set through <see cref="Ticks_Per_Second_Target_Set"/>.
+		/// - Checks wether the tick rate is limited by the user's monitor refresh rate and returns the result.<br></br><br></br>
+		/// - The vertical synchronization and other related changes can set through<br></br> <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.<br></br><br></br>
 		/// </summary>
 		public static bool Ticks_Per_Second_Are_V_Synced_Check() => graphics.SynchronizeWithVerticalRetrace;
 		/// <summary>
 		/// - Gets the number of ticks that have passed since the start and returns them.<br></br><br></br>
-		/// - Changes to the tick speed may be made through <see cref="Ticks_Per_Second_Target_Set"/>.
+		/// - The tick count is also provided as an <see cref="int"/> parameter with <see cref="Program.Each_Tick(int)"/>.<br></br><br></br>
+		/// - Changing the tick speed and receiving information about ticks/frames may be done through <see cref="Ticks_Per_Second_Target_Set"/>.
 		/// </summary>
 		public static int Ticks_Count_Get() => tick;
 
@@ -618,7 +647,7 @@ public abstract class Gear_System : Game
 
 		/// <summary>
 		/// - Gets the current frame rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. A lower frame rate will be present with slow tick rate and vice versa. The targeted tick rate can be changed or uncapped with <see cref="Ticks_Per_Second_Target_Set"/>.
+		/// - The frame rate is tied to the tick rate but they are not the same. A lower frame rate will be present with slow tick rate and vice versa. The targeted tick rate can be changed or uncapped with <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.
 		/// </summary>
 		public static float Frames_Total_Per_Second_Get(bool average = false)
 		{
@@ -626,13 +655,13 @@ public abstract class Gear_System : Game
 		}
 		/// <summary>
 		/// - Gets the number of frames that have passed since the start and returns them. This counter is not affected by rendering. Therefore a frame might be skipped and the counter will still increment. <br></br><br></br>- Rendered frames counter can be checked with <see cref="Frames_Rendered_Count_Get"/>.<br></br><br></br>
-		/// - Changing or uncapping the tick rate through <see cref="Ticks_Per_Second_Target_Set"/> will affect the frame rate.
+		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="Ticks_Per_Second_Target_Set"/>. This affects the frame rate.
 		/// </summary>
 		public static int Frames_Total_Count_Get() => frame;
 		/// <summary>
 		/// - Gets the number of rendered frames that have passed since the start and returns them. Rendered frames happen only when the current frame is different than the last frame. Therefore frames are skipped when the screen is static.<br></br><br></br>
 		/// - A check for the total frames counter can be done through <see cref="Frames_Total_Count_Get"/>.<br></br><br></br>
-		/// - Changing or uncapping the tick rate through <see cref="Ticks_Per_Second_Target_Set"/> will affect the frame rate.
+		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="Ticks_Per_Second_Target_Set"/>. This affects the frame rate.
 		/// </summary>
 		public static int Frames_Rendered_Count_Get() => frame_rendered;
 

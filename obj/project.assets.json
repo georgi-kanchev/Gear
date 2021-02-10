@@ -7383,9 +7383,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\code\\MonoGame\\Gear\\Gear.csproj",
-      "projectName": "Gear",
-      "projectPath": "D:\\code\\MonoGame\\Gear\\Gear.csproj",
+      "projectUniqueName": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
+      "projectName": "Gear_Project",
+      "projectPath": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
       "packagesPath": "C:\\Users\\PC PC\\.nuget\\packages\\",
       "outputPath": "D:\\code\\MonoGame\\Gear\\obj\\",
       "projectStyle": "PackageReference",
@@ -7451,7 +7451,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.102\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\5.0.103\\RuntimeIdentifierGraph.json"
       }
     }
   }
