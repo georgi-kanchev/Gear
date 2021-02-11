@@ -19,14 +19,13 @@ using System.Net;
 using System.Threading;
 using Mono.Nat;
 
-public abstract class Gear : Game
+public static class Gear
 {
 	///<summary>
 	///text, <paramref name="param"/>, <see cref="char"/>, <typeparamref name="Type"/>
 	///</summary>
 	private static void Summary_Example() { }
 
-	#region Gear
 	#region Sleep Prevention
 	[DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
 	static extern EXECUTION_STATE SetThreadExecutionState(EXECUTION_STATE esFlags);
@@ -46,7 +45,7 @@ public abstract class Gear : Game
 	private static extern void SDL_MaximizeWindow(IntPtr window);
 	#endregion
 	#region Show Console
-	private void Form1_Load(object sender, EventArgs e)
+	private static void Form1_Load(object sender, EventArgs e)
 	{
 		AllocConsole();
 	}
@@ -55,17 +54,14 @@ public abstract class Gear : Game
 	[return: MarshalAs(UnmanagedType.Bool)]
 	static extern bool AllocConsole();
 	#endregion
-
 	#region Data
-	private static Point canvas_size = new Point(1920, 1080), screen_size = new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
-
 	private static Game game;
 	private static Program program;
 	private static GraphicsDeviceManager graphics;
 	private static SpriteBatch sprite_batch;
 	private static RenderTarget2D render_target;
 	private static SamplerState render_sampler_state;
-	private static System.Canvas_Pixel_Filter render_pixel_filter;
+	private static Canvas.Pixel_Filter render_pixel_filter;
 
 	private static PerformanceCounter ram_available = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ram_used_percent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -75,18 +71,26 @@ public abstract class Gear : Game
 	private static Dictionary<string, SoundEffectInstance> sounds = new Dictionary<string, SoundEffectInstance>();
 	private static Dictionary<string, SoundEffect> sounds_raw = new Dictionary<string, SoundEffect>();
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
+	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signal_pauses = new Dictionary<string, bool>();
+	private static Dictionary<string, int> gate_entries_count = new Dictionary<string, int>();
+	private static Dictionary<string, float> signal_timers = new Dictionary<string, float>(), signal_start_times = new Dictionary<string, float>(), signal_delays = new Dictionary<string, float>();
+	private static List<Input.Keys> last_frame_keys_pressed = new List<Input.Keys>(), keys_just_pressed = new List<Input.Keys>(), keys_just_released = new List<Input.Keys>();
+
 	private static List<Body> bodies_all = new List<Body>();
+	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
 
 	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port = 1234;
 	private static bool console_draw, loading = true, pause_unfocus, render, sleep_prevented;
 	private static float console_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
-	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
+	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory;
+
 	private static DateTime last_tick_time, last_frame_time;
 	private static Color background_color;
-	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, screenshots_path = $"{AppDomain.CurrentDomain.BaseDirectory}\\screenshots";
+	private static Point canvas_size = new Point(1920, 1080), screen_size = new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
+	private static Vector2 camera_position;
 	#endregion
-	#region Creation
-	public abstract class Executable : Gear
+
+	public abstract class Instance : Game
 	{
 		[STAThread]
 		public static void Main()
@@ -97,624 +101,499 @@ public abstract class Gear : Game
 				game.Run();
 			}
 		}
-	}
-	public Gear()
-	{
-		graphics = new GraphicsDeviceManager(this)
+		public Instance()
 		{
-			PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
-			PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height
-		};
-		Content.RootDirectory = "Content";
-		game = Create();
-	}
-	/// <summary>
-	/// - Example code setup:<br></br>
-	/// <paramref name="public"/> <paramref name="override"/> <see cref="Program"/> <typeparamref name="Create"/>() => <paramref name="this"/>;<br></br>
-	/// </summary>
-	public abstract Executable Create();
-	/// <summary>
-	/// - Has to return a <see cref="string"/>[] containing <paramref name="folder"/>/<paramref name="name"/>.<paramref name="extension"/> for the small amount of content files that need to be loaded before the <typeparamref name="Loading"/> <typeparamref name="Screen"/> so they can be used during <see cref="Each_Loading_Screen_Update"/> while the rest of the content files are being loaded.<br></br>
-	/// - The <paramref name="folder"/> part of the path is skipped if the file is directly inside the Content folder.<br></br><br></br>
-	/// - Example code setup:<br></br>
-	/// // the following code pre-loads two files<br></br>
-	/// // the first with path: Content/folder/name.extension<br></br>
-	/// // the second with path: Content/name.extension<br></br>
-	/// <paramref name="public"/> <paramref name="override"/> <see cref="string"/>[] <typeparamref name="Loading_Screen_Prepare"/>() => <paramref name="new"/> <see cref="string"/>[] { "<typeparamref name="folder"/>/<typeparamref name="name"/>.<typeparamref name="extension"/>", "<typeparamref name="name"/>.<typeparamref name="extension"/>" };<br></br>
-	/// </summary>
-	public abstract string[] Loading_Screen_Prepare();
-	/// <summary>
-	/// - The place for the code that displays and updates the visuals of the <typeparamref name="Loading"/> <typeparamref name="Screen"/> with the small amount of content files loaded through <see cref="Loading_Screen_Prepare"/>. The pre-loaded files can be used by each <see cref="Body"/>.<br></br>
-	/// - The <see cref="int"/> <paramref name="parameter"/> contains the loading %.
-	/// </summary>
-	public abstract void Each_Loading_Screen_Update(int percent_loaded);
-	/// <summary>
-	/// - The place for all program code.<br></br>
-	/// - The <see cref="int"/> <paramref name="parameter"/> contains the tick count.<br></br><br></br>
-	/// - The tick count and information about ticks/frames can be checked through <see cref="System.Ticks_Count_Get"/>.
-	/// </summary>
-	public abstract void Each_Tick(int tick_count);
-	#endregion
-	#region Main
-	protected override void Initialize()
-	{
-		sprite_batch = new SpriteBatch(game.GraphicsDevice);
-
-		graphics.PreferredBackBufferWidth = screen_size.X;
-		graphics.PreferredBackBufferHeight = screen_size.Y;
-		graphics.HardwareModeSwitch = false;
-		graphics.IsFullScreen = true;
-		graphics.ApplyChanges();
-		game.Window.Position = new Point(0, 0);
-
-		render_sampler_state = SamplerState.PointWrap;
-
-		render_target = new RenderTarget2D(game.GraphicsDevice, screen_size.X, screen_size.Y, false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-
-		game.Window.Title = "Gear";
-		game.IsMouseVisible = true;
-
-		// start maximized
-		//var form = (Form)Control.FromHandle(Window.Handle);
-		//form.WindowState = FormWindowState.Maximized;
-
-		//anti pc sleep
-		SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
-
-		var content = program.Loading_Screen_Prepare();
-		foreach (var file in content)
-		{
-			LoadFile(file);
-		}
-		CountContentFiles();
-		LoadAllContent();
-
-		base.Initialize();
-	}
-	protected override void Update(GameTime gameTime)
-	{
-		if (pause_unfocus && game.IsActive == false)
-		{
-			return;
-		}
-		if (loading)
-		{
-			LoadAllContent();
-			program.Each_Loading_Screen_Update(loading_percent);
-		}
-		else
-		{
-			tick++;
-			Advance_Tick_Time();
-			program.Each_Tick(tick);
-		}
-		base.Update(gameTime);
-	}
-	private static void Advance_Tick_Time()
-	{
-		var delta = last_tick_time == default ? default : DateTime.Now - last_tick_time;
-		ticks_delta_time = (float)delta.TotalSeconds;
-		tps = 60 / ((float)delta.TotalSeconds * 60);
-		tps = double.IsInfinity(tps) ? tps_average : tps;
-		Advance_TPS_Average();
-		time += ticks_delta_time;
-		last_tick_time = DateTime.Now;
-	}
-	private static void Advance_TPS_Average()
-	{
-		if (tps_average_index == 60)
-		{
-			tps_average_index = 0;
-		}
-		if (tps_averages.Contains(tps))
-		{
-			return;
-		}
-		if (tps_average_index == tps_averages.Count)
-		{
-			tps_averages.Add(tps);
-		}
-		tps_averages[tps_average_index] = tps;
-		tps_average = tps_averages.Average();
-		tps_average_index++;
-	}
-
-	protected override void Draw(GameTime gameTime)
-	{
-		frame++;
-		if (render == false) return;
-		frame_rendered++;
-
-		sprite_batch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, render_sampler_state, DepthStencilState.Default, RasterizerState.CullNone);
-		GraphicsDevice.SetRenderTarget(render_target);
-		GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
-
-		GraphicsDevice.Clear(background_color);
-
-		// draw =======================================================
-		Advance_Frame_Time();
-		Draw_All_Bodies();
-		// draw =======================================================
-
-		GraphicsDevice.SetRenderTarget(null);
-		var window = Window.ClientBounds;
-		var scale = new Vector2((float)window.Width / canvas_size.X, (float)window.Height / canvas_size.Y);
-		sprite_batch.Draw(render_target, Vector2.Zero, null, Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
-		Draw_Console();
-		render = false;
-		sprite_batch.End();
-		base.Draw(gameTime);
-	}
-	private static void Advance_Frame_Time()
-	{
-		var delta = last_frame_time == default ? default : DateTime.Now - last_frame_time;
-		frames_delta_time = (float)delta.TotalSeconds;
-		fps = 60 / ((float)delta.TotalSeconds * 60);
-		fps = double.IsInfinity(fps) ? fps_average : fps;
-		Advance_FPS_Average();
-		last_frame_time = DateTime.Now;
-	}
-	private static void Advance_FPS_Average()
-	{
-		if (fps_average_index == 60)
-		{
-			fps_average_index = 0;
-		}
-		if (fps_averages.Contains(fps))
-		{
-			return;
-		}
-		if (fps_average_index == fps_averages.Count)
-		{
-			fps_averages.Add(fps);
-		}
-		fps_averages[fps_average_index] = fps;
-		fps_average = fps_averages.Average();
-		fps_average_index++;
-	}
-
-	private static void Draw_All_Bodies()
-	{
-		foreach (var body in bodies_all)
-		{
-			var sprite = body.Sprite_Name_Get();
-			if (sprite == null)
+			graphics = new GraphicsDeviceManager(this)
 			{
-				continue;
-			}
-			var tile_index = new Point(body.Sprite_Index_Horizontal_Get(), body.Sprite_Index_Vertical_Get());
-			var pos = new Vector2(body.Position_X_Get(), body.Position_Y_Get());
-			var size = new Vector2(body.Size_Width_Get(), body.Size_Height_Get()).ToPoint();
-			var sprite_size = new Vector2(body.Sprite_Width_Get(), body.Sprite_Height_Get());
-			var scale = size.ToVector2() / sprite_size;
-			var origin = new Vector2(body.Sprite_Origin_X_Get(), body.Sprite_Origin_Y_Get());
-			var color = new Color(body.Sprite_Red_Get(), body.Sprite_Green_Get(), body.Sprite_Blue_Get(), body.Sprite_Opacity_Get());
-			var boundaries_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
-			var origin_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
-			var angle_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
-			var data = new Color[1] { Color.White };
-			boundaries_sprite.SetData(data);
-			origin_sprite.SetData(data);
-			angle_sprite.SetData(data);
-
-			_Draw_Tile(sprites[sprite], pos - origin, tile_index, body.Sprite_Grid_Size_Get(), (size.ToVector2() / scale).ToPoint(), Vector2.Zero, scale, color, body.Angle_Get(), SpriteEffects.None);
-
-			var boundaries_color = new Color(body.Boundaries_Red_Get(), body.Boundaries_Green_Get(), body.Boundaries_Blue_Get());
-			var boundaries_blink = (body.Boundaries_Are_Shown_Check() && body.Boundaries_Are_Blinking_Check() == false) || (body.Boundaries_Are_Shown_Check() && body.Boundaries_Are_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
-			if (boundaries_sprite != null && boundaries_blink)
-			{
-				_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(size.X, 1), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
-				_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(1, size.Y), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
-			}
-			var angle_color = new Color(body.Angle_Red_Get(), body.Angle_Green_Get(), body.Angle_Blue_Get());
-			var angle_blink = (body.Angle_Is_Shown_Check() && body.Angle_Is_Blinking_Check() == false) || (body.Angle_Is_Shown_Check() && body.Angle_Is_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
-			if (angle_sprite != null && angle_blink)
-			{
-				_Draw_Tile(angle_sprite, pos, Point.Zero, 0, new Point(size.X / 2, 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
-			}
-			var origin_color = new Color(body.Origin_Red_Get(), body.Origin_Green_Get(), body.Origin_Blue_Get());
-			var origin_blink = (body.Origin_Is_Shown_Check() && body.Origin_Is_Blinking_Check() == false) || (body.Origin_Is_Shown_Check() && body.Origin_Is_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
-			if (origin_sprite != null && origin_blink)
-			{
-				_Draw_Tile(origin_sprite, pos, Point.Zero, 0, new Point(1, 1), Vector2.Zero, Vector2.One, origin_color, body.Angle_Get(), SpriteEffects.None);
-			}
-			boundaries_sprite.Dispose();
-			origin_sprite.Dispose();
-		}
-	}
-	private static void Draw_Console()
-	{
-		if (console_font != null && console_draw && fonts.ContainsKey(console_font) && string.IsNullOrWhiteSpace(console_message) == false)
-		{
-			var font_size = fonts[console_font].MeasureString("a") / 18 * console_scale;
-			sprite_batch.DrawString(fonts[console_font], console_message, new Vector2(font_size.Y, font_size.Y), Color.Black, 0, Vector2.Zero, console_scale, SpriteEffects.None, 0);
-			sprite_batch.DrawString(fonts[console_font], console_message, new Vector2(0, 0), Color.White, 0, Vector2.Zero, console_scale, SpriteEffects.None, 0);
-		}
-	}
-	#endregion
-	#region Content Loading
-	private static void CountContentFiles()
-	{
-		var directories = Directory.GetDirectories($"{main_dir}\\Content").ToList();
-		for (int i = 0; i < directories.Count; i++)
-		{
-			CountFolder(directories[i]);
-		}
-		CountFolder($"{main_dir}\\Content");
-		loading_screen_update_per_files = (int)Math.Ceiling(content_file_count / 10d);
-	}
-	private static void CountFolder(string folder)
-	{
-		if (Directory.Exists(folder) == false)
-		{
-			return;
+				PreferredBackBufferWidth = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width,
+				PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height
+			};
+			Content.RootDirectory = "Content";
+			game = Create();
 		}
 
-		var files = Directory.GetFiles(folder);
-		var data_files = new List<string>();
-
-		for (int i = 0; i < files.Length; i++)
-		{
-			if (files[i].Contains(".png") || files[i].Contains(".spritefont"))
-			{
-				data_files.Add(files[i]);
-			}
-		}
-
-		content_file_count += data_files.Count;
-
-		var currentDirectories = Directory.GetDirectories(folder).ToList();
-		while (currentDirectories.Count > 0)
-		{
-			CountFolder(currentDirectories[0]);
-			currentDirectories.RemoveAt(0);
-		}
-	}
-
-	private static void LoadAllContent()
-	{
-		var directories = Directory.GetDirectories($"{main_dir}\\Content").ToList();
-		for (int i = 0; i < directories.Count; i++)
-		{
-			LoadFolder(directories[i]);
-		}
-		LoadFolder($"{main_dir}\\Content");
-		if (loaded_files >= content_file_count)
-		{
-			loading = false;
-		}
-	}
-	private static void LoadFolder(string folder)
-	{
-		if (Directory.Exists(folder) == false)
-		{
-			return;
-		}
-
-		var result = "";
-		var path = folder.Split('\\');
-		var adding = false;
-		for (int i = 0; i < path.Length; i++)
-		{
-			if (adding)
-			{
-				result = result.Insert(result.Length, path[i]);
-				if (i != path.Length - 1)
-				{
-					result = result.Insert(result.Length, "\\");
-				}
-			}
-			if (path[i] == "Content")
-			{
-				adding = true;
-			}
-		}
-		var files = Directory.GetFiles(folder);
-		for (int i = 0; i < files.Length; i++)
-		{
-			var split = files[i].Split('\\');
-			try
-			{
-				var loaded = LoadFile($"{result}\\{split[split.Length - 1]}");
-				if (loaded == false)
-				{
-					continue;
-				}
-			}
-			catch (Exception)
-			{
-				continue;
-			}
-			if (loaded_files % loading_screen_update_per_files == 0)
-			{
-				goto end;
-			}
-		}
-		var currentDirectories = Directory.GetDirectories(folder).ToList();
-		while (currentDirectories.Count > 0)
-		{
-			LoadFolder(currentDirectories[0]);
-			currentDirectories.RemoveAt(0);
-		}
-	end:;
-	}
-	private static bool LoadFile(string name)
-	{
-		var split = name.Split('.');
-		var key = split[0];
-		key = key.Replace('\\', '/');
-		if (key[0] == '/')
-		{
-			key = key.Remove(0, 1);
-		}
-		if (sprites.ContainsKey(key) || fonts.ContainsKey(key) || sounds.ContainsKey(key) || melodies.ContainsKey(key))
-		{
-			return false;
-		}
-		switch (split[1])
-		{
-			case "png":
-				{
-					var sprite = game.Content.Load<Texture2D>(key);
-					sprites[key] = sprite;
-
-					/*
-					var filled = new Texture2D(graphics.GraphicsDevice, sprites[key].Width, sprites[key].Height);
-					var outline = new Texture2D(graphics.GraphicsDevice, sprites[key].Width, sprites[key].Height);
-					var outlineData = new Color[sprite.Width * sprite.Height];
-					var filledData = new Color[sprite.Width * sprite.Height];
-					var pixels = new Color[sprite.Width * sprite.Height];
-
-					sprite.GetData(pixels, 0, sprite.Width * sprite.Height);
-
-					for (int i = 0; i < sprite.Height * sprite.Width; i++)
-					{
-						if (TransparentPixelHasNeighbourOpaquePixel(pixels, i, sprite.Width, sprite.Height))
-						{
-							outlineData[i] = Color.White;
-						}
-						if (pixels[i] != Color.Transparent)
-						{
-							filledData[i] = Color.White;
-						}
-					}
-					outline.SetData(outlineData);
-					filled.SetData(filledData);
-
-					spriteOutlines[key] = outline;
-					spriteFills[key] = filled;
-					*/
-					break;
-				}
-			case "spritefont": fonts[key] = game.Content.Load<SpriteFont>(key); break;
-			case "wav":
-				{
-					sounds_raw[key] = game.Content.Load<SoundEffect>(key);
-					sounds[key] = sounds_raw[key].CreateInstance();
-					break;
-				}
-			case "mp3": melodies[key] = game.Content.Load<Song>(key); break;
-			default: return false;
-		}
-		loaded_files++;
-		loading_percent = (int)((float)loaded_files / content_file_count * 100);
-		loading_percent = loading_percent > 100 ? 100 : loading_percent;
-		return true;
-		/*
-		bool TransparentPixelHasNeighbourOpaquePixel(Color[] pixels, int i, int width, int height)
-		{
-			var y = i / height;
-			var x = i % width;
-			var xLeft = i - 1;
-			var xRight = i + 1;
-			var yUp = i - height;
-			var yDown = i + height;
-
-			if (pixels[i] == Color.Transparent)
-			{
-				if ((IndexIsOutOfBounds(x + 1, y - 1) == false && (pixels[xRight] != Color.Transparent || pixels[yUp] != Color.Transparent)) ||
-					(IndexIsOutOfBounds(x - 1, y + 1) == false && (pixels[xLeft] != Color.Transparent || pixels[yDown] != Color.Transparent)) ||
-					(IndexIsOutOfBounds(x + 1, y + 1) == false && (pixels[xRight] != Color.Transparent || pixels[yDown] != Color.Transparent)) ||
-					(IndexIsOutOfBounds(x - 1, y - 1) == false && (pixels[xLeft] != Color.Transparent || pixels[yUp] != Color.Transparent)))
-				{
-					return true;
-				}
-			}
-			return false;
-
-			bool IndexIsOutOfBounds(int k, int l)
-			{
-				if (k < 0 || k > width - 1 || l < 0 || l > height - 1)
-				{
-					return true;
-				}
-				return false;
-			}
-		}
-		*/
-	}
-	#endregion
-	#endregion
-	#region Program
-	/// <summary>
-	/// General configurations and statistics about the program.
-	/// </summary>
-	public static class System
-	{
 		/// <summary>
-		/// - Displays a <paramref name="message"/> on the screen with a <paramref name="font"/> that has a <paramref name="scale"/>. The <paramref name="message"/> may <paramref name="overwrite"/> what is already displayed instead of appending it.<br></br><br></br>
-		/// - The console can be cleared with <see cref="Console_Clear"/>.
+		/// - Example code setup:<br></br>
+		/// <paramref name="public"/> <paramref name="override"/> <see cref="Program"/> <typeparamref name="Create"/>() => <paramref name="this"/>;<br></br>
 		/// </summary>
-		public static void Console_Write(string font, object message, float scale = 1, bool overwrite = false)
+		public abstract Program Create();
+		/// <summary>
+		/// - Has to return a <see cref="string"/>[] containing <paramref name="folder"/>/<paramref name="name"/>.<paramref name="extension"/> for the small amount of content files that need to be loaded before the <typeparamref name="Loading"/> <typeparamref name="Screen"/> so they can be used during <see cref="Each_Loading_Screen_Update"/> while the rest of the content files are being loaded.<br></br>
+		/// - The <paramref name="folder"/> part of the path is skipped if the file is directly inside the Content folder.<br></br><br></br>
+		/// - Example code setup:<br></br>
+		/// // the following code pre-loads two files<br></br>
+		/// // the first with path: Content/folder/name.extension<br></br>
+		/// // the second with path: Content/name.extension<br></br>
+		/// <paramref name="public"/> <paramref name="override"/> <see cref="string"/>[] <typeparamref name="Loading_Screen_Prepare"/>() => <paramref name="new"/> <see cref="string"/>[] { "<typeparamref name="folder"/>/<typeparamref name="name"/>.<typeparamref name="extension"/>", "<typeparamref name="name"/>.<typeparamref name="extension"/>" };<br></br>
+		/// </summary>
+		public abstract string[] Loading_Screen_Prepare();
+		/// <summary>
+		/// - The place for the code that displays and updates the visuals of the <typeparamref name="Loading"/> <typeparamref name="Screen"/> with the small amount of content files loaded through <see cref="Loading_Screen_Prepare"/>. The pre-loaded files can be used by each <see cref="Body"/>.<br></br>
+		/// - The <see cref="int"/> <paramref name="parameter"/> contains the loading %.
+		/// </summary>
+		public abstract void Each_Loading_Screen_Update(int percent_loaded);
+		/// <summary>
+		/// - The place for all program code.<br></br>
+		/// - The <see cref="int"/> <paramref name="parameter"/> contains the tick count.<br></br><br></br>
+		/// - The tick count and information about ticks/frames can be checked through <see cref="Performance.Ticks_Count_Get"/>.
+		/// </summary>
+		public abstract void Each_Tick(int tick_count);
+
+		protected override void Initialize()
 		{
-			if (fonts.ContainsKey(font) == false)
+			sprite_batch = new SpriteBatch(game.GraphicsDevice);
+
+			graphics.PreferredBackBufferWidth = screen_size.X;
+			graphics.PreferredBackBufferHeight = screen_size.Y;
+			graphics.HardwareModeSwitch = false;
+			graphics.IsFullScreen = true;
+			graphics.ApplyChanges();
+			game.Window.Position = new Point(0, 0);
+
+			render_sampler_state = SamplerState.PointWrap;
+
+			render_target = new RenderTarget2D(game.GraphicsDevice, screen_size.X, screen_size.Y, false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+
+			game.Window.Title = "Gear";
+			game.IsMouseVisible = true;
+
+			// start maximized
+			//var form = (Form)Control.FromHandle(Window.Handle);
+			//form.WindowState = FormWindowState.Maximized;
+
+			//anti pc sleep
+			SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+
+			var content = program.Loading_Screen_Prepare();
+			foreach (var file in content)
+			{
+				Load_File(file);
+			}
+			Count_Content_Files();
+			Load_All_Content();
+
+			base.Initialize();
+		}
+		protected override void Update(GameTime gameTime)
+		{
+			if (pause_unfocus && game.IsActive == false)
 			{
 				return;
 			}
-			console_draw = true;
-			console_font = font;
-			if (overwrite) console_message = "";
-			console_message = $"{console_message}{message}";
-			console_scale = scale;
-
-			var sample_size = fonts[console_font].MeasureString("a");
-			var sample_size_scaled = sample_size * console_scale;
-			var visible_lines = screen_size.Y / (int)sample_size_scaled.Y;
-			var size = fonts[console_font].MeasureString(console_message) * console_scale;
-			var lines = console_message.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-			if (size.Y > screen_size.Y + sample_size_scaled.Y && lines.Count > 2 && visible_lines < lines.Count)
+			if (loading)
 			{
-				console_message = "";
-				lines[lines.Count - visible_lines] = "...";
-				for (int i = lines.Count - visible_lines; i < lines.Count; i++)
+				Load_All_Content();
+				program.Each_Loading_Screen_Update(loading_percent);
+			}
+			else
+			{
+				tick++;
+				Advance_Tick_Time();
+				Update_On_Keys();
+				program.Each_Tick(tick);
+			}
+			base.Update(gameTime);
+		}
+		private static void Advance_Tick_Time()
+		{
+			var delta = last_tick_time == default ? default : DateTime.Now - last_tick_time;
+			ticks_delta_time = (float)delta.TotalSeconds;
+			tps = 60 / ((float)delta.TotalSeconds * 60);
+			tps = double.IsInfinity(tps) ? tps_average : tps;
+			Advance_TPS_Average();
+			time += ticks_delta_time;
+			last_tick_time = DateTime.Now;
+		}
+		private static void Advance_TPS_Average()
+		{
+			if (tps_average_index == 60)
+			{
+				tps_average_index = 0;
+			}
+			if (tps_averages.Contains(tps))
+			{
+				return;
+			}
+			if (tps_average_index == tps_averages.Count)
+			{
+				tps_averages.Add(tps);
+			}
+			tps_averages[tps_average_index] = tps;
+			tps_average = tps_averages.Average();
+			tps_average_index++;
+		}
+
+		private static void Update_On_Keys()
+		{
+			var keysPressed = Input.Keys_Pressed_Get();
+
+			keys_just_pressed.Clear();
+			keys_just_released.Clear();
+			foreach (var key in keysPressed)
+			{
+				if (last_frame_keys_pressed.Contains(key) == false)
 				{
-					console_message = $"{console_message}{lines[i]}\n";
+					keys_just_pressed.Add(key);
 				}
 			}
-			render = true;
-		}
-		/// <summary>
-		/// - Clears all the text on screen that was displayed through <see cref="Console_Write"/>.<br></br>
-		/// - Same as: <see cref="Console_Write"/> with parameters <paramref name="message"/> = "", <paramref name="overwrite"/> = <typeparamref name="true"/>.<br></br><br></br>
-		/// - Writing on the console happens through <see cref="Console_Write"/>.
-		/// </summary>
-		public static void Console_Clear()
-		{
-			console_message = null;
-			render = true;
-		}
-
-		/// <summary>
-		/// - Sets the target <paramref name="tps"/> that can be between 2 and 1000 inclusively if <paramref name="limited"/>. The ticks per second may go bellow but not above the targeted speed (depending on performance), otherwise multiple ticks (but not frames) at the same time will occur in order to keep up. <br></br>- The tick rate is also capped to the user's monitor refresh rate if <paramref name="v_synced"/> (vertical synchronization removes scanlines and tearing artifacts). <br></br>- Not <paramref name="limited"/> and not <paramref name="v_synced"/> tick rate uncaps both the frame rate and tick rate, therefore running as fast as possible. <br></br><br></br>- The current tick rate can be checked with <see cref="Ticks_Per_Second_Get"/>.<br></br>- The current target tick rate can be checked with <see cref="Ticks_Per_Second_Target_Get"/>.<br></br>- A check wether the tick rate is <paramref name="limited"/> can be received from <see cref="Ticks_Per_Second_Are_Limited_Check"/>.<br></br>- And check wether they are vertically synchronized from <see cref="Ticks_Per_Second_Are_V_Synced_Check"/>.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The current frame rate can be checked with <see cref="Frames_Per_Second_Get"/>.<br></br>
-		/// </summary>
-		public static void Ticks_Per_Second_Target_Set(float tps, bool limited, bool v_synced)
-		{
-			tps = tps < 2 ? 2 : tps;
-			tps = tps > 1000 ? 1000 : tps;
-			game.TargetElapsedTime = TimeSpan.FromSeconds(1d / tps);
-			game.IsFixedTimeStep = limited;
-			graphics.SynchronizeWithVerticalRetrace = v_synced;
-			graphics.ApplyChanges();
-		}
-		/// <summary>
-		/// - Gets the current tick rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it. <br></br><br></br>- The target tick speed can be changed via <see cref="Ticks_Per_Second_Target_Set"/>.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="Frames_Per_Second_Get"/>.
-		/// </summary>
-		public static float Ticks_Per_Second_Get(bool average = false)
-		{
-			return average ? tps_average : tps;
-		}
-		/// <summary>
-		/// - Gets the current target tick rate and returns it. <br></br><br></br>
-		/// - The target tick speed can be changed via <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="Frames_Total_Per_Second_Get"/>.<br></br><br></br>
-		/// </summary>
-		public static float Ticks_Per_Second_Target_Get() => 60 / ((float)game.TargetElapsedTime.TotalSeconds * 60);
-		/// <summary>
-		/// - Checks wether the tick rate is limited to the target tick rate and returns the result.<br></br><br></br>- The limitation of the tick speed and other related changes can be set through<br></br> <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.
-		/// </summary>
-		public static bool Ticks_Per_Second_Are_Limited_Check() => game.IsFixedTimeStep;
-		/// <summary>
-		/// - Checks wether the tick rate is limited by the user's monitor refresh rate and returns the result.<br></br><br></br>
-		/// - The vertical synchronization and other related changes can set through<br></br> <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.<br></br><br></br>
-		/// </summary>
-		public static bool Ticks_Per_Second_Are_V_Synced_Check() => graphics.SynchronizeWithVerticalRetrace;
-		/// <summary>
-		/// - Gets the number of ticks that have passed since the start and returns them.<br></br><br></br>
-		/// - The tick count is also provided as an <see cref="int"/> parameter with <see cref="Program.Each_Tick(int)"/>.<br></br><br></br>
-		/// - Changing the tick speed and receiving information about ticks/frames may be done through <see cref="Ticks_Per_Second_Target_Set"/>.
-		/// </summary>
-		public static int Ticks_Count_Get() => tick;
-
-		public enum Performance_Type
-		{
-			Ticks_Per_Second, Ticks_Per_Second_Average, Ticks_Per_Second_Target, Frames_Per_Second_Total, RAM_Available_GB, RAM_Percent_Used
-		}
-		public static float Performance_Get(Performance_Type performance_type)
-		{
-			switch (performance_type)
+			foreach (var key in last_frame_keys_pressed)
 			{
-				case Performance_Type.Ticks_Per_Second: break;
-				case Performance_Type.Ticks_Per_Second_Average: break;
-				case Performance_Type.Ticks_Per_Second_Target: break;
-				case Performance_Type.Frames_Per_Second_Total: break;
-				case Performance_Type.RAM_Available_GB: return ram_available.NextValue() / 1000;
-				case Performance_Type.RAM_Percent_Used: return ram_used_percent.NextValue();
+				if (keysPressed.Contains(key) == false)
+				{
+					keys_just_released.Add(key);
+				}
 			}
-			return default;
+
+			last_frame_keys_pressed = Input.Keys_Pressed_Get();
 		}
 
-		/// <summary>
-		/// - Gets the current frame rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. A lower frame rate will be present with slow tick rate and vice versa. The targeted tick rate can be changed or uncapped with <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.
-		/// </summary>
-		public static float Frames_Total_Per_Second_Get(bool average = false)
+		protected override void Draw(GameTime gameTime)
 		{
-			return average ? fps_average : fps;
+			frame++;
+			if (render == false) return;
+			frame_rendered++;
+
+			sprite_batch.Begin(SpriteSortMode.Immediate, BlendState.NonPremultiplied, render_sampler_state, DepthStencilState.Default, RasterizerState.CullNone);
+			GraphicsDevice.SetRenderTarget(render_target);
+			GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
+
+			GraphicsDevice.Clear(background_color);
+
+			// draw =======================================================
+			Advance_Frame_Time();
+			Draw_All_Bodies();
+			// draw =======================================================
+
+			GraphicsDevice.SetRenderTarget(null);
+			var window = Window.ClientBounds;
+			var scale = new Vector2((float)window.Width / canvas_size.X, (float)window.Height / canvas_size.Y);
+			sprite_batch.Draw(render_target, Vector2.Zero, null, Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+			Draw_Console();
+			render = false;
+			sprite_batch.End();
+			base.Draw(gameTime);
 		}
-		/// <summary>
-		/// - Gets the number of frames that have passed since the start and returns them. This counter is not affected by rendering. Therefore a frame might be skipped and the counter will still increment. <br></br><br></br>- Rendered frames counter can be checked with <see cref="Frames_Rendered_Count_Get"/>.<br></br><br></br>
-		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="Ticks_Per_Second_Target_Set"/>. This affects the frame rate.
-		/// </summary>
-		public static int Frames_Total_Count_Get() => frame;
-		/// <summary>
-		/// - Gets the number of rendered frames that have passed since the start and returns them. Rendered frames happen only when the current frame is different than the last frame. Therefore frames are skipped when the screen is static.<br></br><br></br>
-		/// - A check for the total frames counter can be done through <see cref="Frames_Total_Count_Get"/>.<br></br><br></br>
-		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="Ticks_Per_Second_Target_Set"/>. This affects the frame rate.
-		/// </summary>
-		public static int Frames_Rendered_Count_Get() => frame_rendered;
+		private static void Advance_Frame_Time()
+		{
+			var delta = last_frame_time == default ? default : DateTime.Now - last_frame_time;
+			frames_delta_time = (float)delta.TotalSeconds;
+			fps = 60 / ((float)delta.TotalSeconds * 60);
+			fps = double.IsInfinity(fps) ? fps_average : fps;
+			Advance_FPS_Average();
+			last_frame_time = DateTime.Now;
+		}
+		private static void Advance_FPS_Average()
+		{
+			if (fps_average_index == 60)
+			{
+				fps_average_index = 0;
+			}
+			if (fps_averages.Contains(fps))
+			{
+				return;
+			}
+			if (fps_average_index == fps_averages.Count)
+			{
+				fps_averages.Add(fps);
+			}
+			fps_averages[fps_average_index] = fps;
+			fps_average = fps_averages.Average();
+			fps_average_index++;
+		}
 
-		/// <summary>
-		/// - Gets the time that has passed since the start and returns it.
-		/// </summary>
-		public static float Time_Get() => time;
-		/// <summary>
-		/// - Gets the time that has passed since the last tick and returns it. <br></br><br></br>- The target tick rate can be changed via <see cref="Ticks_Per_Second_Target_Set"/><br></br>- The current target tick rate can be checked with <see cref="Time_Since_Last_Tick_Target_Get"/>.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="Time_Since_Last_Frame_Get"/>.
-		/// </summary>
-		public static float Time_Since_Last_Tick_Get() => ticks_delta_time;
-		/// <summary>
-		/// - Gets the target time between ticks and returns it.<br></br><br></br>- The target tick rate can be changed via <see cref="Ticks_Per_Second_Target_Set"/>.<br></br>- The current tick rate can be checked with <see cref="Time_Since_Last_Tick_Get"/>.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="Time_Since_Last_Frame_Get"/>.
-		/// </summary>
-		public static float Time_Since_Last_Tick_Target_Get() => (float)game.TargetElapsedTime.TotalSeconds;
-		/// <summary>
-		/// - Gets the time that has passed since the last frame and returns it.<br></br><br></br>
-		/// - The frame rate is tied to the tick rate but they are not the same. The time since last tick can be checked with <see cref="Time_Since_Last_Tick_Get"/>.
-		/// </summary>
-		public static float Time_Since_Last_Frame_Get() => frames_delta_time;
+		private static void Draw_All_Bodies()
+		{
+			foreach (var body in bodies_all)
+			{
+				var sprite = body.Sprite_Name_Get();
+				if (sprite == null)
+				{
+					continue;
+				}
+				var tile_index = new Point(body.Sprite_Index_Horizontal_Get(), body.Sprite_Index_Vertical_Get());
+				var pos = new Vector2(body.Position_X_Get(), body.Position_Y_Get());
+				var size = new Vector2(body.Size_Width_Get(), body.Size_Height_Get()).ToPoint();
+				var sprite_size = new Vector2(body.Sprite_Width_Get(), body.Sprite_Height_Get());
+				var scale = size.ToVector2() / sprite_size;
+				var origin = new Vector2(body.Sprite_Origin_X_Get(), body.Sprite_Origin_Y_Get());
+				var color = new Color(body.Sprite_Red_Get(), body.Sprite_Green_Get(), body.Sprite_Blue_Get(), body.Sprite_Opacity_Get());
+				var boundaries_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
+				var origin_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
+				var angle_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
+				var data = new Color[1] { Color.White };
+				boundaries_sprite.SetData(data);
+				origin_sprite.SetData(data);
+				angle_sprite.SetData(data);
 
-		public enum Canvas_Pixel_Filter
+				_Draw_Tile(sprites[sprite], pos - origin, tile_index, body.Sprite_Grid_Size_Get(), (size.ToVector2() / scale).ToPoint(), Vector2.Zero, scale, color, body.Angle_Get(), SpriteEffects.None);
+
+				var boundaries_color = new Color(body.Boundaries_Red_Get(), body.Boundaries_Green_Get(), body.Boundaries_Blue_Get());
+				var boundaries_blink = (body.Boundaries_Are_Shown_Check() && body.Boundaries_Are_Blinking_Check() == false) || (body.Boundaries_Are_Shown_Check() && body.Boundaries_Are_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
+				if (boundaries_sprite != null && boundaries_blink)
+				{
+					_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(size.X, 1), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(1, size.Y), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
+				}
+				var angle_color = new Color(body.Angle_Red_Get(), body.Angle_Green_Get(), body.Angle_Blue_Get());
+				var angle_blink = (body.Angle_Is_Shown_Check() && body.Angle_Is_Blinking_Check() == false) || (body.Angle_Is_Shown_Check() && body.Angle_Is_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
+				if (angle_sprite != null && angle_blink)
+				{
+					_Draw_Tile(angle_sprite, pos, Point.Zero, 0, new Point(size.X / 2, 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
+				}
+				var origin_color = new Color(body.Origin_Red_Get(), body.Origin_Green_Get(), body.Origin_Blue_Get());
+				var origin_blink = (body.Origin_Is_Shown_Check() && body.Origin_Is_Blinking_Check() == false) || (body.Origin_Is_Shown_Check() && body.Origin_Is_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
+				if (origin_sprite != null && origin_blink)
+				{
+					_Draw_Tile(origin_sprite, pos, Point.Zero, 0, new Point(1, 1), Vector2.Zero, Vector2.One, origin_color, body.Angle_Get(), SpriteEffects.None);
+				}
+				boundaries_sprite.Dispose();
+				origin_sprite.Dispose();
+			}
+		}
+		private static void Draw_Console()
+		{
+			if (console_font != null && console_draw && fonts.ContainsKey(console_font) && string.IsNullOrWhiteSpace(console_message) == false)
+			{
+				var font_size = fonts[console_font].MeasureString("a") / 18 * console_scale;
+				sprite_batch.DrawString(fonts[console_font], console_message, new Vector2(font_size.Y, font_size.Y), Color.Black, 0, Vector2.Zero, console_scale, SpriteEffects.None, 0);
+				sprite_batch.DrawString(fonts[console_font], console_message, new Vector2(0, 0), Color.White, 0, Vector2.Zero, console_scale, SpriteEffects.None, 0);
+			}
+		}
+
+		private static void Count_Content_Files()
+		{
+			var directories = Directory.GetDirectories($"{main_dir}\\Content").ToList();
+			for (int i = 0; i < directories.Count; i++)
+			{
+				Count_Folder(directories[i]);
+			}
+			Count_Folder($"{main_dir}\\Content");
+			loading_screen_update_per_files = (int)Math.Ceiling(content_file_count / 10d);
+		}
+		private static void Count_Folder(string folder)
+		{
+			if (Directory.Exists(folder) == false)
+			{
+				return;
+			}
+
+			var files = Directory.GetFiles(folder);
+			var data_files = new List<string>();
+
+			for (int i = 0; i < files.Length; i++)
+			{
+				if (files[i].Contains(".png") || files[i].Contains(".spritefont"))
+				{
+					data_files.Add(files[i]);
+				}
+			}
+
+			content_file_count += data_files.Count;
+
+			var currentDirectories = Directory.GetDirectories(folder).ToList();
+			while (currentDirectories.Count > 0)
+			{
+				Count_Folder(currentDirectories[0]);
+				currentDirectories.RemoveAt(0);
+			}
+		}
+
+		private static void Load_All_Content()
+		{
+			var directories = Directory.GetDirectories($"{main_dir}\\Content").ToList();
+			for (int i = 0; i < directories.Count; i++)
+			{
+				Load_Folder(directories[i]);
+			}
+			Load_Folder($"{main_dir}\\Content");
+			if (loaded_files >= content_file_count)
+			{
+				loading = false;
+			}
+		}
+		private static void Load_Folder(string folder)
+		{
+			if (Directory.Exists(folder) == false)
+			{
+				return;
+			}
+
+			var result = "";
+			var path = folder.Split('\\');
+			var adding = false;
+			for (int i = 0; i < path.Length; i++)
+			{
+				if (adding)
+				{
+					result = result.Insert(result.Length, path[i]);
+					if (i != path.Length - 1)
+					{
+						result = result.Insert(result.Length, "\\");
+					}
+				}
+				if (path[i] == "Content")
+				{
+					adding = true;
+				}
+			}
+			var files = Directory.GetFiles(folder);
+			for (int i = 0; i < files.Length; i++)
+			{
+				var split = files[i].Split('\\');
+				try
+				{
+					var loaded = Load_File($"{result}\\{split[split.Length - 1]}");
+					if (loaded == false)
+					{
+						continue;
+					}
+				}
+				catch (Exception)
+				{
+					continue;
+				}
+				if (loaded_files % loading_screen_update_per_files == 0)
+				{
+					goto end;
+				}
+			}
+			var currentDirectories = Directory.GetDirectories(folder).ToList();
+			while (currentDirectories.Count > 0)
+			{
+				Load_Folder(currentDirectories[0]);
+				currentDirectories.RemoveAt(0);
+			}
+		end:;
+		}
+		private static bool Load_File(string name)
+		{
+			var split = name.Split('.');
+			var key = split[0];
+			key = key.Replace('\\', '/');
+			if (key[0] == '/')
+			{
+				key = key.Remove(0, 1);
+			}
+			if (sprites.ContainsKey(key) || fonts.ContainsKey(key) || sounds.ContainsKey(key) || melodies.ContainsKey(key))
+			{
+				return false;
+			}
+			switch (split[1])
+			{
+				case "png":
+					{
+						var sprite = game.Content.Load<Texture2D>(key);
+						sprites[key] = sprite;
+
+						/*
+						var filled = new Texture2D(graphics.GraphicsDevice, sprites[key].Width, sprites[key].Height);
+						var outline = new Texture2D(graphics.GraphicsDevice, sprites[key].Width, sprites[key].Height);
+						var outlineData = new Color[sprite.Width * sprite.Height];
+						var filledData = new Color[sprite.Width * sprite.Height];
+						var pixels = new Color[sprite.Width * sprite.Height];
+
+						sprite.GetData(pixels, 0, sprite.Width * sprite.Height);
+
+						for (int i = 0; i < sprite.Height * sprite.Width; i++)
+						{
+							if (TransparentPixelHasNeighbourOpaquePixel(pixels, i, sprite.Width, sprite.Height))
+							{
+								outlineData[i] = Color.White;
+							}
+							if (pixels[i] != Color.Transparent)
+							{
+								filledData[i] = Color.White;
+							}
+						}
+						outline.SetData(outlineData);
+						filled.SetData(filledData);
+
+						spriteOutlines[key] = outline;
+						spriteFills[key] = filled;
+						*/
+						break;
+					}
+				case "spritefont": fonts[key] = game.Content.Load<SpriteFont>(key); break;
+				case "wav":
+					{
+						sounds_raw[key] = game.Content.Load<SoundEffect>(key);
+						sounds[key] = sounds_raw[key].CreateInstance();
+						break;
+					}
+				case "mp3": melodies[key] = game.Content.Load<Song>(key); break;
+				default: return false;
+			}
+			loaded_files++;
+			loading_percent = (int)((float)loaded_files / content_file_count * 100);
+			loading_percent = loading_percent > 100 ? 100 : loading_percent;
+			return true;
+			/*
+			bool TransparentPixelHasNeighbourOpaquePixel(Color[] pixels, int i, int width, int height)
+			{
+				var y = i / height;
+				var x = i % width;
+				var xLeft = i - 1;
+				var xRight = i + 1;
+				var yUp = i - height;
+				var yDown = i + height;
+
+				if (pixels[i] == Color.Transparent)
+				{
+					if ((IndexIsOutOfBounds(x + 1, y - 1) == false && (pixels[xRight] != Color.Transparent || pixels[yUp] != Color.Transparent)) ||
+						(IndexIsOutOfBounds(x - 1, y + 1) == false && (pixels[xLeft] != Color.Transparent || pixels[yDown] != Color.Transparent)) ||
+						(IndexIsOutOfBounds(x + 1, y + 1) == false && (pixels[xRight] != Color.Transparent || pixels[yDown] != Color.Transparent)) ||
+						(IndexIsOutOfBounds(x - 1, y - 1) == false && (pixels[xLeft] != Color.Transparent || pixels[yUp] != Color.Transparent)))
+					{
+						return true;
+					}
+				}
+				return false;
+
+				bool IndexIsOutOfBounds(int k, int l)
+				{
+					if (k < 0 || k > width - 1 || l < 0 || l > height - 1)
+					{
+						return true;
+					}
+					return false;
+				}
+			}
+			*/
+		}
+	}
+
+	public static class Canvas
+	{
+		public enum Pixel_Filter
 		{
 			Lowest,
 			Medium,
 			Highest
 		}
 		/// <summary>
-		/// - Smooths out the edges of the pixels according to the <paramref name="pixel_filter"/>. Higher filters apply better image quality but cost more performance.<br></br><br></br>- Pixel art projects go best with <see cref="Canvas_Pixel_Filter.Lowest"/>.<br></br>- High resolution projects go best with the rest. <br></br><br></br>
+		/// - Smooths out the edges of the pixels according to the <paramref name="pixel_filter"/>. Higher filters apply better image quality but cost more performance.<br></br><br></br>- Pixel art projects go best with <see cref="Pixel_Filter.Lowest"/>.<br></br>- High resolution projects go best with the rest. <br></br><br></br>
 		/// - The current filter can be checked with <see cref="Canvas_Pixel_Filter_Get"/>.
 		/// </summary>
 		/// <param name="pixel_filter"></param>
-		public static void Canvas_Pixel_Filter_Set(Canvas_Pixel_Filter pixel_filter)
+		public static void Pixel_Filter_Set(Pixel_Filter pixel_filter)
 		{
 			render_pixel_filter = pixel_filter;
 			switch (render_pixel_filter)
 			{
-				case Canvas_Pixel_Filter.Lowest: render_sampler_state = SamplerState.PointWrap; break;
-				case Canvas_Pixel_Filter.Medium: render_sampler_state = SamplerState.LinearWrap; break;
-				case Canvas_Pixel_Filter.Highest: render_sampler_state = SamplerState.AnisotropicWrap; break;
+				case Pixel_Filter.Lowest: render_sampler_state = SamplerState.PointWrap; break;
+				case Pixel_Filter.Medium: render_sampler_state = SamplerState.LinearWrap; break;
+				case Pixel_Filter.Highest: render_sampler_state = SamplerState.AnisotropicWrap; break;
 			}
 		}
 		/// <summary>
 		/// - Gets the current pixel filter and returns it.<br></br><br></br>
 		/// - Pixel filters can be changed and researched through <see cref="Canvas_Pixel_Filter_Get"/>.
 		/// </summary>
-		public static Canvas_Pixel_Filter Canvas_Pixel_Filter_Get() => render_pixel_filter;
+		public static Pixel_Filter Canvas_Pixel_Filter_Get() => render_pixel_filter;
 		/// <summary>
-		/// - Sets the size of the displayed pixel relative to the user's monitor resolution. Each displayed pixel is equal to <paramref name="width"/> and <paramref name="height"/> of screen pixels.<br></br><br></br> - The canvas size can be checked with <see cref="Canvas_Width_Get"/> and <see cref="Canvas_Height_Get"/>.<br></br> - The user's screen size can be checked with <see cref="Screen_Width_Get"/> and <see cref="Screen_Height_Get"/>.
+		/// - Sets the size of the displayed pixel relative to the user's monitor resolution. Each displayed pixel is equal to <paramref name="width"/> and <paramref name="height"/> of screen pixels.<br></br><br></br> - The canvas size can be checked with <see cref="Size_Width_Get"/> and <see cref="Size_Height_Get"/>.<br></br> - The user's screen size can be checked with <see cref="User.Screen_Size_Width_Get"/> and <see cref="User.Screen_Size_Width_Get"/>.
 		/// </summary>
-		public static void Canvas_Pixel_Size_Set(int width, int height)
+		public static void Pixel_Size_Set(int width, int height)
 		{
 			width = (int)Number.Limited_Get(width, 1, screen_size.X);
 			height = (int)Number.Limited_Get(height, 1, screen_size.Y);
@@ -724,58 +603,82 @@ public abstract class Gear : Game
 		}
 		/// <summary>
 		/// - Gets the current pixel width according to the user's monitor resolution and returns it.<br></br><br></br>
-		/// - The height of the current pixel can be received from <see cref="Canvas_Pixel_Height_Get"/>.<br></br><br></br>
-		/// - Pixel size can be changed through <see cref="Canvas_Pixel_Size_Set"/>.
+		/// - The height of the current pixel can be received from <see cref="Pixel_Size_Height_Get"/>.<br></br><br></br>
+		/// - Pixel size can be changed through <see cref="Pixel_Size_Set"/>.
 		/// </summary>
-		public static int Canvas_Pixel_Width_Get() => pixel_width;
+		public static int Pixel_Size_Width_Get() => pixel_width;
 		/// <summary>
 		/// - Gets the current pixel height according to the user's monitor resolution and returns it.<br></br><br></br>
-		/// - The width of the current pixel can be received from <see cref="Canvas_Pixel_Width_Get"/>.<br></br><br></br>
-		/// - Pixel size can be changed through <see cref="Canvas_Pixel_Size_Set"/>.
+		/// - The width of the current pixel can be received from <see cref="Pixel_Size_Width_Get"/>.<br></br><br></br>
+		/// - Pixel size can be changed through <see cref="Pixel_Size_Set"/>.
 		/// </summary>
-		public static int Canvas_Pixel_Height_Get() => pixel_height;
+		public static int Pixel_Size_Height_Get() => pixel_height;
 		/// <summary>
 		/// - Gets the current width of the canvas in pixels. <br></br><br></br>
 		/// - This value can be changed through <see cref="Pixel_Size_Set"/>.<br></br><br></br>
-		/// - The height of the canvas size can be checked with <see cref="Canvas_Height_Get"/>.
+		/// - The height of the canvas size can be checked with <see cref="Size_Height_Get"/>.
 		/// </summary>
-		public static int Canvas_Width_Get() => canvas_size.X;
+		public static int Size_Width_Get() => canvas_size.X;
 		/// <summary>
 		/// - Gets the current height of the canvas in pixels. <br></br><br></br>
 		/// - This value can be changed through <see cref="Pixel_Size_Set"/>.<br></br><br></br>
-		/// - The width of the canvas size can be checked with <see cref="Canvas_Width_Get"/>.
+		/// - The width of the canvas size can be checked with <see cref="Size_Width_Get"/>.
 		/// </summary>
-		public static int Canvas_Height_Get() => canvas_size.Y;
-
+		public static int Size_Height_Get() => canvas_size.Y;
 		/// <summary>
-		/// - Gets the user's screen width in pixels.<br></br><br></br>
-		/// - The user's screen height can be checked with <see cref="Screen_Height_Get"/>.
+		/// - Sets the background color's hues to <paramref name="red"/>, <paramref name="green"/>, <paramref name="blue"/>.<br></br><br></br>
+		/// - Those values must be between 0 and 255 inclusively.<br></br><br></br>
+		/// - Those hues can be checked through<br></br>
+		/// <see cref="Background_Color_Red_Get"/><br></br>
+		/// <see cref="Background_Color_Green_Get"/><br></br>
+		/// <see cref="Background_Color_Blue_Get"/><br></br>
 		/// </summary>
-		public static int Screen_Width_Get() => screen_size.X;
+		public static void Background_Color_Set(byte red, byte green, byte blue) => background_color = new Color(red, green, blue);
 		/// <summary>
-		/// - Gets the user's screen height in pixels.<br></br><br></br>
-		/// - The user's screen width can be checked with <see cref="Screen_Width_Get"/>.
+		/// - Gets the red hue in the background color and returns it.<br></br><br></br>
+		/// - The background color can be changed through <see cref="Background_Color_Set"/>.<br></br><br></br>
+		/// - The other two hues can be checked with <br></br>
+		/// <see cref="Background_Color_Green_Get"/><br></br>
+		/// <see cref="Background_Color_Blue_Get"/>
 		/// </summary>
-		public static int Screen_Height_Get() => screen_size.Y;
-
+		public static byte Background_Color_Red_Get() => background_color.R;
+		/// <summary>
+		/// - Gets the green hue in the background color and returns it.<br></br><br></br>
+		/// - The background color can be changed through <see cref="Background_Color_Set"/>.<br></br><br></br>
+		/// - The other two hues can be checked with <br></br>
+		/// <see cref="Background_Color_Red_Get"/><br></br>
+		/// <see cref="Background_Color_Blue_Get"/>
+		/// </summary>
+		public static byte Background_Color_Green_Get() => background_color.G;
+		/// <summary>
+		/// - Gets the blue hue in the background color and returns it.<br></br><br></br>
+		/// - The background color can be changed through <see cref="Background_Color_Set"/>.<br></br><br></br>
+		/// - The other two hues can be checked with <br></br>
+		/// <see cref="Background_Color_Red_Get"/><br></br>
+		/// <see cref="Background_Color_Green_Get"/>
+		/// </summary>
+		public static byte Background_Color_Blue_Get() => background_color.B;
+	}
+	public static class Window
+	{
 		/// <summary>
 		/// - Checks wether the window is currently focused by the user and returns the result.
 		/// </summary>
-		public static bool Window_Is_Focused_Check() => game.IsActive;
+		public static bool Focused_Check() => game.IsActive;
 		/// <summary>
 		/// - Pause is <paramref name="activated"/> when the user has the window unfocused or minimized.<br></br><br></br>
 		/// - A check wether this pause is activated can be done through <see cref="Window_Unfocused_Pause_Is_Activated_Check"/>.<br></br><br></br>
 		/// - A check wether the user has focused the window can be done through <see cref="Window_Is_Focused_Check"/>.
 		/// </summary>
-		public static void Window_Unfocused_Pause_Activate(bool activated) => pause_unfocus = activated;
+		public static void Unfocused_Pause_Activate(bool activated) => pause_unfocus = activated;
 		/// <summary>
 		/// - Checks if the window pause when unfocusing or minimizing the window is activated and returns the result.<br></br><br></br>
 		/// - The window pause can be activated or deactivated through <see cref="Window_Unfocused_Pause_Activate"/>.<br></br><br></br>
 		/// - A check wether the user has focused the window can be done through <see cref="Window_Is_Focused_Check"/>.
 		/// </summary>
-		public static bool Window_Unfocused_Pause_Is_Activated_Check() => pause_unfocus;
+		public static bool Unfocused_Pause_Is_Activated_Check() => pause_unfocus;
 
-		public static void Window_Show(bool show)
+		public static void Show(bool show)
 		{
 			var form = Control.FromHandle(game.Window.Handle) as Form;
 			if (show) form.Show();
@@ -786,86 +689,29 @@ public abstract class Gear : Game
 		/// - Sets the <paramref name="title"/> of the window.<br></br><br></br>
 		/// - The title can be received with <see cref="Window_Title_Get"/>.
 		/// </summary>
-		public static void Window_Title_Set(string title) => game.Window.Title = title;
+		public static void Title_Set(string title) => game.Window.Title = title;
 		/// <summary>
 		/// - Gets the title of the window and returns it.<br></br><br></br>
 		/// - The title can be changed through <see cref="Window_Title_Set"/>.
 		/// </summary>
-		public static string Window_Title_Get() => game.Window.Title;
+		public static string Title_Get() => game.Window.Title;
 
 		/// <summary>
 		/// - Sets the Alt+F4 functionality to <paramref name="activated"/>. When <paramref name="activated"/> pressing Alt+F4 closes the window.<br></br><br></br>
 		/// - A check wether the Alt+F4 functionality is activated can be done through <see cref="Window_Close_Hotkeys_Is_Activated_Check"/>.<br></br><br></br>
 		/// - The window can be also closed through <see cref="Window_Close"/>.
 		/// </summary>
-		public static void Window_Close_Hotkeys_Activate(bool activated) => game.Window.AllowAltF4 = activated;
+		public static void Close_Hotkeys_Activate(bool activated) => game.Window.AllowAltF4 = activated;
 		/// <summary>
 		/// - Checks wether the Alt+F4 functionality is activated and returns the result.<br></br><br></br>
 		/// - The Alt+F4 functionality can be activated or deactivated with <see cref="Window_Close_Hotkeys_Activate(bool)"/>.
 		/// </summary>
-		public static bool Window_Close_Hotkeys_Is_Activated_Check() => game.Window.AllowAltF4;
-
-		/// <summary>
-		/// - When <paramref name="activated"/> the user's computer will stay active at all times, even when left idle.<br></br><br></br>
-		/// - A check wether sleep prevention is activated can be done via <see cref="Computer_Sleep_Prevention_Is_Activated_Check"/>.
-		/// </summary>
-		public static void Computer_Sleep_Prevention_Activate(bool activated)
-		{
-			sleep_prevented = activated;
-			if (sleep_prevented)
-			{
-				SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
-			}
-			else
-			{
-				SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
-			}
-		}
-		/// <summary>
-		/// - Checks wether the user's computer is prevented from sleeping and returns the result.<br></br><br></br>
-		/// - Sleep prevention can be activated or deactivated through <see cref="Computer_Sleep_Prevention_Activate"/>.
-		/// </summary>
-		public static bool Computer_Sleep_Prevention_Is_Activated_Check() => sleep_prevented;
+		public static bool Close_Hotkeys_Is_Activated_Check() => game.Window.AllowAltF4;
 
 		/// <summary>
 		/// - Ends the runtime of the program and closes the window.
 		/// </summary>
-		public static void Window_Close() => game.Exit();
-
-		/// <summary>
-		/// - Sets the background color's hues to <paramref name="red"/>, <paramref name="green"/>, <paramref name="blue"/>.<br></br><br></br>
-		/// - Those values must be between 0 and 255 inclusively.<br></br><br></br>
-		/// - Those hues can be checked through<br></br>
-		/// <see cref="Canvas_Background_Red_Get"/><br></br>
-		/// <see cref="Canvas_Background_Green_Get"/><br></br>
-		/// <see cref="Canvas_Background_Blue_Get"/><br></br>
-		/// </summary>
-		public static void Canvas_Background_Color_Set(byte red, byte green, byte blue) => background_color = new Color(red, green, blue);
-		/// <summary>
-		/// - Gets the red hue in the background color and returns it.<br></br><br></br>
-		/// - The background color can be changed through <see cref="Canvas_Background_Color_Set"/>.<br></br><br></br>
-		/// - The other two hues can be checked with <br></br>
-		/// <see cref="Canvas_Background_Green_Get"/><br></br>
-		/// <see cref="Canvas_Background_Blue_Get"/>
-		/// </summary>
-		public static byte Canvas_Background_Red_Get() => background_color.R;
-		/// <summary>
-		/// - Gets the green hue in the background color and returns it.<br></br><br></br>
-		/// - The background color can be changed through <see cref="Canvas_Background_Color_Set"/>.<br></br><br></br>
-		/// - The other two hues can be checked with <br></br>
-		/// <see cref="Canvas_Background_Red_Get"/><br></br>
-		/// <see cref="Canvas_Background_Blue_Get"/>
-		/// </summary>
-		public static byte Canvas_Background_Green_Get() => background_color.G;
-		/// <summary>
-		/// - Gets the blue hue in the background color and returns it.<br></br><br></br>
-		/// - The background color can be changed through <see cref="Canvas_Background_Color_Set"/>.<br></br><br></br>
-		/// - The other two hues can be checked with <br></br>
-		/// <see cref="Canvas_Background_Red_Get"/><br></br>
-		/// <see cref="Canvas_Background_Green_Get"/>
-		/// </summary>
-		public static byte Canvas_Background_Blue_Get() => background_color.B;
-
+		public static void Close() => game.Exit();
 	}
 	/// <summary>
 	/// A main object for the program that can contain different data for it to be displayed on the screen and interacted with.
@@ -1313,8 +1159,171 @@ public abstract class Gear : Game
 				return default;
 			}
 		}
-	}
 
+		/// <summary>
+		/// - Displays a <paramref name="message"/> on the screen with a <paramref name="font"/> that has a <paramref name="scale"/>. The <paramref name="message"/> may <paramref name="overwrite"/> what is already displayed instead of appending it.<br></br><br></br>
+		/// - The displayed text can be cleared with <see cref="Display_Clear"/>.
+		/// </summary>
+		public static void Display(string font, object message, float scale = 1, bool overwrite = false)
+		{
+			if (fonts.ContainsKey(font) == false)
+			{
+				return;
+			}
+			console_draw = true;
+			console_font = font;
+			if (overwrite) console_message = "";
+			console_message = $"{console_message}{message}";
+			console_scale = scale;
+
+			var sample_size = fonts[console_font].MeasureString("a");
+			var sample_size_scaled = sample_size * console_scale;
+			var visible_lines = screen_size.Y / (int)sample_size_scaled.Y;
+			var size = fonts[console_font].MeasureString(console_message) * console_scale;
+			var lines = console_message.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+			if (size.Y > screen_size.Y + sample_size_scaled.Y && lines.Count > 2 && visible_lines < lines.Count)
+			{
+				console_message = "";
+				lines[lines.Count - visible_lines] = "...";
+				for (int i = lines.Count - visible_lines; i < lines.Count; i++)
+				{
+					console_message = $"{console_message}{lines[i]}\n";
+				}
+			}
+			render = true;
+		}
+		/// <summary>
+		/// - Clears all the text on screen that was displayed through <see cref="Display"/>.
+		/// </summary>
+		public static void Display_Clear()
+		{
+			console_message = null;
+			render = true;
+		}
+	}
+	public static class Performance
+	{
+		/// <summary>
+		/// - Sets the target <paramref name="tps"/> that can be between 2 and 1000 inclusively if <paramref name="limited"/>. The ticks per second may go bellow but not above the targeted speed (depending on performance), otherwise multiple ticks (but not frames) at the same time will occur in order to keep up. <br></br>- The tick rate is also capped to the user's monitor refresh rate if <paramref name="v_synced"/> (vertical synchronization removes scanlines and tearing artifacts). <br></br>- Not <paramref name="limited"/> and not <paramref name="v_synced"/> tick rate uncaps both the frame rate and tick rate, therefore running as fast as possible. <br></br><br></br>- The current tick rate can be checked with <see cref="Ticks_Per_Second_Get"/>.<br></br>- The current target tick rate can be checked with <see cref="Ticks_Per_Second_Target_Get"/>.<br></br>- A check wether the tick rate is <paramref name="limited"/> can be received from <see cref="Ticks_Per_Second_Are_Limited_Check"/>.<br></br>- And check wether they are vertically synchronized from <see cref="Ticks_Per_Second_Are_V_Synced_Check"/>.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The current frame rate can be checked with <see cref="Frames_Total_Per_Second_Get"/>.<br></br>
+		/// </summary>
+		public static void Ticks_Per_Second_Target_Set(float tps, bool limited, bool v_synced)
+		{
+			tps = tps < 2 ? 2 : tps;
+			tps = tps > 1000 ? 1000 : tps;
+			game.TargetElapsedTime = TimeSpan.FromSeconds(1d / tps);
+			game.IsFixedTimeStep = limited;
+			graphics.SynchronizeWithVerticalRetrace = v_synced;
+			graphics.ApplyChanges();
+		}
+		/// <summary>
+		/// - Gets the current tick rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it. <br></br><br></br>- The target tick speed can be changed via <see cref="Ticks_Per_Second_Target_Set"/>.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="Frames_Total_Per_Second_Get"/>.
+		/// </summary>
+		public static float Ticks_Per_Second_Get(bool average = false)
+		{
+			return average ? tps_average : tps;
+		}
+		/// <summary>
+		/// - Gets the current target tick rate and returns it. <br></br><br></br>
+		/// - The target tick speed can be changed via <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="Frames_Total_Per_Second_Get"/>.<br></br><br></br>
+		/// </summary>
+		public static float Ticks_Per_Second_Target_Get() => 60 / ((float)game.TargetElapsedTime.TotalSeconds * 60);
+		/// <summary>
+		/// - Checks wether the tick rate is limited to the target tick rate and returns the result.<br></br><br></br>- The limitation of the tick speed and other related changes can be set through<br></br> <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.
+		/// </summary>
+		public static bool Ticks_Per_Second_Are_Limited_Check() => game.IsFixedTimeStep;
+		/// <summary>
+		/// - Checks wether the tick rate is limited by the user's monitor refresh rate and returns the result.<br></br><br></br>
+		/// - The vertical synchronization and other related changes can set through<br></br> <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.<br></br><br></br>
+		/// </summary>
+		public static bool Ticks_Per_Second_Are_V_Synced_Check() => graphics.SynchronizeWithVerticalRetrace;
+		/// <summary>
+		/// - Gets the number of ticks that have passed since the start and returns them.<br></br><br></br>
+		/// - The tick count is also provided as an <see cref="int"/> parameter with <see cref="Program.Each_Tick(int)"/>.<br></br><br></br>
+		/// - Changing the tick speed and receiving information about ticks/frames may be done through <see cref="Ticks_Per_Second_Target_Set"/>.
+		/// </summary>
+		public static int Ticks_Count_Get() => tick;
+
+		public static float RAM_GB_Available_Get() => ram_available.NextValue() / 1000;
+		public static float RAM_Percent_Used_Get() => ram_used_percent.NextValue();
+
+		/// <summary>
+		/// - Gets the current frame rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. A lower frame rate will be present with slow tick rate and vice versa. The targeted tick rate can be changed or uncapped with <see cref="Ticks_Per_Second_Target_Set"/>. Also contains information about ticks/frames.
+		/// </summary>
+		public static float Frames_Total_Per_Second_Get(bool average = false)
+		{
+			return average ? fps_average : fps;
+		}
+		/// <summary>
+		/// - Gets the number of frames that have passed since the start and returns them. This counter is not affected by rendering. Therefore a frame might be skipped and the counter will still increment. <br></br><br></br>- Rendered frames counter can be checked with <see cref="Frames_Rendered_Count_Get"/>.<br></br><br></br>
+		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="Ticks_Per_Second_Target_Set"/>. This affects the frame rate.
+		/// </summary>
+		public static int Frames_Total_Count_Get() => frame;
+		/// <summary>
+		/// - Gets the number of rendered frames that have passed since the start and returns them. Rendered frames happen only when the current frame is different than the last frame. Therefore frames are skipped when the screen is static.<br></br><br></br>
+		/// - A check for the total frames counter can be done through <see cref="Frames_Total_Count_Get"/>.<br></br><br></br>
+		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="Ticks_Per_Second_Target_Set"/>. This affects the frame rate.
+		/// </summary>
+		public static int Frames_Rendered_Count_Get() => frame_rendered;
+
+		/// <summary>
+		/// - Gets the time that has passed since the start and returns it.
+		/// </summary>
+		public static float Time_Get() => time;
+		/// <summary>
+		/// - Gets the time that has passed since the last tick and returns it. <br></br><br></br>- The target tick rate can be changed via <see cref="Ticks_Per_Second_Target_Set"/><br></br>- The current target tick rate can be checked with <see cref="Time_Since_Last_Tick_Target_Get"/>.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="Time_Since_Last_Frame_Get"/>.
+		/// </summary>
+		public static float Time_Since_Last_Tick_Get() => ticks_delta_time;
+		/// <summary>
+		/// - Gets the target time between ticks and returns it.<br></br><br></br>- The target tick rate can be changed via <see cref="Ticks_Per_Second_Target_Set"/>.<br></br>- The current tick rate can be checked with <see cref="Time_Since_Last_Tick_Get"/>.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="Time_Since_Last_Frame_Get"/>.
+		/// </summary>
+		public static float Time_Since_Last_Tick_Target_Get() => (float)game.TargetElapsedTime.TotalSeconds;
+		/// <summary>
+		/// - Gets the time that has passed since the last frame and returns it.<br></br><br></br>
+		/// - The frame rate is tied to the tick rate but they are not the same. The time since last tick can be checked with <see cref="Time_Since_Last_Tick_Get"/>.
+		/// </summary>
+		public static float Time_Since_Last_Frame_Get() => frames_delta_time;
+
+	}
+	public static class Hardware
+	{
+		/// <summary>
+		/// - Gets the user's screen width in pixels.<br></br><br></br>
+		/// - The user's screen height can be checked with <see cref="Screen_Size_Height_Get"/>.
+		/// </summary>
+		public static int Screen_Size_Width_Get() => screen_size.X;
+		/// <summary>
+		/// - Gets the user's screen height in pixels.<br></br><br></br>
+		/// - The user's screen width can be checked with <see cref="Screen_Size_Width_Get"/>.
+		/// </summary>
+		public static int Screen_Size_Height_Get() => screen_size.Y;
+		/// <summary>
+		/// - When <paramref name="activated"/> the user's computer will stay active at all times, even when left idle.<br></br><br></br>
+		/// - A check wether sleep prevention is activated can be done via <see cref="Computer_Sleep_Prevention_Is_Activated_Check"/>.
+		/// </summary>
+		public static void Computer_Sleep_Prevention_Activate(bool activated)
+		{
+			sleep_prevented = activated;
+			if (sleep_prevented)
+			{
+				SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
+			}
+			else
+			{
+				SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS);
+			}
+		}
+		/// <summary>
+		/// - Checks wether the user's computer is prevented from sleeping and returns the result.<br></br><br></br>
+		/// - Sleep prevention can be activated or deactivated through <see cref="Computer_Sleep_Prevention_Activate"/>.
+		/// </summary>
+		public static bool Computer_Sleep_Prevention_Is_Activated_Check() => sleep_prevented;
+	}
 	public static class Network
 	{
 		private enum Message_Type
@@ -1351,6 +1360,7 @@ public abstract class Gear : Game
 				}
 				server = new Server(IPAddress.Any, server_port);
 				AllocConsole();
+				Console.Title = $"{Window.Title_Get()} | Network Console | Server | Disconnected";
 				console_log = $"{console_log}\nServer_Start(): Starging a LAN Server on port {server_port}...";
 				server.Start();
 				console_log = $"{console_log}\nServer_Start(): Done!";
@@ -1400,6 +1410,7 @@ public abstract class Gear : Game
 			NatUtility.StartDiscovery();
 			client_is_connected = true;
 
+			Console.Title = $"{Window.Title_Get()} | Network Console | Client | Disconnected";
 			Console.Write("Join Server with IP: ");
 			var ip = Console.ReadLine();
 			client = new Client(ip, server_port);
@@ -1481,7 +1492,7 @@ public abstract class Gear : Game
 			var clients_connected = connection == "Disconnected" ? "" : $"Clients Connected ({client_unique_names.Count}): {_Clients_Online_Get()}\n\n";
 			var connect_info = server_is_running ? connect_to_server_info + "\n\n" : "";
 
-			Console.Title = $"{System.Window_Title_Get()} | Network Console | {client_server_str} | {connection}";
+			Console.Title = $"{Window.Title_Get()} | Network Console | {client_server_str} | {connection}";
 			Console.WriteLine($"{connect_info}{clients_connected}{console_log}");
 		}
 		private static void _Add_Message(string from, string message)
@@ -1711,6 +1722,365 @@ public abstract class Gear : Game
 			}
 		}
 	}
+	public static class Camera
+	{
+		/// <summary>
+		/// - Creates a screenshot in <paramref name="path"/>/<paramref name="name"/>.png that contains what is currently visible in the window and saves it as a sprite. The result can be <paramref name="scaled"/> to the user's screen resolution, otherwise takes the canvas resolution.<br></br><br></br>
+		/// - The canvas resolution can be received from <see cref="Canvas.Size_Width_Get"/> and <see cref="Canvas.Size_Height_Get"/>.<br></br>
+		/// - The user's screen resolution can be received from <see cref="Hardware.Screen_Size_Width_Get"/> and <see cref="Hardware.Screen_Size_Height_Get"/>.<br></br>
+		/// </summary>
+		public static void Screenshot_Create(string path, string name, bool scaled)
+		{
+			int width = scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : screen_size.X;
+			int height = scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : screen_size.Y;
+			var buffer = new int[width * height];
+			var texture = new Texture2D(game.GraphicsDevice, width, height);
+			var final_path = $"{main_dir}/{path}";
+
+			if (Directory.Exists(final_path) == false)
+			{
+				Directory.CreateDirectory(final_path);
+			}
+
+			if (scaled)
+			{
+				game.GraphicsDevice.GetBackBufferData(buffer);
+			}
+			else
+			{
+				render_target.GetData(0, new Rectangle(0, 0, width, height), buffer, 0, width * height);
+			}
+			texture.SetData(buffer);
+			using (Stream stream = File.Create($"{final_path}\\{name}.png"))
+			{
+				texture.SaveAsPng(stream, width, height);
+			}
+			sprites[name] = texture;
+		}
+
+		public static void Position_Set(float x, float y) => camera_position = new Vector2(x, y);
+		public static float Position_X_Get() => camera_position.X;
+		public static float Position_Y_Get() => camera_position.Y;
+	}
+	/// <summary>
+	/// Holds information about the current input of the user.
+	/// </summary>
+	public static class Input
+	{
+		public enum Keys
+		{
+			None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, Left = 37, Up = 38, Right = 39, Down = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, Minus_Dash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
+		}
+		public static string Key_To_Text_Get(Keys key)
+		{
+			var shift = Key_Is_Pressed_Check(Keys.ShiftLeft) || Key_Is_Pressed_Check(Keys.ShiftRight);
+			var result = "";
+			switch (key)
+			{
+				case Keys.Space: result = " "; break;
+				case Keys._0: result = shift ? ")" : "0"; break;
+				case Keys._1: result = shift ? "!" : "1"; break;
+				case Keys._2: result = shift ? "@" : "2"; break;
+				case Keys._3: result = shift ? "#" : "3"; break;
+				case Keys._4: result = shift ? "$" : "4"; break;
+				case Keys._5: result = shift ? "%" : "5"; break;
+				case Keys._6: result = shift ? "^" : "6"; break;
+				case Keys._7: result = shift ? "&" : "7"; break;
+				case Keys._8: result = shift ? "*" : "8"; break;
+				case Keys._9: result = shift ? "(" : "9"; break;
+				case Keys.A: result = "a"; break;
+				case Keys.B: result = "b"; break;
+				case Keys.C: result = "c"; break;
+				case Keys.D: result = "d"; break;
+				case Keys.E: result = "e"; break;
+				case Keys.F: result = "f"; break;
+				case Keys.G: result = "g"; break;
+				case Keys.H: result = "h"; break;
+				case Keys.I: result = "i"; break;
+				case Keys.J: result = "j"; break;
+				case Keys.K: result = "k"; break;
+				case Keys.L: result = "l"; break;
+				case Keys.M: result = "m"; break;
+				case Keys.N: result = "n"; break;
+				case Keys.O: result = "o"; break;
+				case Keys.P: result = "p"; break;
+				case Keys.Q: result = "q"; break;
+				case Keys.R: result = "r"; break;
+				case Keys.S: result = "s"; break;
+				case Keys.T: result = "t"; break;
+				case Keys.U: result = "u"; break;
+				case Keys.V: result = "v"; break;
+				case Keys.W: result = "w"; break;
+				case Keys.X: result = "x"; break;
+				case Keys.Y: result = "y"; break;
+				case Keys.Z: result = "z"; break;
+				case Keys.Num0: result = "0"; break;
+				case Keys.Num1: result = "1"; break;
+				case Keys.Num2: result = "2"; break;
+				case Keys.Num3: result = "3"; break;
+				case Keys.Num4: result = "4"; break;
+				case Keys.Num5: result = "5"; break;
+				case Keys.Num6: result = "6"; break;
+				case Keys.Num7: result = "7"; break;
+				case Keys.Num8: result = "8"; break;
+				case Keys.Num9: result = "9"; break;
+				case Keys.NumMultiply: result = "*"; break;
+				case Keys.NumAdd: result = "+"; break;
+				case Keys.NumSubtract: result = "-"; break;
+				case Keys.NumDecimal: result = "."; break;
+				case Keys.NumDivide: result = "/"; break;
+				case Keys.Semicolon: result = shift ? ":" : ";"; break;
+				case Keys.Equals: result = shift ? "+" : "="; break;
+				case Keys.Comma: result = shift ? "<" : ","; break;
+				case Keys.Minus_Dash: result = shift ? "_" : "-"; break;
+				case Keys.Dot: result = shift ? ">" : "."; break;
+				case Keys.Slash: result = shift ? "?" : "/"; break;
+				case Keys.GraveAccent: result = shift ? "~" : "`"; break;
+				case Keys.SquareBracketOpen: result = shift ? "{" : "["; break;
+				case Keys.Backslash: result = shift ? "|" : "\\"; break;
+				case Keys.SquareBracketClose: result = shift ? "}" : "]"; break;
+				case Keys.Quote: result = shift ? "\"" : "'"; break;
+				default: result = null; break;
+			}
+			result = shift && result != null ? result.ToUpper() : result;
+			return result;
+		}
+		public static List<Keys> Keys_Pressed_Get()
+		{
+			var result = new List<Keys>();
+			var keysPressed = Keyboard.GetState().GetPressedKeys();
+			for (int i = 0; i < keysPressed.Length; i++)
+			{
+				result.Add((Keys)(int)keysPressed[i]);
+			}
+			return result;
+		}
+		public static List<Keys> Keys_Just_Pressed_Get() => new List<Keys>(keys_just_pressed);
+		public static List<Keys> Keys_Just_Released_Get() => new List<Keys>(keys_just_released);
+		public static bool Key_Is_Pressed_Check(Keys key) => Keyboard.GetState().IsKeyDown((Microsoft.Xna.Framework.Input.Keys)(int)key);
+
+		public static Vector2 Mouse_Cursor_Position_World_Get()
+		{
+			var scale = new Vector2((float)canvas_size.X / screen_size.X, (float)canvas_size.Y / screen_size.Y);
+			var pos = new Vector2(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
+			return pos;
+		}
+		public static Vector2 Mouse_Cursor_Position_Window_Get() => Mouse_Cursor_Position_World_Get() + new Vector2(Camera.Position_X_Get(), Camera.Position_Y_Get());
+		public static void Mouse_Cursor_Visibility_Activate(bool visible)
+		{
+			game.IsMouseVisible = visible;
+		}
+		public static bool Mouse_Cursor_Is_Visible_Check() => game.IsMouseVisible == false;
+		public static bool Mouse_Button_Is_Pressed_Left_Check() => Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+		public static bool Mouse_Button_Is_Pressed_Middle_Check() => Mouse.GetState().MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+		public static bool Mouse_Button_Is_Pressed_Right_Check() => Mouse.GetState().RightButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+		public static void Mouse_Cursor_From_Sprite_Set(string sprite_path, int origin_x, int origin_y)
+		{
+			if (sprite_path == null || sprites.ContainsKey(sprite_path) == false) return;
+
+			Mouse.SetCursor(MouseCursor.FromTexture2D(sprites[sprite_path], origin_x, origin_y));
+		}
+
+		public static bool Press_Into_Hold_Check(string name, bool condition, float seconds_delay = 0.5f, float updates_per_second = 0.1f)
+		{
+			if (Gate.Opened_Check($"{name}-gate", condition))
+			{
+				Signal.Create(name, seconds_delay);
+				return true;
+			}
+			else if (Signal.Timer_From_Signal_Is_Occuring_Check(name, updates_per_second))
+			{
+				return condition;
+			}
+			return false;
+		}
+	}
+	/// <summary>
+	/// Controls Gates and holds information about them. <br></br><br></br>
+	/// Gates' purpose is to convert continuous code flow into a single trigger.<br></br>
+	/// They can be accessed through their names.<br></br>
+	/// A Gate's state is either true or false (opened/closed).<br></br>
+	/// Once the code is inside, the Gate closes until the code is manually KickedOut or the Gate is opened through its condition turning false.
+	/// </summary>
+	public static class Gate
+	{
+		public static int Entries_Count_Get(string name)
+		{
+			return gate_entries_count.ContainsKey(name) ? gate_entries_count[name] : 0;
+		}
+		public static void Entries_Remove(string name)
+		{
+			if (gate_entries_count.ContainsKey(name) == false)
+			{
+				return;
+			}
+			gate_entries_count[name] = default;
+		}
+		public static void Close(string name)
+		{
+			if (gates.ContainsKey(name) == false)
+			{
+				return;
+			}
+			gates.Remove(name);
+		}
+		public static bool Opened_Check(string name, bool condition, int maximum_entries = int.MaxValue)
+		{
+			if (gates.ContainsKey(name) == false && condition == false)
+			{
+				return false;
+			}
+			else if (gates.ContainsKey(name) == false && condition == true)
+			{
+				gates[name] = true;
+				gate_entries_count[name] = 1;
+				return true;
+			}
+			else
+			{
+				if (gates[name] == true && condition == true)
+				{
+					return false;
+				}
+				else if (gates[name] == false && condition == true)
+				{
+					gates[name] = true;
+					gate_entries_count[name]++;
+					return true;
+				}
+				else if (gate_entries_count[name] < maximum_entries)
+				{
+					gates[name] = false;
+				}
+			}
+			return false;
+		}
+	}
+	/// <summary>
+	/// Controls Signals and holds information about them.<br></br><br></br>
+	/// Signals' purpose is to convert continuous code flow into a single trigger.<br></br>
+	/// They can be accessed through their names.<br></br>
+	/// The trigger of each Signal happens after a certain period of it being created.
+	/// </summary>
+	public static class Signal
+	{
+		public static void Create(string name, float seconds_delay)
+		{
+			if (seconds_delay < 0)
+			{
+				return;
+			}
+			if (signal_timers.ContainsKey(name) == false)
+			{
+				signal_timers.Add(name, 0);
+			}
+			if (signal_pauses.ContainsKey(name) == false)
+			{
+				signal_pauses.Add(name, false);
+			}
+			if (signal_start_times.ContainsKey(name) == false)
+			{
+				signal_start_times.Add(name, Performance.Time_Get());
+			}
+			if (signal_delays.ContainsKey(name) == false)
+			{
+				signal_delays.Add(name, seconds_delay);
+			}
+			signal_timers[name] = 0;
+			signal_pauses[name] = false;
+			signal_start_times[name] = Performance.Time_Get();
+			signal_delays[name] = seconds_delay;
+		}
+		public static bool Exists_Check(string name)
+		{
+			return name != null && signal_timers.ContainsKey(name);
+		}
+		public static double Delay_In_Seconds_Get(string name)
+		{
+			return signal_delays.ContainsKey(name) != false ? signal_delays[name] : 0;
+		}
+		public static void Delay_Pause(string name, bool paused)
+		{
+			if (signal_pauses.ContainsKey(name) == false)
+			{
+				return;
+			}
+			signal_pauses[name] = paused;
+		}
+		public static double Seconds_Until_Occurance_Get(string name)
+		{
+			return Time_Occur_Get(name) - Performance.Time_Get();
+		}
+		public static double Time_Start_Get(string name)
+		{
+			return signal_start_times.ContainsKey(name) == false ? 0 : signal_start_times[name];
+		}
+		public static double Time_Occur_Get(string name)
+		{
+			return signal_start_times.ContainsKey(name) == false || signal_delays.ContainsKey(name) == false ? 0 : signal_start_times[name] + signal_delays[name];
+		}
+		public static bool Is_Occuring_Check(string name, bool delete)
+		{
+			if (signal_timers.ContainsKey(name) == false || signal_delays.ContainsKey(name) == false)
+			{
+				return false;
+			}
+			if (signal_pauses.ContainsKey(name) == true && signal_pauses[name])
+			{
+				return false;
+			}
+			if (signal_timers[name] >= signal_delays[name])
+			{
+				if (delete)
+				{
+					Delete(name);
+				}
+				return true;
+			}
+			return false;
+		}
+		public static void Delete(string name)
+		{
+			if (signal_timers.ContainsKey(name))
+			{
+				signal_timers.Remove(name);
+			}
+			if (signal_pauses.ContainsKey(name))
+			{
+				signal_pauses.Remove(name);
+			}
+			if (signal_start_times.ContainsKey(name))
+			{
+				signal_start_times.Remove(name);
+			}
+			if (signal_delays.ContainsKey(name))
+			{
+				signal_delays.Remove(name);
+			}
+		}
+
+		public static void Timer_Restart_Start(string name)
+		{
+			Gate.Entries_Remove(name);
+		}
+		public static bool Timer_From_Signal_Is_Occuring_Check(string name, float intervals_in_seconds, int repeats = int.MaxValue)
+		{
+			if (Gate.Opened_Check(name, Is_Occuring_Check(name, false), repeats))
+			{
+				Create(name, intervals_in_seconds);
+				return true;
+			}
+			return false;
+		}
+		public static int Timer_Repeat_Count_Get(string name)
+		{
+			return Gate.Entries_Count_Get(name);
+		}
+		public static double Timer_Get(string name)
+		{
+			return Timer_Repeat_Count_Get(name) * Delay_In_Seconds_Get(name);
+		}
+	}
 
 	private static void _Draw_Tile(Texture2D texture, Vector2 position, Point tile_index, int grid_size, Point size, Vector2 origin, Vector2 scale, Color color, float angle, SpriteEffects spriteEffects)
 	{
@@ -1763,5 +2133,4 @@ public abstract class Gear : Game
 
 		return new Vector2(px, py); // return statement
 	}
-	#endregion
 }

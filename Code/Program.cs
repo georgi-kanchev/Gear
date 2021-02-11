@@ -1,4 +1,4 @@
-﻿public class Program : Gear.Executable
+﻿public class Program : Gear.Instance
 {
 	public override Program Create() => this;
 	public override string[] Loading_Screen_Prepare() => new string[] { "font.spritefont" };
@@ -7,9 +7,9 @@
 	{
 		if (tick_count == 1)
 		{
-			Gear.System.Window_Show(false);
-			//Gear_System.Network.Server_Start();
-			Gear.Network.Client_Connect("test");
+			Gear.Window.Show(false);
+			Gear.Network.Server_Start();
+			//Gear.Network.Client_Connect("test");
 		}
 		Gear.Network.Clinet_Message_Send_To_All(Gear.Network.Console_Read());
 	}
