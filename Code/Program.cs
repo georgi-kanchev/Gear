@@ -7,10 +7,16 @@
 	{
 		if (tick_count == 1)
 		{
-			Gear.Window.Show(false);
-			Gear.Network.Server_Start();
+			//Gear.Window.Show(false);
+			//Gear.Network.Server_Start();
 			//Gear.Network.Client_Connect("test");
+			Gear.Signal.Create("test", 0);
 		}
-		Gear.Network.Clinet_Message_Send_To_All(Gear.Network.Console_Read());
+		if (Gear.Timer.Occurance_Check("test", 0.1f))
+		{
+			Gear.Text.Display("font", Gear.Timer.Repeat_Count_Get("test"), overwrite: true);
+		}
+
+		//Gear.Network.Clinet_Message_Send_To_All(Gear.Network.Console_Read());
 	}
 }

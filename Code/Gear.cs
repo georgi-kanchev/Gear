@@ -18,6 +18,7 @@ using System.Net.Sockets;
 using System.Net;
 using System.Threading;
 using Mono.Nat;
+using System.Threading.Tasks;
 
 public static class Gear
 {
@@ -73,7 +74,7 @@ public static class Gear
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signal_pauses = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gate_entries_count = new Dictionary<string, int>();
-	private static Dictionary<string, float> signal_timers = new Dictionary<string, float>(), signal_start_times = new Dictionary<string, float>(), signal_delays = new Dictionary<string, float>();
+	private static Dictionary<string, float> signal_end_times = new Dictionary<string, float>(), signal_start_times = new Dictionary<string, float>(), signal_delays = new Dictionary<string, float>();
 	private static List<Input.Keys> last_frame_keys_pressed = new List<Input.Keys>(), keys_just_pressed = new List<Input.Keys>(), keys_just_released = new List<Input.Keys>();
 
 	private static List<Body> bodies_all = new List<Body>();
@@ -897,6 +898,10 @@ public static class Gear
 		{
 			Closest, Up, Down
 		}
+		public enum Time_Convert_Type
+		{
+			Milliseconds_To_Seconds, Seconds_To_Milliseconds, Seconds_To_Minutes, Seconds_To_Hours, Minutes_To_Seconds, Minutes_To_Hours, Minutes_To_Days, Hours_To_Seconds, Hours_To_Minutes, Hours_To_Days
+		}
 		public static float Unsigned_Get(float number)
 		{
 			return Math.Abs(number);
@@ -978,7 +983,11 @@ public static class Gear
 			}
 			return Changed_Get(number, numbers_per_second);
 		}
-		public static bool Chance_Percent_Check(float percent)
+		public static float Time_Convert_Get(float time, Time_Convert_Type time_convert_type)
+		{
+			return 0;
+		}
+		public static bool Chance_Check(float percent)
 		{
 			percent = Limited_Get(percent, 0, 100);
 			var n = Randomized_Get(1, 100, 0);
@@ -1288,7 +1297,6 @@ public static class Gear
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last tick can be checked with <see cref="Time_Since_Last_Tick_Get"/>.
 		/// </summary>
 		public static float Time_Since_Last_Frame_Get() => frames_delta_time;
-
 	}
 	public static class Hardware
 	{
@@ -1763,7 +1771,7 @@ public static class Gear
 		public static float Position_Y_Get() => camera_position.Y;
 	}
 	/// <summary>
-	/// Holds information about the current input of the user.
+	/// - Holds information about the current input of the user.
 	/// </summary>
 	public static class Input
 	{
@@ -1888,48 +1896,29 @@ public static class Gear
 				Signal.Create(name, seconds_delay);
 				return true;
 			}
-			else if (Signal.Timer_From_Signal_Is_Occuring_Check(name, updates_per_second))
+			else if (Timer.Occurance_Check(name, updates_per_second))
 			{
 				return condition;
 			}
 			return false;
 		}
 	}
-	/// <summary>
-	/// Controls Gates and holds information about them. <br></br><br></br>
-	/// Gates' purpose is to convert continuous code flow into a single trigger.<br></br>
-	/// They can be accessed through their names.<br></br>
-	/// A Gate's state is either true or false (opened/closed).<br></br>
-	/// Once the code is inside, the Gate closes until the code is manually KickedOut or the Gate is opened through its condition turning false.
-	/// </summary>
 	public static class Gate
 	{
-		public static int Entries_Count_Get(string name)
-		{
-			return gate_entries_count.ContainsKey(name) ? gate_entries_count[name] : 0;
-		}
+		public static int Entries_Count_Get(string name) => name != null && gate_entries_count.ContainsKey(name) ? gate_entries_count[name] : 0;
 		public static void Entries_Remove(string name)
 		{
-			if (gate_entries_count.ContainsKey(name) == false)
-			{
-				return;
-			}
+			if (name == null || gate_entries_count.ContainsKey(name) == false) return;
 			gate_entries_count[name] = default;
 		}
 		public static void Close(string name)
 		{
-			if (gates.ContainsKey(name) == false)
-			{
-				return;
-			}
+			if (name == null || gates.ContainsKey(name) == false) return;
 			gates.Remove(name);
 		}
 		public static bool Opened_Check(string name, bool condition, int maximum_entries = int.MaxValue)
 		{
-			if (gates.ContainsKey(name) == false && condition == false)
-			{
-				return false;
-			}
+			if (name == null || (gates.ContainsKey(name) == false && condition == false)) return false;
 			else if (gates.ContainsKey(name) == false && condition == true)
 			{
 				gates[name] = true;
@@ -1938,148 +1927,95 @@ public static class Gear
 			}
 			else
 			{
-				if (gates[name] == true && condition == true)
-				{
-					return false;
-				}
+				if (gates[name] == true && condition == true) return false;
 				else if (gates[name] == false && condition == true)
 				{
 					gates[name] = true;
 					gate_entries_count[name]++;
 					return true;
 				}
-				else if (gate_entries_count[name] < maximum_entries)
-				{
-					gates[name] = false;
-				}
+				else if (gate_entries_count[name] < maximum_entries) gates[name] = false;
 			}
 			return false;
 		}
 	}
-	/// <summary>
-	/// Controls Signals and holds information about them.<br></br><br></br>
-	/// Signals' purpose is to convert continuous code flow into a single trigger.<br></br>
-	/// They can be accessed through their names.<br></br>
-	/// The trigger of each Signal happens after a certain period of it being created.
-	/// </summary>
 	public static class Signal
 	{
 		public static void Create(string name, float seconds_delay)
 		{
-			if (seconds_delay < 0)
-			{
-				return;
-			}
-			if (signal_timers.ContainsKey(name) == false)
-			{
-				signal_timers.Add(name, 0);
-			}
-			if (signal_pauses.ContainsKey(name) == false)
-			{
-				signal_pauses.Add(name, false);
-			}
-			if (signal_start_times.ContainsKey(name) == false)
-			{
-				signal_start_times.Add(name, Performance.Time_Get());
-			}
-			if (signal_delays.ContainsKey(name) == false)
-			{
-				signal_delays.Add(name, seconds_delay);
-			}
-			signal_timers[name] = 0;
+			if (name == null) return;
+			seconds_delay = Number.Limited_Get(seconds_delay, 0, float.MaxValue);
 			signal_pauses[name] = false;
 			signal_start_times[name] = Performance.Time_Get();
 			signal_delays[name] = seconds_delay;
+			signal_end_times[name] = Performance.Time_Get() + seconds_delay;
 		}
-		public static bool Exists_Check(string name)
+		public static bool Exists_Check(string name) => name != null && signal_start_times.ContainsKey(name);
+		public static float Seconds_Delay_Get(string name) => name != null && signal_delays.ContainsKey(name) ? signal_delays[name] : 0;
+		public static void Pause(string name, bool paused)
 		{
-			return name != null && signal_timers.ContainsKey(name);
-		}
-		public static double Delay_In_Seconds_Get(string name)
-		{
-			return signal_delays.ContainsKey(name) != false ? signal_delays[name] : 0;
-		}
-		public static void Delay_Pause(string name, bool paused)
-		{
-			if (signal_pauses.ContainsKey(name) == false)
-			{
-				return;
-			}
+			if (name == null || signal_pauses.ContainsKey(name) == false) return;
 			signal_pauses[name] = paused;
 		}
-		public static double Seconds_Until_Occurance_Get(string name)
+		public static float Seconds_Left_Get(string name)
 		{
-			return Time_Occur_Get(name) - Performance.Time_Get();
+			if (name == null || signal_end_times.ContainsKey(name) == false) return 0;
+			var result = signal_end_times[name] - Performance.Time_Get();
+			return result < 0 ? 0 : result;
 		}
-		public static double Time_Start_Get(string name)
+		public static float Time_Start_Get(string name) => name != null && signal_start_times.ContainsKey(name) ? signal_start_times[name] : 0;
+		public static float Time_Occur_Get(string name) => name != null && signal_end_times.ContainsKey(name) ? signal_end_times[name] : 0;
+		public static bool Occurance_Check(string name, bool delete)
 		{
-			return signal_start_times.ContainsKey(name) == false ? 0 : signal_start_times[name];
-		}
-		public static double Time_Occur_Get(string name)
-		{
-			return signal_start_times.ContainsKey(name) == false || signal_delays.ContainsKey(name) == false ? 0 : signal_start_times[name] + signal_delays[name];
-		}
-		public static bool Is_Occuring_Check(string name, bool delete)
-		{
-			if (signal_timers.ContainsKey(name) == false || signal_delays.ContainsKey(name) == false)
-			{
-				return false;
-			}
+			if (name == null) return false;
+			if (signal_delays.ContainsKey(name) == false) return false;
 			if (signal_pauses.ContainsKey(name) == true && signal_pauses[name])
 			{
+				signal_end_times[name] += ticks_delta_time;
 				return false;
 			}
-			if (signal_timers[name] >= signal_delays[name])
+			if (time >= signal_end_times[name])
 			{
-				if (delete)
-				{
-					Delete(name);
-				}
+				if (delete) Delete(name);
 				return true;
 			}
 			return false;
 		}
 		public static void Delete(string name)
 		{
-			if (signal_timers.ContainsKey(name))
-			{
-				signal_timers.Remove(name);
-			}
-			if (signal_pauses.ContainsKey(name))
-			{
-				signal_pauses.Remove(name);
-			}
-			if (signal_start_times.ContainsKey(name))
-			{
-				signal_start_times.Remove(name);
-			}
-			if (signal_delays.ContainsKey(name))
-			{
-				signal_delays.Remove(name);
-			}
+			if (name == null) return;
+			if (signal_end_times.ContainsKey(name)) signal_end_times.Remove(name);
+			if (signal_pauses.ContainsKey(name)) signal_pauses.Remove(name);
+			if (signal_start_times.ContainsKey(name)) signal_start_times.Remove(name);
+			if (signal_delays.ContainsKey(name)) signal_delays.Remove(name);
 		}
+	}
+	public static class Timer
+	{
+		private static Dictionary<string, int> repeats = new Dictionary<string, int>();
 
-		public static void Timer_Restart_Start(string name)
+		public static bool Occurance_Check(string name, float intervals_in_seconds, int repeats = 1_000_000)
 		{
-			Gate.Entries_Remove(name);
-		}
-		public static bool Timer_From_Signal_Is_Occuring_Check(string name, float intervals_in_seconds, int repeats = int.MaxValue)
-		{
-			if (Gate.Opened_Check(name, Is_Occuring_Check(name, false), repeats))
+			intervals_in_seconds = Number.Limited_Get(intervals_in_seconds, 0.1f, 100_000);
+			if (Gate.Opened_Check(name, Signal.Occurance_Check(name, false), repeats))
 			{
-				Create(name, intervals_in_seconds);
+				Signal.Create(name, intervals_in_seconds);
+				Timer.repeats[name] = repeats;
 				return true;
 			}
 			return false;
 		}
-		public static int Timer_Repeat_Count_Get(string name)
+		public static float Seconds_Get(string name) => Repeat_Count_Get(name) * Signal.Seconds_Delay_Get(name);
+		public static float Seconds_Left_Get(string name)
 		{
-			return Gate.Entries_Count_Get(name);
+			var repeats = Repeats_Get(name);
+			var delay = Signal.Seconds_Delay_Get(name);
+			var seconds = Seconds_Get(name);
+			return repeats * delay - seconds;
 		}
-		public static double Timer_Get(string name)
-		{
-			return Timer_Repeat_Count_Get(name) * Delay_In_Seconds_Get(name);
-		}
+		public static int Repeat_Count_Get(string name) => Gate.Entries_Count_Get(name);
+		public static int Repeats_Get(string name) => name != null && repeats.ContainsKey(name) ? repeats[name] : 0;
+		public static void Restart(string name) => Gate.Entries_Remove(name);
 	}
 
 	private static void _Draw_Tile(Texture2D texture, Vector2 position, Point tile_index, int grid_size, Point size, Vector2 origin, Vector2 scale, Color color, float angle, SpriteEffects spriteEffects)
