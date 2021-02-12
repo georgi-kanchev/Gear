@@ -9,14 +9,18 @@
 		{
 			//Gear.Window.Show(false);
 			//Gear.Network.Server_Start();
-			//Gear.Network.Client_Connect("test");
-			Gear.Signal.Create("test", 0);
+			//Gear.Network.Client_Connect("test", "asfagf");
+			Gear.Canvas.Pixel_Size_Set(10, 10);
+			var body = Gear.Body.Create();
+			body.Sprite_Set("red", origin_x: 16, origin_y: 16);
+			body.Unique_Name_Set("f");
+			body.Position_Set(50, 50);
+			body.Angle_Set(45);
+			body.Boundaries_Show(true, color_red: 0, color_green: 0, color_blue: 255);
+			body.Angle_Show(true, color_red: 0, color_green: 255, color_blue: 0);
+			body.Origin_Show(true, color_red: 255, color_green: 255, color_blue: 0);
 		}
-		if (Gear.Timer.Occurance_Check("test", 0.1f))
-		{
-			Gear.Text.Display("font", Gear.Timer.Repeat_Count_Get("test"), overwrite: true);
-		}
-
+		//Gear.Text.Display("font", $"{Gear.Text.Time_Formatted_Get(5.5f, ms_show: true)}\n", overwrite: false);
 		//Gear.Network.Clinet_Message_Send_To_All(Gear.Network.Console_Read());
 	}
 }

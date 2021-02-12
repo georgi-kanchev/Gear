@@ -63,6 +63,13 @@ public static class Gear
 	private static RenderTarget2D render_target;
 	private static SamplerState render_sampler_state;
 	private static Canvas.Pixel_Filter render_pixel_filter;
+	private static Server server;
+	private static Client client;
+
+	private enum Message_Type
+	{
+		Connection, Unique_Name_Change, Client_Connected, Client_Disconnected, Client_Online, Message_To_All, Message_To_Client
+	}
 
 	private static PerformanceCounter ram_available = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ram_used_percent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -72,21 +79,24 @@ public static class Gear
 	private static Dictionary<string, SoundEffectInstance> sounds = new Dictionary<string, SoundEffectInstance>();
 	private static Dictionary<string, SoundEffect> sounds_raw = new Dictionary<string, SoundEffect>();
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
+	private static Dictionary<string, List<string>> last_messages = new Dictionary<string, List<string>>();
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signal_pauses = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gate_entries_count = new Dictionary<string, int>();
+	private static Dictionary<string, string> client_ids = new Dictionary<string, string>();
 	private static Dictionary<string, float> signal_end_times = new Dictionary<string, float>(), signal_start_times = new Dictionary<string, float>(), signal_delays = new Dictionary<string, float>();
-	private static List<Input.Keys> last_frame_keys_pressed = new List<Input.Keys>(), keys_just_pressed = new List<Input.Keys>(), keys_just_released = new List<Input.Keys>();
 
+	private static List<Input.Keys> last_frame_keys_pressed = new List<Input.Keys>(), keys_just_pressed = new List<Input.Keys>(), keys_just_released = new List<Input.Keys>();
 	private static List<Body> bodies_all = new List<Body>();
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
+	private static List<string> client_unique_names = new List<string>();
 
 	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port = 1234;
-	private static bool console_draw, loading = true, pause_unfocus, render, sleep_prevented;
-	private static float console_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
-	private static string console_font, console_message, main_dir = AppDomain.CurrentDomain.BaseDirectory;
+	private static bool text_display_draw, loading = true, pause_unfocus, render, sleep_prevented, console_shown, client_is_connected, server_is_running;
+	private static float text_display_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
+	private static string text_display_font, text_display_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, console_log, connect_to_server_info, client_unique_name;
 
 	private static DateTime last_tick_time, last_frame_time;
-	private static Color background_color;
+	private static Color background_color = Color.Black;
 	private static Point canvas_size = new Point(1920, 1080), screen_size = new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
 	private static Vector2 camera_position;
 	#endregion
@@ -148,13 +158,13 @@ public static class Gear
 			graphics.PreferredBackBufferHeight = screen_size.Y;
 			graphics.HardwareModeSwitch = false;
 			graphics.IsFullScreen = true;
-			graphics.ApplyChanges();
 			game.Window.Position = new Point(0, 0);
 
 			render_sampler_state = SamplerState.PointWrap;
 
 			render_target = new RenderTarget2D(game.GraphicsDevice, screen_size.X, screen_size.Y, false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
 
+			graphics.ApplyChanges();
 			game.Window.Title = "Gear";
 			game.IsMouseVisible = true;
 
@@ -263,13 +273,12 @@ public static class Gear
 			// draw =======================================================
 			Advance_Frame_Time();
 			Draw_All_Bodies();
+			Draw_Text_Display();
 			// draw =======================================================
 
 			GraphicsDevice.SetRenderTarget(null);
-			var window = Window.ClientBounds;
-			var scale = new Vector2((float)window.Width / canvas_size.X, (float)window.Height / canvas_size.Y);
+			var scale = new Vector2(pixel_width, pixel_height);
 			sprite_batch.Draw(render_target, Vector2.Zero, null, Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
-			Draw_Console();
 			render = false;
 			sprite_batch.End();
 			base.Draw(gameTime);
@@ -311,8 +320,9 @@ public static class Gear
 				{
 					continue;
 				}
+				var sprite_shown = body.Sprite_Is_Shown_Check();
 				var tile_index = new Point(body.Sprite_Index_Horizontal_Get(), body.Sprite_Index_Vertical_Get());
-				var pos = new Vector2(body.Position_X_Get(), body.Position_Y_Get());
+				var pos = new Vector2(body.Position_X_Get(), body.Position_Y_Get()) + camera_position;
 				var size = new Vector2(body.Size_Width_Get(), body.Size_Height_Get()).ToPoint();
 				var sprite_size = new Vector2(body.Sprite_Width_Get(), body.Sprite_Height_Get());
 				var scale = size.ToVector2() / sprite_size;
@@ -326,38 +336,38 @@ public static class Gear
 				origin_sprite.SetData(data);
 				angle_sprite.SetData(data);
 
-				_Draw_Tile(sprites[sprite], pos - origin, tile_index, body.Sprite_Grid_Size_Get(), (size.ToVector2() / scale).ToPoint(), Vector2.Zero, scale, color, body.Angle_Get(), SpriteEffects.None);
+				if (sprite_shown)
+				{
+					_Draw_Tile(sprites[sprite], pos - origin, tile_index, body.Sprite_Grid_Size_Get(), (size.ToVector2() / scale).ToPoint(), Vector2.Zero, scale, color, body.Angle_Get(), SpriteEffects.None);
+				}
 
 				var boundaries_color = new Color(body.Boundaries_Red_Get(), body.Boundaries_Green_Get(), body.Boundaries_Blue_Get());
-				var boundaries_blink = (body.Boundaries_Are_Shown_Check() && body.Boundaries_Are_Blinking_Check() == false) || (body.Boundaries_Are_Shown_Check() && body.Boundaries_Are_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
-				if (boundaries_sprite != null && boundaries_blink)
+				if (boundaries_sprite != null && body.Boundaries_Are_Shown_Check())
 				{
 					_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(size.X, 1), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
 					_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(1, size.Y), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
 				}
+
 				var angle_color = new Color(body.Angle_Red_Get(), body.Angle_Green_Get(), body.Angle_Blue_Get());
-				var angle_blink = (body.Angle_Is_Shown_Check() && body.Angle_Is_Blinking_Check() == false) || (body.Angle_Is_Shown_Check() && body.Angle_Is_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
-				if (angle_sprite != null && angle_blink)
-				{
-					_Draw_Tile(angle_sprite, pos, Point.Zero, 0, new Point(size.X / 2, 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
-				}
+				if (angle_sprite != null && body.Angle_Is_Shown_Check())
+					_Draw_Tile(angle_sprite, pos, Point.Zero, 0, new Point((int)(size.X * 1.1f), 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
+
 				var origin_color = new Color(body.Origin_Red_Get(), body.Origin_Green_Get(), body.Origin_Blue_Get());
-				var origin_blink = (body.Origin_Is_Shown_Check() && body.Origin_Is_Blinking_Check() == false) || (body.Origin_Is_Shown_Check() && body.Origin_Is_Blinking_Check() && frame % 8 != 0 && frame % 20 != 0);
-				if (origin_sprite != null && origin_blink)
-				{
+				if (origin_sprite != null && body.Origin_Is_Shown_Check())
 					_Draw_Tile(origin_sprite, pos, Point.Zero, 0, new Point(1, 1), Vector2.Zero, Vector2.One, origin_color, body.Angle_Get(), SpriteEffects.None);
-				}
+
 				boundaries_sprite.Dispose();
+				angle_sprite.Dispose();
 				origin_sprite.Dispose();
 			}
 		}
-		private static void Draw_Console()
+		private static void Draw_Text_Display()
 		{
-			if (console_font != null && console_draw && fonts.ContainsKey(console_font) && string.IsNullOrWhiteSpace(console_message) == false)
+			if (text_display_font != null && text_display_draw && fonts.ContainsKey(text_display_font) && string.IsNullOrWhiteSpace(text_display_message) == false)
 			{
-				var font_size = fonts[console_font].MeasureString("a") / 18 * console_scale;
-				sprite_batch.DrawString(fonts[console_font], console_message, new Vector2(font_size.Y, font_size.Y), Color.Black, 0, Vector2.Zero, console_scale, SpriteEffects.None, 0);
-				sprite_batch.DrawString(fonts[console_font], console_message, new Vector2(0, 0), Color.White, 0, Vector2.Zero, console_scale, SpriteEffects.None, 0);
+				var font_size = fonts[text_display_font].MeasureString("a") / 18 * text_display_scale;
+				sprite_batch.DrawString(fonts[text_display_font], text_display_message, new Vector2(font_size.Y, font_size.Y), Color.Black, 0, Vector2.Zero, text_display_scale, SpriteEffects.None, 0);
+				sprite_batch.DrawString(fonts[text_display_font], text_display_message, new Vector2(0, 0), Color.White, 0, Vector2.Zero, text_display_scale, SpriteEffects.None, 0);
 			}
 		}
 
@@ -601,6 +611,9 @@ public static class Gear
 			pixel_width = width;
 			pixel_height = height;
 			canvas_size = screen_size / new Point(width, height);
+			var gd = game.GraphicsDevice;
+			render_target = new RenderTarget2D(gd, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight, false, gd.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+			graphics.ApplyChanges();
 		}
 		/// <summary>
 		/// - Gets the current pixel width according to the user's monitor resolution and returns it.<br></br><br></br>
@@ -765,7 +778,7 @@ public static class Gear
 		[JsonProperty]
 		private string unique_name, sprite_name;
 		[JsonProperty]
-		private bool boundaries_shown, boundaries_blinking, origin_shown, origin_blinking, angle_shown, angle_blinking;
+		private bool boundaries_shown, origin_shown, angle_shown, sprite_shown;
 
 		public Body()
 		{
@@ -800,63 +813,66 @@ public static class Gear
 		{
 			position.X = x;
 			position.Y = y;
+			render = true;
 		}
 
-		public void Angle_Set(float angle) => this.angle = angle;
+		public void Angle_Set(float angle)
+		{
+			this.angle = angle;
+			render = true;
+		}
 		public float Angle_Get() => angle;
 
 		public void Size_Set(float width, float height)
 		{
 			size.X = width;
 			size.Y = height;
+			render = true;
 		}
 		public float Size_Width_Get() => size.X;
 		public float Size_Height_Get() => size.Y;
 
 		#region Display Angle
-		public void Angle_Show(bool show = true, bool blinking = false, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
+		public void Angle_Show(bool show = true, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
 		{
 			angle_shown = show;
 			angle_color = new Color(color_red, color_green, color_blue, opacity);
-			angle_blinking = blinking;
+			render = true;
 		}
 		public bool Angle_Is_Shown_Check() => angle_shown;
-		public bool Angle_Is_Blinking_Check() => angle_blinking;
 		public int Angle_Red_Get() => angle_color.R;
 		public int Angle_Green_Get() => angle_color.G;
 		public int Angle_Blue_Get() => angle_color.B;
 		public int Angle_Opacity_Get() => angle_color.A;
 		#endregion
 		#region Display Origin
-		public void Origin_Show(bool show = true, bool blinking = false, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
+		public void Origin_Show(bool show = true, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
 		{
 			origin_shown = show;
 			origin_color = new Color(color_red, color_green, color_blue, opacity);
-			origin_blinking = blinking;
+			render = true;
 		}
 		public bool Origin_Is_Shown_Check() => origin_shown;
-		public bool Origin_Is_Blinking_Check() => origin_blinking;
 		public int Origin_Red_Get() => origin_color.R;
 		public int Origin_Green_Get() => origin_color.G;
 		public int Origin_Blue_Get() => origin_color.B;
 		public int Origin_Opacity_Get() => origin_color.A;
 		#endregion
 		#region Display Boundaries
-		public void Boundaries_Show(bool show = true, bool blinking = false, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
+		public void Boundaries_Show(bool show = true, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
 		{
 			boundaries_shown = show;
 			boundaries_color = new Color(color_red, color_green, color_blue, opacity);
-			boundaries_blinking = blinking;
+			render = true;
 		}
 		public bool Boundaries_Are_Shown_Check() => boundaries_shown;
-		public bool Boundaries_Are_Blinking_Check() => boundaries_blinking;
 		public int Boundaries_Red_Get() => boundaries_color.R;
 		public int Boundaries_Green_Get() => boundaries_color.G;
 		public int Boundaries_Blue_Get() => boundaries_color.B;
 		public int Boundaries_Opacity_Get() => boundaries_color.A;
 		#endregion
 		#region Display Sprite
-		public void Sprite_Set(string name, int width = 64, int height = 64, byte red = 255, byte green = 255, byte blue = 255, byte opacity = 255, int origin_x = 0, int origin_y = 0, int grid_size = 0, int index_h = 0, int index_v = 0)
+		public void Sprite_Set(string name, bool show = true, int width = 64, int height = 64, byte red = 255, byte green = 255, byte blue = 255, byte opacity = 255, int origin_x = 0, int origin_y = 0, int grid_size = 0, int index_h = 0, int index_v = 0)
 		{
 			if (sprites.ContainsKey(name) == false)
 			{
@@ -869,8 +885,12 @@ public static class Gear
 			sprite_origin = new Vector2(origin_x, origin_y);
 			sprite_grid_size = grid_size;
 			sprite_index = new Point(index_h, index_v);
+			sprite_shown = show;
+			render = true;
 		}
 		public string Sprite_Name_Get() => sprite_name;
+
+		public bool Sprite_Is_Shown_Check() => sprite_shown;
 
 		public int Sprite_Grid_Size_Get() => sprite_grid_size;
 
@@ -900,7 +920,12 @@ public static class Gear
 		}
 		public enum Time_Convert_Type
 		{
-			Milliseconds_To_Seconds, Seconds_To_Milliseconds, Seconds_To_Minutes, Seconds_To_Hours, Minutes_To_Seconds, Minutes_To_Hours, Minutes_To_Days, Hours_To_Seconds, Hours_To_Minutes, Hours_To_Days
+			Milliseconds_To_Seconds,
+			Seconds_To_Milliseconds, Seconds_To_Minutes, Seconds_To_Hours,
+			Minutes_To_Milliseconds, Minutes_To_Seconds, Minutes_To_Hours, Minutes_To_Days,
+			Hours_To_Seconds, Hours_To_Minutes, Hours_To_Days, Hours_To_Weeks,
+			Days_To_Minutes, Days_To_Hours, Days_To_Weeks,
+			Weeks_To_Hours, Weeks_To_Days
 		}
 		public static float Unsigned_Get(float number)
 		{
@@ -983,8 +1008,28 @@ public static class Gear
 			}
 			return Changed_Get(number, numbers_per_second);
 		}
-		public static float Time_Convert_Get(float time, Time_Convert_Type time_convert_type)
+		public static float Time_Converted_Get(float time, Time_Convert_Type time_convert_type)
 		{
+			switch (time_convert_type)
+			{
+				case Time_Convert_Type.Milliseconds_To_Seconds: return time / 1_000;
+				case Time_Convert_Type.Seconds_To_Milliseconds: return time * 1_000;
+				case Time_Convert_Type.Seconds_To_Minutes: return time / 60;
+				case Time_Convert_Type.Seconds_To_Hours: return time / 3_600;
+				case Time_Convert_Type.Minutes_To_Milliseconds: return time * 60_000;
+				case Time_Convert_Type.Minutes_To_Seconds: return time * 60;
+				case Time_Convert_Type.Minutes_To_Hours: return time / 60;
+				case Time_Convert_Type.Minutes_To_Days: return time / 1_440;
+				case Time_Convert_Type.Hours_To_Seconds: return time * 3_600;
+				case Time_Convert_Type.Hours_To_Minutes: return time * 60;
+				case Time_Convert_Type.Hours_To_Days: return time / 24;
+				case Time_Convert_Type.Hours_To_Weeks: return time / 168;
+				case Time_Convert_Type.Days_To_Minutes: return time * 1_440;
+				case Time_Convert_Type.Days_To_Hours: return time * 24;
+				case Time_Convert_Type.Days_To_Weeks: return time / 7;
+				case Time_Convert_Type.Weeks_To_Hours: return time * 168;
+				case Time_Convert_Type.Weeks_To_Days: return time * 7;
+			}
 			return 0;
 		}
 		public static bool Chance_Check(float percent)
@@ -1179,24 +1224,25 @@ public static class Gear
 			{
 				return;
 			}
-			console_draw = true;
-			console_font = font;
-			if (overwrite) console_message = "";
-			console_message = $"{console_message}{message}";
-			console_scale = scale;
+			text_display_draw = true;
+			text_display_font = font;
+			if (overwrite) text_display_message = "";
+			text_display_message = $"{text_display_message}{message}";
+			scale = Number.Limited_Get(scale, 0.001f, 5000);
+			text_display_scale = scale;
 
-			var sample_size = fonts[console_font].MeasureString("a");
-			var sample_size_scaled = sample_size * console_scale;
-			var visible_lines = screen_size.Y / (int)sample_size_scaled.Y;
-			var size = fonts[console_font].MeasureString(console_message) * console_scale;
-			var lines = console_message.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-			if (size.Y > screen_size.Y + sample_size_scaled.Y && lines.Count > 2 && visible_lines < lines.Count)
+			var sample_size = fonts[text_display_font].MeasureString("a");
+			var sample_size_scaled = sample_size * text_display_scale;
+			var visible_lines = (int)(canvas_size.Y / sample_size_scaled.Y);
+			var size = fonts[text_display_font].MeasureString(text_display_message) * text_display_scale;
+			var lines = text_display_message.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+			if (size.Y > canvas_size.Y + sample_size_scaled.Y && lines.Count > 2 && visible_lines < lines.Count)
 			{
-				console_message = "";
+				text_display_message = "";
 				lines[lines.Count - visible_lines] = "...";
 				for (int i = lines.Count - visible_lines; i < lines.Count; i++)
 				{
-					console_message = $"{console_message}{lines[i]}\n";
+					text_display_message = $"{text_display_message}{lines[i]}\n";
 				}
 			}
 			render = true;
@@ -1206,8 +1252,37 @@ public static class Gear
 		/// </summary>
 		public static void Display_Clear()
 		{
-			console_message = null;
+			text_display_message = null;
 			render = true;
+		}
+
+		public static string Time_Formatted_Get(float seconds, string separator = ":", bool ms_show = false, string ms_format = "ms", bool sec_show = true, string sec_format = "s", bool min_show = true, string min_format = "m", bool hr_show = true, string hr_format = "h")
+		{
+			seconds = Number.Unsigned_Get(seconds);
+			var seconds_str = seconds.ToString();
+			var ms = 0;
+			if (seconds_str.Contains('.'))
+			{
+				var spl = seconds_str.Split('.');
+				ms = int.Parse(spl[1]) * 100;
+				seconds = Number.Rounded_Get(seconds, 0, Number.Round_Type.Down);
+			}
+			var sec = seconds % 60;
+			var min = Number.Rounded_Get(seconds / 60 % 60, 0, Number.Round_Type.Down);
+			var hr = Number.Rounded_Get(seconds / 3_600, 0, Number.Round_Type.Down);
+			var ms_str = ms_show ? $"{ms}" : "";
+			var sec_str = sec_show ? $"{sec}" : "";
+			var min_str = min_show ? $"{min}" : "";
+			var hr_str = hr_show ? $"{hr}" : "";
+			var ms_f = ms_show ? $"{ms_format}" : "";
+			var sec_f = sec_show ? $"{sec_format}" : "";
+			var min_f = min_show ? $"{min_format}" : "";
+			var hr_f = hr_show ? $"{hr_format}" : "";
+			var sec_ms_sep = ms_show && (sec_show || min_show || hr_show) ? $"{separator}" : "";
+			var min_sec_sep = sec_show && (min_show || hr_show) ? $"{separator}" : "";
+			var hr_min_sep = min_show && hr_show ? $"{separator}" : "";
+
+			return $"{hr_str}{hr_f}{hr_min_sep}{min_str}{min_f}{min_sec_sep}{sec_str}{sec_f}{sec_ms_sep}{ms_str}{ms_f}";
 		}
 	}
 	public static class Performance
@@ -1334,22 +1409,6 @@ public static class Gear
 	}
 	public static class Network
 	{
-		private enum Message_Type
-		{
-			Connection, Unique_Name_Change, Client_Connected, Client_Disconnected, Client_Online, Message_To_All, Message_To_Client
-		}
-
-		private static Server server;
-		private static bool server_is_running;
-		private static Dictionary<string, string> client_ids = new Dictionary<string, string>();
-		private static List<string> client_unique_names = new List<string>();
-		private static Client client;
-		private static Dictionary<string, List<string>> last_messages = new Dictionary<string, List<string>>();
-		private static string client_unique_name;
-		private static bool client_is_connected;
-		private static string console_log;
-		private static string connect_to_server_info;
-
 		public static void Server_Start()
 		{
 			try
@@ -1367,8 +1426,6 @@ public static class Gear
 					return;
 				}
 				server = new Server(IPAddress.Any, server_port);
-				AllocConsole();
-				Console.Title = $"{Window.Title_Get()} | Network Console | Server | Disconnected";
 				console_log = $"{console_log}\nServer_Start(): Starging a LAN Server on port {server_port}...";
 				server.Start();
 				console_log = $"{console_log}\nServer_Start(): Done!";
@@ -1393,14 +1450,15 @@ public static class Gear
 			}
 			catch (Exception ex)
 			{
+				server_is_running = false;
 				console_log = $"{console_log}\nServer_Start() Error: {ex.Message}";
 				_Console_Update();
 				return;
 			}
 		}
-		public static void Client_Connect(string unique_name)
+		public static void Client_Connect(string unique_name, string ip)
 		{
-			var func_name = $"Client_Connect(\"{unique_name}\")";
+			var func_name = $"Client_Connect(\"{unique_name}\", \"{ip}\")";
 			if (client_is_connected)
 			{
 				console_log = $"{console_log}\n{func_name}: Already connecting/connected.";
@@ -1413,17 +1471,21 @@ public static class Gear
 				_Console_Update();
 				return;
 			}
-			AllocConsole();
 			NatUtility.DeviceFound += DeviceFound;
 			NatUtility.StartDiscovery();
 			client_is_connected = true;
 
-			Console.Title = $"{Window.Title_Get()} | Network Console | Client | Disconnected";
-			Console.Write("Join Server with IP: ");
-			var ip = Console.ReadLine();
-			client = new Client(ip, server_port);
-			Console.Write("With nickname: ");
-			client_unique_name = Console.ReadLine();
+			try
+			{
+				client = new Client(ip, server_port);
+			}
+			catch (Exception)
+			{
+				client_is_connected = false;
+				console_log = $"{console_log}{func_name}: {ip} is an invalid IP.";
+				return;
+			}
+			client_unique_name = unique_name;
 			console_log = $"{console_log}\n{func_name}: Connecting to {ip}:{server_port}...";
 			_Console_Update();
 			client.ConnectAsync();
@@ -1433,7 +1495,8 @@ public static class Gear
 		{
 			if (client_is_connected == false)
 			{
-				Console.WriteLine($"Client_Disconnect(): Cannot disconnect when not connected.");
+				console_log = $"{console_log}\nClient_Disconnect(): Cannot disconnect when not connected.";
+				_Console_Update();
 				return;
 			}
 			client.DisconnectAndStop();
@@ -1479,256 +1542,8 @@ public static class Gear
 			client.SendAsync($"{(int)Message_Type.Message_To_Client}|{client_unique_name}|{receiver_unique_name}|{message}");
 		}
 
-		public static string Console_Read() => Console.ReadLine();
+		public static string Console_Read() => System.Console.ReadLine();
 		private static void DeviceFound(object sender, DeviceEventArgs args) => args.Device.CreatePortMap(new Mapping(Protocol.Tcp, server_port, server_port));
-
-		private static string _Clients_Online_Get()
-		{
-			var result = "";
-			for (int i = 0; i < client_unique_names.Count; i++)
-			{
-				var separator = i == client_unique_names.Count - 1 ? "" : ", ";
-				result = $"{result}[{client_unique_names[i]}]{separator}";
-			}
-			return result;
-		}
-		private static void _Console_Update()
-		{
-			Console.Clear();
-			var client_server_str = server_is_running ? "Server" : $"Client [{client_unique_name}]";
-			var connection = client_is_connected == false && server_is_running == false ? "Disconnected" : "Connected";
-			var clients_connected = connection == "Disconnected" ? "" : $"Clients Connected ({client_unique_names.Count}): {_Clients_Online_Get()}\n\n";
-			var connect_info = server_is_running ? connect_to_server_info + "\n\n" : "";
-
-			Console.Title = $"{Window.Title_Get()} | Network Console | {client_server_str} | {connection}";
-			Console.WriteLine($"{connect_info}{clients_connected}{console_log}");
-		}
-		private static void _Add_Message(string from, string message)
-		{
-			if (last_messages.ContainsKey(from) == false)
-			{
-				last_messages[from] = new List<string>();
-			}
-			last_messages[from].Add(message);
-		}
-
-		private class Session : TcpSession
-		{
-			public Session(TcpServer server) : base(server) { }
-
-			protected override void OnConnected()
-			{
-				// Send invite message
-				//string message = "Hello from TCP! Please send a message!";
-				//SendAsync(message);
-			}
-			protected override void OnDisconnected()
-			{
-				var disconnected_client = client_ids[Id.ToString()];
-				client_unique_names.Remove(disconnected_client);
-				server.Multicast($"~{(int)Message_Type.Client_Disconnected}|{disconnected_client}");
-				console_log = $"{console_log}\nClient [{disconnected_client}] just disconnected.";
-				_Console_Update();
-			}
-			protected override void OnReceived(byte[] buffer, long offset, long size)
-			{
-				var raw_messages = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-				var messages = raw_messages.Split('~', StringSplitOptions.RemoveEmptyEntries);
-				var message_back = "";
-				foreach (var message in messages)
-				{
-					var components = message.Split('|');
-					var message_type = (Message_Type)int.Parse(components[0]);
-					switch (message_type)
-					{
-						case Message_Type.Connection: // A client just connected and sent his ID & unique name
-							{
-								var id = components[1];
-								var unique_name = components[2];
-								if (client_unique_names.Contains(unique_name)) // Is the unique name free?
-								{
-									unique_name = ChangeUniqueName(unique_name);
-									message_back = $"~{(int)Message_Type.Unique_Name_Change}|{id}|{unique_name}"; // Send a message back with a free one towards the same ID so the client can recognize it's for him
-								}
-								client_ids[Id.ToString()] = unique_name;
-								client_unique_names.Add(unique_name);
-								message_back = $"{message_back}~{(int)Message_Type.Client_Online}|{unique_name}"; // Sticking another message to update the newcoming client about online clients
-								foreach (var client in client_unique_names)
-								{
-									message_back = $"{message_back}|{client}";
-								}
-								message_back = $"{message_back}~{(int)Message_Type.Client_Connected}|{unique_name}"; // Sticking a third message to update online clients about the newcomer.
-								console_log = $"{console_log}\nClient [{unique_name}] just connected.";
-								_Console_Update();
-								break;
-							}
-						case Message_Type.Message_To_All: // A client wants to send a message to everyone
-							{
-								message_back = $"{message_back}~{message}";
-								break;
-							}
-						case Message_Type.Message_To_Client: // A client wants to send a message to another client
-							{
-								message_back = $"{message_back}~{message}";
-								break;
-							}
-					}
-				}
-				if (message_back != "")
-				{
-					server.Multicast(message_back);
-				}
-			}
-			protected override void OnError(SocketError error)
-			{
-				console_log = $"{console_log}\nServer Error: {error}";
-				_Console_Update();
-			}
-			private string ChangeUniqueName(string unique_name)
-			{
-				var i = 0;
-				while (true)
-				{
-					i++;
-					if (client_unique_names.Contains($"{unique_name}{i}") == false)
-					{
-						break;
-					}
-				}
-				return $"{unique_name}{i}";
-			}
-		}
-		private class Server : TcpServer
-		{
-			public Server(IPAddress address, int port) : base(address, port) { }
-			protected override TcpSession CreateSession() { return new Session(this); }
-			protected override void OnError(SocketError error) => Console.WriteLine($"Server Error: {error}.");
-		}
-		private class Client : TcpClient
-		{
-			private bool stop;
-
-			public Client(string address, int port) : base(address, port) { }
-
-			public void DisconnectAndStop()
-			{
-				stop = true;
-				DisconnectAsync();
-				while (IsConnected) Thread.Yield();
-			}
-			protected override void OnConnected()
-			{
-				client_is_connected = true;
-				client_unique_names.Add(client_unique_name);
-				console_log = $"{console_log}\nConnected as [{client_unique_name}] to {client.Socket.RemoteEndPoint}.";
-				_Console_Update();
-				client.SendAsync($"~{(int)Message_Type.Connection}|{client.Id}|{client_unique_name}");
-			}
-			protected override void OnDisconnected()
-			{
-				if (client_is_connected)
-				{
-					client_is_connected = false;
-					console_log = $"Disconnected.";
-					client_unique_names.Clear();
-				}
-
-				// Wait for a while...
-				Thread.Sleep(1000);
-
-				// Try to connect again
-				console_log = $"{console_log}\nTrying to reconnect...";
-				if (stop == false) ConnectAsync();
-				_Console_Update();
-			}
-			protected override void OnReceived(byte[] buffer, long offset, long size)
-			{
-				var raw_messages = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
-				var messages = raw_messages.Split('~', StringSplitOptions.RemoveEmptyEntries);
-				var message_back = "";
-				foreach (var message in messages)
-				{
-					var components = message.Split('|');
-					var message_type = (Message_Type)int.Parse(components[0]);
-					switch (message_type)
-					{
-						case Message_Type.Unique_Name_Change: // Server said someone's unique name is taken and sent a free one
-							{
-								if (components[1] == client.Id.ToString()) // Is this for me?
-								{
-									console_log = $"{console_log}\nMy Unique Name [{client_unique_name}] is taken so my new Unique Name is [{components[2]}].";
-									client_unique_names.Remove(client_unique_name);
-									client_unique_name = components[2];
-									client_unique_names.Add(client_unique_name);
-								}
-								break;
-							}
-						case Message_Type.Client_Connected: // Server said some client connected
-							{
-								if (components[1] != client_unique_name) // If not me
-								{
-									client_unique_names.Add(components[1]);
-									console_log = $"{console_log}\nClient [{components[1]}] just connected.";
-								}
-								break;
-							}
-						case Message_Type.Client_Disconnected: // Server said some client disconnected
-							{
-								client_unique_names.Remove(components[1]);
-								console_log = $"{console_log}\nClient [{components[1]}] just disconnected.";
-								break;
-							}
-						case Message_Type.Client_Online: // Someone just connected and is getting updated on who is already online
-							{
-								if (components[1] == client_unique_name) // For me?
-								{
-									for (int i = 2; i < components.Length; i++)
-									{
-										if (client_unique_names.Contains(components[i]) == false)
-										{
-											client_unique_names.Add(components[i]);
-										}
-									}
-								}
-								break;
-							}
-						case Message_Type.Message_To_All: // A client is sending a message to everybody
-							{
-								if (components[1] == client_unique_name) // Is this my message coming back to me?
-								{
-									break;
-								}
-								_Add_Message(components[1], components[2]);
-								console_log = $"{console_log}\nClient [{components[1]}] sent everyone a message: {components[2]}";
-								break;
-							}
-						case Message_Type.Message_To_Client: // A client is sending a message to another client
-							{
-								if (components[1] == client_unique_name) // Is this my message coming back to me?
-								{
-									break;
-								}
-								if (components[2] == client_unique_name) // Is it for me?
-								{
-									_Add_Message(components[1], components[3]);
-									console_log = $"{console_log}\nClient [{components[1]}] sent me a message: {components[3]}";
-								}
-								break;
-							}
-					}
-				}
-				_Console_Update();
-				if (message_back != "")
-				{
-					client.SendAsync(message_back);
-				}
-			}
-			protected override void OnError(SocketError error)
-			{
-				console_log = $"{console_log}\nClient Error: {error}";
-				_Console_Update();
-			}
-		}
 	}
 	public static class Camera
 	{
@@ -1737,31 +1552,24 @@ public static class Gear
 		/// - The canvas resolution can be received from <see cref="Canvas.Size_Width_Get"/> and <see cref="Canvas.Size_Height_Get"/>.<br></br>
 		/// - The user's screen resolution can be received from <see cref="Hardware.Screen_Size_Width_Get"/> and <see cref="Hardware.Screen_Size_Height_Get"/>.<br></br>
 		/// </summary>
-		public static void Screenshot_Create(string path, string name, bool scaled)
+		public static void Screenshot(string path, string name, bool scaled)
 		{
-			int width = scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : screen_size.X;
-			int height = scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : screen_size.Y;
-			var buffer = new int[width * height];
-			var texture = new Texture2D(game.GraphicsDevice, width, height);
-			var final_path = $"{main_dir}/{path}";
+			var size = new Point(
+				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : canvas_size.X,
+				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : canvas_size.Y);
+			var buffer = new int[size.X * size.Y];
+			var texture = new Texture2D(game.GraphicsDevice, size.X, size.Y);
+			var final_path = $"{main_dir}{path}";
 
-			if (Directory.Exists(final_path) == false)
-			{
-				Directory.CreateDirectory(final_path);
-			}
+			if (Directory.Exists(final_path) == false) Directory.CreateDirectory(final_path);
 
-			if (scaled)
-			{
-				game.GraphicsDevice.GetBackBufferData(buffer);
-			}
-			else
-			{
-				render_target.GetData(0, new Rectangle(0, 0, width, height), buffer, 0, width * height);
-			}
+			if (scaled) game.GraphicsDevice.GetBackBufferData(buffer);
+			else render_target.GetData(0, new Rectangle(0, 0, size.X, size.Y), buffer, 0, size.X * size.Y);
+
 			texture.SetData(buffer);
 			using (Stream stream = File.Create($"{final_path}\\{name}.png"))
 			{
-				texture.SaveAsPng(stream, width, height);
+				texture.SaveAsPng(stream, size.X, size.Y);
 			}
 			sprites[name] = texture;
 		}
@@ -1874,11 +1682,8 @@ public static class Gear
 			return pos;
 		}
 		public static Vector2 Mouse_Cursor_Position_Window_Get() => Mouse_Cursor_Position_World_Get() + new Vector2(Camera.Position_X_Get(), Camera.Position_Y_Get());
-		public static void Mouse_Cursor_Visibility_Activate(bool visible)
-		{
-			game.IsMouseVisible = visible;
-		}
-		public static bool Mouse_Cursor_Is_Visible_Check() => game.IsMouseVisible == false;
+		public static void Mouse_Cursor_Show(bool shown) => game.IsMouseVisible = shown;
+		public static bool Mouse_Cursor_Is_Shown_Check() => game.IsMouseVisible == false;
 		public static bool Mouse_Button_Is_Pressed_Left_Check() => Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 		public static bool Mouse_Button_Is_Pressed_Middle_Check() => Mouse.GetState().MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 		public static bool Mouse_Button_Is_Pressed_Right_Check() => Mouse.GetState().RightButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
@@ -2017,7 +1822,275 @@ public static class Gear
 		public static int Repeats_Get(string name) => name != null && repeats.ContainsKey(name) ? repeats[name] : 0;
 		public static void Restart(string name) => Gate.Entries_Remove(name);
 	}
+	public static class Console
+	{
+		public static void Show()
+		{
+			console_shown = true;
+			AllocConsole();
+			_Console_Update();
+		}
+		public static bool Is_Shown() => console_shown;
+		public static string Input_Get() => System.Console.ReadLine();
+		public static void Log(string message)
+		{
+			console_log = $"{console_log}{message}";
+			_Console_Update();
+		}
+	}
 
+	private class Session : TcpSession
+	{
+		public Session(TcpServer server) : base(server) { }
+
+		protected override void OnConnected()
+		{
+			// Send invite message
+			//string message = "Hello from TCP! Please send a message!";
+			//SendAsync(message);
+		}
+		protected override void OnDisconnected()
+		{
+			var disconnected_client = client_ids[Id.ToString()];
+			client_unique_names.Remove(disconnected_client);
+			server.Multicast($"~{(int)Message_Type.Client_Disconnected}|{disconnected_client}");
+			console_log = $"{console_log}\nClient [{disconnected_client}] just disconnected.";
+			_Console_Update();
+		}
+		protected override void OnReceived(byte[] buffer, long offset, long size)
+		{
+			var raw_messages = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+			var messages = raw_messages.Split('~', StringSplitOptions.RemoveEmptyEntries);
+			var message_back = "";
+			foreach (var message in messages)
+			{
+				var components = message.Split('|');
+				var message_type = (Message_Type)int.Parse(components[0]);
+				switch (message_type)
+				{
+					case Message_Type.Connection: // A client just connected and sent his ID & unique name
+						{
+							var id = components[1];
+							var unique_name = components[2];
+							if (client_unique_names.Contains(unique_name)) // Is the unique name free?
+							{
+								unique_name = ChangeUniqueName(unique_name);
+								message_back = $"~{(int)Message_Type.Unique_Name_Change}|{id}|{unique_name}"; // Send a message back with a free one towards the same ID so the client can recognize it's for him
+							}
+							client_ids[Id.ToString()] = unique_name;
+							client_unique_names.Add(unique_name);
+							message_back = $"{message_back}~{(int)Message_Type.Client_Online}|{unique_name}"; // Sticking another message to update the newcoming client about online clients
+							foreach (var client in client_unique_names)
+							{
+								message_back = $"{message_back}|{client}";
+							}
+							message_back = $"{message_back}~{(int)Message_Type.Client_Connected}|{unique_name}"; // Sticking a third message to update online clients about the newcomer.
+							console_log = $"{console_log}\nClient [{unique_name}] just connected.";
+							_Console_Update();
+							break;
+						}
+					case Message_Type.Message_To_All: // A client wants to send a message to everyone
+						{
+							message_back = $"{message_back}~{message}";
+							break;
+						}
+					case Message_Type.Message_To_Client: // A client wants to send a message to another client
+						{
+							message_back = $"{message_back}~{message}";
+							break;
+						}
+				}
+			}
+			if (message_back != "")
+			{
+				server.Multicast(message_back);
+			}
+		}
+		protected override void OnError(SocketError error)
+		{
+			console_log = $"{console_log}\nServer Error: {error}";
+			_Console_Update();
+		}
+		private string ChangeUniqueName(string unique_name)
+		{
+			var i = 0;
+			while (true)
+			{
+				i++;
+				if (client_unique_names.Contains($"{unique_name}{i}") == false)
+				{
+					break;
+				}
+			}
+			return $"{unique_name}{i}";
+		}
+	}
+	private class Server : TcpServer
+	{
+		public Server(IPAddress address, int port) : base(address, port) { }
+		protected override TcpSession CreateSession() { return new Session(this); }
+		protected override void OnError(SocketError error)
+		{
+			server_is_running = false;
+			console_log = $"{console_log}\nServer Error: {error}";
+			_Console_Update();
+		}
+	}
+	private class Client : TcpClient
+	{
+		private bool stop;
+
+		public Client(string address, int port) : base(address, port) { }
+
+		public void DisconnectAndStop()
+		{
+			stop = true;
+			DisconnectAsync();
+			while (IsConnected) Thread.Yield();
+		}
+		protected override void OnConnected()
+		{
+			client_is_connected = true;
+			client_unique_names.Add(client_unique_name);
+			console_log = $"{console_log}\nConnected as [{client_unique_name}] to {client.Socket.RemoteEndPoint}.";
+			_Console_Update();
+			client.SendAsync($"~{(int)Message_Type.Connection}|{client.Id}|{client_unique_name}");
+		}
+		protected override void OnDisconnected()
+		{
+			if (client_is_connected)
+			{
+				client_is_connected = false;
+				console_log = $"Disconnected.";
+				client_unique_names.Clear();
+			}
+
+			// Wait for a while...
+			Thread.Sleep(1000);
+
+			// Try to connect again
+			console_log = $"{console_log}\nTrying to reconnect...";
+			if (stop == false) ConnectAsync();
+			_Console_Update();
+		}
+		protected override void OnReceived(byte[] buffer, long offset, long size)
+		{
+			var raw_messages = Encoding.UTF8.GetString(buffer, (int)offset, (int)size);
+			var messages = raw_messages.Split('~', StringSplitOptions.RemoveEmptyEntries);
+			var message_back = "";
+			foreach (var message in messages)
+			{
+				var components = message.Split('|');
+				var message_type = (Message_Type)int.Parse(components[0]);
+				switch (message_type)
+				{
+					case Message_Type.Unique_Name_Change: // Server said someone's unique name is taken and sent a free one
+						{
+							if (components[1] == client.Id.ToString()) // Is this for me?
+							{
+								console_log = $"{console_log}\nMy Unique Name [{client_unique_name}] is taken so my new Unique Name is [{components[2]}].";
+								client_unique_names.Remove(client_unique_name);
+								client_unique_name = components[2];
+								client_unique_names.Add(client_unique_name);
+							}
+							break;
+						}
+					case Message_Type.Client_Connected: // Server said some client connected
+						{
+							if (components[1] != client_unique_name) // If not me
+							{
+								client_unique_names.Add(components[1]);
+								console_log = $"{console_log}\nClient [{components[1]}] just connected.";
+							}
+							break;
+						}
+					case Message_Type.Client_Disconnected: // Server said some client disconnected
+						{
+							client_unique_names.Remove(components[1]);
+							console_log = $"{console_log}\nClient [{components[1]}] just disconnected.";
+							break;
+						}
+					case Message_Type.Client_Online: // Someone just connected and is getting updated on who is already online
+						{
+							if (components[1] == client_unique_name) // For me?
+							{
+								for (int i = 2; i < components.Length; i++)
+								{
+									if (client_unique_names.Contains(components[i]) == false)
+									{
+										client_unique_names.Add(components[i]);
+									}
+								}
+							}
+							break;
+						}
+					case Message_Type.Message_To_All: // A client is sending a message to everybody
+						{
+							if (components[1] == client_unique_name) // Is this my message coming back to me?
+							{
+								break;
+							}
+							_Add_Message(components[1], components[2]);
+							console_log = $"{console_log}\nClient [{components[1]}] sent everyone a message: {components[2]}";
+							break;
+						}
+					case Message_Type.Message_To_Client: // A client is sending a message to another client
+						{
+							if (components[1] == client_unique_name) // Is this my message coming back to me?
+							{
+								break;
+							}
+							if (components[2] == client_unique_name) // Is it for me?
+							{
+								_Add_Message(components[1], components[3]);
+								console_log = $"{console_log}\nClient [{components[1]}] sent me a message: {components[3]}";
+							}
+							break;
+						}
+				}
+			}
+			_Console_Update();
+			if (message_back != "")
+			{
+				client.SendAsync(message_back);
+			}
+		}
+		protected override void OnError(SocketError error)
+		{
+			client_is_connected = false;
+			console_log = $"{console_log}\nClient Error: {error}";
+			_Console_Update();
+		}
+	}
+
+	private static string _Clients_Online_Get()
+	{
+		var result = "";
+		for (int i = 0; i < client_unique_names.Count; i++)
+		{
+			var separator = i == client_unique_names.Count - 1 ? "" : ", ";
+			result = $"{result}[{client_unique_names[i]}]{separator}";
+		}
+		return result;
+	}
+	private static void _Add_Message(string from, string message)
+	{
+		if (last_messages.ContainsKey(from) == false)
+		{
+			last_messages[from] = new List<string>();
+		}
+		last_messages[from].Add(message);
+	}
+	private static void _Console_Update()
+	{
+		if (console_shown == false) return;
+		System.Console.Clear();
+		var clients_connected = server_is_running || client_is_connected ? $"Clients Connected ({client_unique_names.Count}): {_Clients_Online_Get()}\n\n" : "";
+		var connect_info = server_is_running || client_is_connected ? connect_to_server_info + "\n\n" : "";
+
+		System.Console.Title = $"Console | {Window.Title_Get()}";
+		System.Console.WriteLine($"{connect_info}{clients_connected}{console_log}");
+	}
 	private static void _Draw_Tile(Texture2D texture, Vector2 position, Point tile_index, int grid_size, Point size, Vector2 origin, Vector2 scale, Color color, float angle, SpriteEffects spriteEffects)
 	{
 		var texture_start_position = new Point(tile_index.X * size.X + (grid_size * tile_index.X), tile_index.Y * size.Y + (grid_size * tile_index.Y));
