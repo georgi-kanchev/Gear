@@ -97,7 +97,7 @@ public static class Gear
 
 	private static DateTime last_tick_time, last_frame_time;
 	private static Color background_color = Color.Black;
-	private static Point canvas_size = new Point(1920, 1080), screen_size = new Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
+	private static Microsoft.Xna.Framework.Point canvas_size = new Microsoft.Xna.Framework.Point(1920, 1080), screen_size = new Microsoft.Xna.Framework.Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
 	private static Vector2 camera_position;
 	#endregion
 
@@ -120,14 +120,14 @@ public static class Gear
 				PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height
 			};
 			Content.RootDirectory = "Content";
-			game = Create();
+			game = Created_Get();
 		}
 
 		/// <summary>
 		/// - Example code setup:<br></br>
 		/// <paramref name="public"/> <paramref name="override"/> <see cref="Program"/> <typeparamref name="Create"/>() => <paramref name="this"/>;<br></br>
 		/// </summary>
-		public abstract Program Create();
+		public abstract Program Created_Get();
 		/// <summary>
 		/// - Has to return a <see cref="string"/>[] containing <paramref name="folder"/>/<paramref name="name"/>.<paramref name="extension"/> for the small amount of content files that need to be loaded before the <typeparamref name="Loading"/> <typeparamref name="Screen"/> so they can be used during <see cref="Each_Loading_Screen_Update"/> while the rest of the content files are being loaded.<br></br>
 		/// - The <paramref name="folder"/> part of the path is skipped if the file is directly inside the Content folder.<br></br><br></br>
@@ -158,11 +158,12 @@ public static class Gear
 			graphics.PreferredBackBufferHeight = screen_size.Y;
 			graphics.HardwareModeSwitch = false;
 			graphics.IsFullScreen = true;
-			game.Window.Position = new Point(0, 0);
+			game.Window.Position = new Microsoft.Xna.Framework.Point(0, 0);
 
 			render_sampler_state = SamplerState.PointWrap;
 
 			render_target = new RenderTarget2D(game.GraphicsDevice, screen_size.X, screen_size.Y, false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+			Gear.Canvas.Pixel_Size_Set(1, 1);
 
 			graphics.ApplyChanges();
 			game.Window.Title = "Gear";
@@ -321,7 +322,7 @@ public static class Gear
 					continue;
 				}
 				var sprite_shown = body.Sprite_Is_Shown_Check();
-				var tile_index = new Point(body.Sprite_Index_Horizontal_Get(), body.Sprite_Index_Vertical_Get());
+				var tile_index = new Microsoft.Xna.Framework.Point(body.Sprite_Index_Horizontal_Get(), body.Sprite_Index_Vertical_Get());
 				var pos = new Vector2(body.Position_X_Get(), body.Position_Y_Get()) + camera_position;
 				var size = new Vector2(body.Size_Width_Get(), body.Size_Height_Get()).ToPoint();
 				var sprite_size = new Vector2(body.Sprite_Width_Get(), body.Sprite_Height_Get());
@@ -344,17 +345,17 @@ public static class Gear
 				var boundaries_color = new Color(body.Boundaries_Red_Get(), body.Boundaries_Green_Get(), body.Boundaries_Blue_Get());
 				if (boundaries_sprite != null && body.Boundaries_Are_Shown_Check())
 				{
-					_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(size.X, 1), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
-					_Draw_Tile(boundaries_sprite, pos - origin, Point.Zero, 0, new Point(1, size.Y), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(boundaries_sprite, pos - origin, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point(size.X, 1), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(boundaries_sprite, pos - origin, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point(1, size.Y), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
 				}
 
 				var angle_color = new Color(body.Angle_Red_Get(), body.Angle_Green_Get(), body.Angle_Blue_Get());
 				if (angle_sprite != null && body.Angle_Is_Shown_Check())
-					_Draw_Tile(angle_sprite, pos, Point.Zero, 0, new Point((int)(size.X * 1.1f), 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(angle_sprite, pos, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point((int)(size.X * 1.1f), 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
 
 				var origin_color = new Color(body.Origin_Red_Get(), body.Origin_Green_Get(), body.Origin_Blue_Get());
 				if (origin_sprite != null && body.Origin_Is_Shown_Check())
-					_Draw_Tile(origin_sprite, pos, Point.Zero, 0, new Point(1, 1), Vector2.Zero, Vector2.One, origin_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(origin_sprite, pos, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point(1, 1), Vector2.Zero, Vector2.One, origin_color, body.Angle_Get(), SpriteEffects.None);
 
 				boundaries_sprite.Dispose();
 				angle_sprite.Dispose();
@@ -610,7 +611,7 @@ public static class Gear
 			height = (int)Number.Limited_Get(height, 1, screen_size.Y);
 			pixel_width = width;
 			pixel_height = height;
-			canvas_size = screen_size / new Point(width, height);
+			canvas_size = screen_size / new Microsoft.Xna.Framework.Point(width, height);
 			var gd = game.GraphicsDevice;
 			render_target = new RenderTarget2D(gd, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight, false, gd.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
 			graphics.ApplyChanges();
@@ -741,7 +742,7 @@ public static class Gear
 		}
 
 		public static List<Body> Bodies_All_Get() => new List<Body>(bodies_all);
-		public static Body Pick_By_Name(string unique_name)
+		public static Body Pick_By_Name_Get(string unique_name)
 		{
 			if (unique_name == null || body_unique_names.ContainsKey(unique_name) == false)
 			{
@@ -749,26 +750,12 @@ public static class Gear
 			}
 			return body_unique_names[unique_name];
 		}
-		public static Body Create() => new Body();
-
-		public static List<Body> Pick_By_Number(float number, Pick_Number_Comparison pick_number_comparison)
-		{
-			var result = new List<Body>();
-			switch (pick_number_comparison)
-			{
-				case Pick_Number_Comparison.Lowest: break;
-				case Pick_Number_Comparison.Less: break;
-				case Pick_Number_Comparison.Equals: break;
-				case Pick_Number_Comparison.Greater: break;
-				case Pick_Number_Comparison.Highest: break;
-			}
-			return result;
-		}
+		public static Body Create_Get() => new Body();
 
 		[JsonProperty]
 		private Color sprite_color, boundaries_color, origin_color, angle_color;
 		[JsonProperty]
-		private Point sprite_index, sprite_size;
+		private Microsoft.Xna.Framework.Point sprite_index, sprite_size;
 		[JsonProperty]
 		private Vector2 position, sprite_origin, size;
 		[JsonProperty]
@@ -880,11 +867,11 @@ public static class Gear
 			}
 			sprite_name = name;
 			size = new Vector2(sprites[name].Width, sprites[name].Height);
-			sprite_size = new Point(width, height);
+			sprite_size = new Microsoft.Xna.Framework.Point(width, height);
 			sprite_color = new Color(red, green, blue, opacity);
 			sprite_origin = new Vector2(origin_x, origin_y);
 			sprite_grid_size = grid_size;
-			sprite_index = new Point(index_h, index_v);
+			sprite_index = new Microsoft.Xna.Framework.Point(index_h, index_v);
 			sprite_shown = show;
 			render = true;
 		}
@@ -944,8 +931,8 @@ public static class Gear
 				lower_bound = upper_bound;
 				upper_bound = swap;
 			}
-			var lowerInt = Convert.ToInt32(lower_bound * Math.Pow(10, _Count_After_Double_Point_Get(lower_bound, precision)));
-			var upperInt = Convert.ToInt32(upper_bound * Math.Pow(10, _Count_After_Double_Point_Get(upper_bound, precision)));
+			var lowerInt = Convert.ToInt32(lower_bound * Math.Pow(10, Precision_Get(lower_bound)));
+			var upperInt = Convert.ToInt32(upper_bound * Math.Pow(10, Precision_Get(upper_bound)));
 			var randInt = new Random(Guid.NewGuid().GetHashCode()).Next(lowerInt, upperInt + 1);
 
 			return randInt / (float)Math.Pow(10, precision);
@@ -953,7 +940,7 @@ public static class Gear
 		public static float Rounded_Get(float number, int precision, Round_Type number_round_type)
 		{
 			precision = (int)Limited_Get(precision, 0, 5);
-			var a = (float)Math.Pow(10, _Count_After_Double_Point_Get(number, precision));
+			var a = (float)Math.Pow(10, Precision_Get(number));
 			var b = (float)Math.Pow(10, precision);
 			var c = number * a;
 			switch (number_round_type)
@@ -1038,30 +1025,12 @@ public static class Gear
 			var n = Randomized_Get(1, 100, 0);
 			return n <= percent;
 		}
-
-		private static int _Count_After_Double_Point_Get(float number, int precision)
+		public static int Precision_Get(float number)
 		{
-			precision = (int)Number.Limited_Get(precision, 0, 5);
-			var formatting = new List<string>()
-			{
-				"0", $"{number:F1}", $"{number:F2}", $"{number:F3}", $"{number:F4}", $"{number:F5}"
-			};
-			var numberStr = formatting[precision];
-			var count = 0;
-			var counting = false;
-
-			for (int i = 0; i < numberStr.Length; i++)
-			{
-				if (counting)
-				{
-					count++;
-				}
-				if (numberStr[i] == '.')
-				{
-					counting = true;
-				}
-			}
-			return count;
+			var result = 0;
+			var number_str = number.ToString();
+			if (number_str.Contains('.')) result = number.ToString().Split('.')[1].Length;
+			return result;
 		}
 	}
 	/// <summary>
@@ -1554,7 +1523,7 @@ public static class Gear
 		/// </summary>
 		public static void Screenshot(string path, string name, bool scaled)
 		{
-			var size = new Point(
+			var size = new Microsoft.Xna.Framework.Point(
 				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : canvas_size.X,
 				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : canvas_size.Y);
 			var buffer = new int[size.X * size.Y];
@@ -1839,6 +1808,90 @@ public static class Gear
 		}
 	}
 
+	private class Pair
+	{
+		private object first;
+		private object second;
+
+		public Pair() { }
+		public void Set(object first, object second)
+		{
+			this.first = first;
+			this.second = second;
+		}
+		public T First_Get<T>() => (T)first;
+		public T Second_Get<T>() => (T)second;
+		public override string ToString() => $"pair[first:{first}][second:{second}]";
+	}
+
+	public class Pair_Texts
+	{
+		private Pair pair = new Pair();
+
+		public static Pair_Texts Created_Get() => new Pair_Texts();
+		public Pair_Texts() { }
+		public void Set(string first, string second) => pair.Set(first, second);
+		public string First_Get() => pair.First_Get<string>();
+		public string Second_Get() => pair.Second_Get<string>();
+		public override string ToString() => $"pair_texts[first:{First_Get()}][second:{Second_Get()}]";
+	}
+
+	public class Pair_Numbers
+	{
+		private Pair pair = new Pair();
+
+		public static Pair_Numbers Created_Get(float first = 0, float second = 0) => new Pair_Numbers(first, second);
+		public Pair_Numbers(float first = 0, float second = 0) => pair.Set(first, second);
+		public void Set(float first, float second) => pair.Set(first, second);
+		public float First_Get() => pair.First_Get<float>();
+		public float Second_Get() => pair.Second_Get<float>(); 
+		public override string ToString() => $"pair_numbers[first:{First_Get()}][second:{Second_Get()}]";
+	}
+	public class Point
+	{
+		private Pair_Numbers point = new Pair_Numbers();
+
+		public static Point Created_Get(float x = 0, float y = 0) => new Point(x, y);
+		public Point(float x = 0, float y = 0) => point.Set(x, y);
+		public virtual void Set(float x, float y) => point.Set(x, y);
+		public float X_Get() => point.First_Get();
+		public float Y_Get() => point.Second_Get();
+		public override string ToString() => $"point[x:{X_Get()}][y:{Y_Get()}]";
+	}
+	public class Size
+	{
+		private Pair_Numbers size = new Pair_Numbers();
+
+		public static Size Created_Get(float width = 1, float height = 1) => new Size();
+		public Size(float width = 1, float height = 1) => size.Set(width, height);
+		public virtual void Set(float width, float height) => size.Set(width, height);
+		public float Width_Get() => size.First_Get();
+		public float Height_Get() => size.Second_Get();
+		public override string ToString() => $"size[width:{Width_Get()}][height:{Height_Get()}]";
+	}
+
+	public class Point_Grid
+	{
+		private Point original_point = new Point();
+		private Point point = new Point();
+		private Size grid_size = new Size();
+
+		public static Point_Grid Created_Get(float x = 0, float y = 0, float grid_width = 1, float grid_height = 1) => new Point_Grid(x, y, grid_width, grid_height);
+		public Point_Grid(float x = 0, float y = 0, float grid_width = 1, float grid_height = 1) => Set(new Point(x, y), new Size(grid_width, grid_height));
+		public void Set(Point point, Size grid_size)
+		{
+			this.grid_size = grid_size;
+			original_point = point;
+			var x = grid_size.Width_Get() * (int)Math.Round((float)point.X_Get() / grid_size.Width_Get());
+			var y = grid_size.Height_Get() * (int)Math.Round((float)point.Y_Get() / grid_size.Height_Get());
+			this.point.Set(x, y);
+		}
+		public Point Original_Get() => original_point;
+		public Point Get() => point;
+		public Size Size_Get() => grid_size;
+		public override string ToString() => $"point_grid(original_{original_point})(grid_{point})(grid_{grid_size})";
+	}
+
 	private class Session : TcpSession
 	{
 		public Session(TcpServer server) : base(server) { }
@@ -2091,9 +2144,9 @@ public static class Gear
 		System.Console.Title = $"Console | {Window.Title_Get()}";
 		System.Console.WriteLine($"{connect_info}{clients_connected}{console_log}");
 	}
-	private static void _Draw_Tile(Texture2D texture, Vector2 position, Point tile_index, int grid_size, Point size, Vector2 origin, Vector2 scale, Color color, float angle, SpriteEffects spriteEffects)
+	private static void _Draw_Tile(Texture2D texture, Vector2 position, Microsoft.Xna.Framework.Point tile_index, int grid_size, Microsoft.Xna.Framework.Point size, Vector2 origin, Vector2 scale, Color color, float angle, SpriteEffects spriteEffects)
 	{
-		var texture_start_position = new Point(tile_index.X * size.X + (grid_size * tile_index.X), tile_index.Y * size.Y + (grid_size * tile_index.Y));
+		var texture_start_position = new Microsoft.Xna.Framework.Point(tile_index.X * size.X + (grid_size * tile_index.X), tile_index.Y * size.Y + (grid_size * tile_index.Y));
 		sprite_batch.Draw(texture, position, new Rectangle(texture_start_position.X, texture_start_position.Y, size.X, size.Y), color, (float)Math.PI / 180 * angle, origin, scale, spriteEffects, 0);
 	}
 	private static bool _Rectangle_Contains_Point(Vector2 rectA, Vector2 rectB, Vector2 rectC, Vector2 point)
