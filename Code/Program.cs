@@ -18,12 +18,17 @@
 			body.Boundaries_Show(true, color_red: 0, color_green: 0, color_blue: 255);
 			body.Angle_Show(true, color_red: 0, color_green: 255, color_blue: 0);
 			body.Origin_Show(true, color_red: 255, color_green: 255, color_blue: 0);
+			var pair = new Gear.Pair_Numbers(69, 420);
+			var pair2 = new Gear.Pair_Numbers(555, 666);
+			pair = pair2;
+			pair2.Set(2, 3);
+			Gear.AI.Test();
 		}
 		var f = Gear.Body.Pick_By_Name_Get("f");
+		var mouse_pos = Gear.Input.Mouse_Cursor_Position_World_Get();
 
 
-
-		var gp = Gear.Point_Grid.Created_Get(x: 666, y: 420, grid_width: 100, grid_height: 100);
+		var gp = Gear.Point_Grid.Created_Get(x: mouse_pos.X, y: mouse_pos.Y, grid_width: 0.1f, grid_height: 0.5f);
 		f.Position_Set(gp.Get().X_Get(), gp.Get().Y_Get());
 		Gear.Text.Display("font", gp, overwrite: true);
 		//Gear.Network.Clinet_Message_Send_To_All(Gear.Network.Console_Read());

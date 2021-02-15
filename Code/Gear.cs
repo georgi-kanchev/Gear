@@ -19,6 +19,7 @@ using System.Net;
 using System.Threading;
 using Mono.Nat;
 using System.Threading.Tasks;
+using Tinn;
 
 public static class Gear
 {
@@ -1514,6 +1515,49 @@ public static class Gear
 		public static string Console_Read() => System.Console.ReadLine();
 		private static void DeviceFound(object sender, DeviceEventArgs args) => args.Device.CreatePortMap(new Mapping(Protocol.Tcp, server_port, server_port));
 	}
+	public static class AI
+	{
+		public static void Test()
+		{
+			var input = new float[][]
+			{
+				new []{ 1f, 1f },
+				new []{ 1f, 0f },
+				new []{ 0f, 0f },
+			};
+			var expected = new float[][]
+			{
+				new []{ 1f },
+				new []{ 1f },
+				new []{ 0f },
+			};
+
+			var nn = new TinyNeuralNetwork(input[0].Length, input.Length, expected[0].Length);
+			var learning_rate = 1f;
+			for (int j = 0; j < 1000; j++)
+			{
+				for (int i = 0; i < input.Length; i++)
+				{
+					nn.Train(input[i], expected[i], learning_rate);
+					learning_rate *= 0.99f;
+				}
+				Shuffle(input, expected);
+			}
+			var output = nn.Predict(new[] { 1f, 0f });
+		}
+
+		private static void Shuffle(float[][] input, float[][] output)
+		{
+			var random = new Random(0);
+
+			for (int i = 0; i < input.Length; i++)
+			{
+				var j = random.Next(input.Length);
+				(input[i], input[j]) = (input[j], input[i]);
+				(output[i], output[j]) = (output[j], output[i]);
+			}
+		}
+	}
 	public static class Camera
 	{
 		/// <summary>
@@ -1844,8 +1888,13 @@ public static class Gear
 		public Pair_Numbers(float first = 0, float second = 0) => pair.Set(first, second);
 		public void Set(float first, float second) => pair.Set(first, second);
 		public float First_Get() => pair.First_Get<float>();
-		public float Second_Get() => pair.Second_Get<float>(); 
+		public float Second_Get() => pair.Second_Get<float>();
 		public override string ToString() => $"pair_numbers[first:{First_Get()}][second:{Second_Get()}]";
+
+		public static Pair_Numbers operator +(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() + b.First_Get(), a.Second_Get() + b.Second_Get());
+		public static Pair_Numbers operator -(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() - b.First_Get(), a.Second_Get() - b.Second_Get());
+		public static Pair_Numbers operator *(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() * b.First_Get(), a.Second_Get() * b.Second_Get());
+		public static Pair_Numbers operator /(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() / b.First_Get(), a.Second_Get() / b.Second_Get());
 	}
 	public class Point
 	{
@@ -1880,10 +1929,13 @@ public static class Gear
 		public Point_Grid(float x = 0, float y = 0, float grid_width = 1, float grid_height = 1) => Set(new Point(x, y), new Size(grid_width, grid_height));
 		public void Set(Point point, Size grid_size)
 		{
+			grid_size.Set(Number.Limited_Get(grid_size.Width_Get(), 1, screen_size.X), Number.Limited_Get(grid_size.Height_Get(), 1, screen_size.Y));
 			this.grid_size = grid_size;
 			original_point = point;
-			var x = grid_size.Width_Get() * (int)Math.Round((float)point.X_Get() / grid_size.Width_Get());
-			var y = grid_size.Height_Get() * (int)Math.Round((float)point.Y_Get() / grid_size.Height_Get());
+			var x = original_point.X_Get();
+			var y = original_point.Y_Get();
+			if (grid_size.Width_Get() > 0) x = grid_size.Width_Get() * (float)Math.Round((float)point.X_Get() / grid_size.Width_Get());
+			if (grid_size.Height_Get() > 0) y = grid_size.Height_Get() * (float)Math.Round((float)point.Y_Get() / grid_size.Height_Get());
 			this.point.Set(x, y);
 		}
 		public Point Original_Get() => original_point;
