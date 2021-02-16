@@ -19,7 +19,6 @@ using System.Net;
 using System.Threading;
 using Mono.Nat;
 using System.Threading.Tasks;
-using Tinn;
 
 public static class Gear
 {
@@ -91,15 +90,15 @@ public static class Gear
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
 	private static List<string> client_unique_names = new List<string>();
 
-	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, pixel_width, pixel_height, server_port = 1234;
+	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, server_port = 1234;
 	private static bool text_display_draw, loading = true, pause_unfocus, render, sleep_prevented, console_shown, client_is_connected, server_is_running;
 	private static float text_display_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
 	private static string text_display_font, text_display_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, console_log, connect_to_server_info, client_unique_name;
 
 	private static DateTime last_tick_time, last_frame_time;
-	private static Color background_color = Color.Black;
-	private static Microsoft.Xna.Framework.Point canvas_size = new Microsoft.Xna.Framework.Point(1920, 1080), screen_size = new Microsoft.Xna.Framework.Point(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height);
-	private static Vector2 camera_position;
+	private static Color background_color = new Color(0, 0, 0);
+	private static Size canvas_size = new Size(1920, 1080), screen_size = new Size(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height), pixel_size;
+	private static Point camera_position;
 	#endregion
 
 	public abstract class Instance : Game
@@ -155,16 +154,16 @@ public static class Gear
 		{
 			sprite_batch = new SpriteBatch(game.GraphicsDevice);
 
-			graphics.PreferredBackBufferWidth = screen_size.X;
-			graphics.PreferredBackBufferHeight = screen_size.Y;
+			graphics.PreferredBackBufferWidth = (int)screen_size.Width_Get();
+			graphics.PreferredBackBufferHeight = (int)screen_size.Height_Get();
 			graphics.HardwareModeSwitch = false;
 			graphics.IsFullScreen = true;
 			game.Window.Position = new Microsoft.Xna.Framework.Point(0, 0);
 
 			render_sampler_state = SamplerState.PointWrap;
 
-			render_target = new RenderTarget2D(game.GraphicsDevice, screen_size.X, screen_size.Y, false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-			Gear.Canvas.Pixel_Size_Set(1, 1);
+			render_target = new RenderTarget2D(game.GraphicsDevice, (int)screen_size.Width_Get(), (int)screen_size.Height_Get(), false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+			Canvas.Pixel_Size_Set(1, 1);
 
 			graphics.ApplyChanges();
 			game.Window.Title = "Gear";
@@ -270,7 +269,7 @@ public static class Gear
 			GraphicsDevice.SetRenderTarget(render_target);
 			GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
-			GraphicsDevice.Clear(background_color);
+			GraphicsDevice.Clear(new Microsoft.Xna.Framework.Color((int)background_color.Red_Get(), (int)background_color.Green_Get(), (int)background_color.Blue_Get(), 255));
 
 			// draw =======================================================
 			Advance_Frame_Time();
@@ -279,8 +278,8 @@ public static class Gear
 			// draw =======================================================
 
 			GraphicsDevice.SetRenderTarget(null);
-			var scale = new Vector2(pixel_width, pixel_height);
-			sprite_batch.Draw(render_target, Vector2.Zero, null, Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
+			var scale = new Vector2(pixel_size.Width_Get(), pixel_size.Height_Get());
+			sprite_batch.Draw(render_target, Vector2.Zero, null, Microsoft.Xna.Framework.Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
 			render = false;
 			sprite_batch.End();
 			base.Draw(gameTime);
@@ -323,40 +322,38 @@ public static class Gear
 					continue;
 				}
 				var sprite_shown = body.Sprite_Is_Shown_Check();
-				var tile_index = new Microsoft.Xna.Framework.Point(body.Sprite_Index_Horizontal_Get(), body.Sprite_Index_Vertical_Get());
-				var pos = new Vector2(body.Position_X_Get(), body.Position_Y_Get()) + camera_position;
-				var size = new Vector2(body.Size_Width_Get(), body.Size_Height_Get()).ToPoint();
-				var sprite_size = new Vector2(body.Sprite_Width_Get(), body.Sprite_Height_Get());
-				var scale = size.ToVector2() / sprite_size;
-				var origin = new Vector2(body.Sprite_Origin_X_Get(), body.Sprite_Origin_Y_Get());
-				var color = new Color(body.Sprite_Red_Get(), body.Sprite_Green_Get(), body.Sprite_Blue_Get(), body.Sprite_Opacity_Get());
+				var tile_index = body.Sprite_Grid_Indexes_Get();
+				var pos = body.Position_Get() + camera_position;
+				var size = body.Size_Get();
+				var sprite_size = body.Sprite_Size_Get();
+				var scale = size / sprite_size;
+				var origin = body.Sprite_Origin_Get();
+				var color = body.Sprite_Color_Get();
 				var boundaries_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var origin_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var angle_sprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
-				var data = new Color[1] { Color.White };
+				var data = new Microsoft.Xna.Framework.Color[1] { Microsoft.Xna.Framework.Color.White };
 				boundaries_sprite.SetData(data);
 				origin_sprite.SetData(data);
 				angle_sprite.SetData(data);
 
 				if (sprite_shown)
-				{
-					_Draw_Tile(sprites[sprite], pos - origin, tile_index, body.Sprite_Grid_Size_Get(), (size.ToVector2() / scale).ToPoint(), Vector2.Zero, scale, color, body.Angle_Get(), SpriteEffects.None);
-				}
+					_Draw_Tile(sprites[sprite], pos - origin, tile_index, body.Sprite_Grid_Size_Get(), size / scale, new Point(), scale, color, body.Angle_Get(), SpriteEffects.None);
 
-				var boundaries_color = new Color(body.Boundaries_Red_Get(), body.Boundaries_Green_Get(), body.Boundaries_Blue_Get());
+				var boundaries_color = body.Boundaries_Color_Get();
 				if (boundaries_sprite != null && body.Boundaries_Are_Shown_Check())
 				{
-					_Draw_Tile(boundaries_sprite, pos - origin, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point(size.X, 1), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
-					_Draw_Tile(boundaries_sprite, pos - origin, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point(1, size.Y), Vector2.Zero, Vector2.One, boundaries_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(boundaries_sprite, pos - origin, new Point(), 0, new Size(size.Width_Get(), 1), new Point(), new Size(), boundaries_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(boundaries_sprite, pos - origin, new Point(), 0, new Size(1, size.Height_Get()), new Point(), new Size(), boundaries_color, body.Angle_Get(), SpriteEffects.None);
 				}
 
-				var angle_color = new Color(body.Angle_Red_Get(), body.Angle_Green_Get(), body.Angle_Blue_Get());
+				var angle_color = body.Angle_Color_Get();
 				if (angle_sprite != null && body.Angle_Is_Shown_Check())
-					_Draw_Tile(angle_sprite, pos, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point((int)(size.X * 1.1f), 1), Vector2.Zero, Vector2.One, angle_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(angle_sprite, pos, new Point(), 0, new Size(size.Width_Get() * 1.1f, 1), new Point(), new Size(1, 1), angle_color, body.Angle_Get(), SpriteEffects.None);
 
-				var origin_color = new Color(body.Origin_Red_Get(), body.Origin_Green_Get(), body.Origin_Blue_Get());
+				var origin_color = body.Origin_Color_Get();
 				if (origin_sprite != null && body.Origin_Is_Shown_Check())
-					_Draw_Tile(origin_sprite, pos, Microsoft.Xna.Framework.Point.Zero, 0, new Microsoft.Xna.Framework.Point(1, 1), Vector2.Zero, Vector2.One, origin_color, body.Angle_Get(), SpriteEffects.None);
+					_Draw_Tile(origin_sprite, pos, new Point(), 0, new Size(1, 1), new Point(), new Size(), origin_color, body.Angle_Get(), SpriteEffects.None);
 
 				boundaries_sprite.Dispose();
 				angle_sprite.Dispose();
@@ -368,8 +365,8 @@ public static class Gear
 			if (text_display_font != null && text_display_draw && fonts.ContainsKey(text_display_font) && string.IsNullOrWhiteSpace(text_display_message) == false)
 			{
 				var font_size = fonts[text_display_font].MeasureString("a") / 18 * text_display_scale;
-				sprite_batch.DrawString(fonts[text_display_font], text_display_message, new Vector2(font_size.Y, font_size.Y), Color.Black, 0, Vector2.Zero, text_display_scale, SpriteEffects.None, 0);
-				sprite_batch.DrawString(fonts[text_display_font], text_display_message, new Vector2(0, 0), Color.White, 0, Vector2.Zero, text_display_scale, SpriteEffects.None, 0);
+				sprite_batch.DrawString(fonts[text_display_font], text_display_message, new Vector2(font_size.Y, font_size.Y), Microsoft.Xna.Framework.Color.Black, 0, Vector2.Zero, text_display_scale, SpriteEffects.None, 0);
+				sprite_batch.DrawString(fonts[text_display_font], text_display_message, new Vector2(0, 0), Microsoft.Xna.Framework.Color.White, 0, Vector2.Zero, text_display_scale, SpriteEffects.None, 0);
 			}
 		}
 
@@ -608,39 +605,16 @@ public static class Gear
 		/// </summary>
 		public static void Pixel_Size_Set(int width, int height)
 		{
-			width = (int)Number.Limited_Get(width, 1, screen_size.X);
-			height = (int)Number.Limited_Get(height, 1, screen_size.Y);
-			pixel_width = width;
-			pixel_height = height;
-			canvas_size = screen_size / new Microsoft.Xna.Framework.Point(width, height);
+			width = (int)Number.Limited_Get(width, 1, screen_size.Width_Get());
+			height = (int)Number.Limited_Get(height, 1, (int)screen_size.Height_Get());
+			pixel_size = new Size(width, height);
+			canvas_size = screen_size / new Size(width, height);
 			var gd = game.GraphicsDevice;
 			render_target = new RenderTarget2D(gd, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight, false, gd.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
 			graphics.ApplyChanges();
 		}
-		/// <summary>
-		/// - Gets the current pixel width according to the user's monitor resolution and returns it.<br></br><br></br>
-		/// - The height of the current pixel can be received from <see cref="Pixel_Size_Height_Get"/>.<br></br><br></br>
-		/// - Pixel size can be changed through <see cref="Pixel_Size_Set"/>.
-		/// </summary>
-		public static int Pixel_Size_Width_Get() => pixel_width;
-		/// <summary>
-		/// - Gets the current pixel height according to the user's monitor resolution and returns it.<br></br><br></br>
-		/// - The width of the current pixel can be received from <see cref="Pixel_Size_Width_Get"/>.<br></br><br></br>
-		/// - Pixel size can be changed through <see cref="Pixel_Size_Set"/>.
-		/// </summary>
-		public static int Pixel_Size_Height_Get() => pixel_height;
-		/// <summary>
-		/// - Gets the current width of the canvas in pixels. <br></br><br></br>
-		/// - This value can be changed through <see cref="Pixel_Size_Set"/>.<br></br><br></br>
-		/// - The height of the canvas size can be checked with <see cref="Size_Height_Get"/>.
-		/// </summary>
-		public static int Size_Width_Get() => canvas_size.X;
-		/// <summary>
-		/// - Gets the current height of the canvas in pixels. <br></br><br></br>
-		/// - This value can be changed through <see cref="Pixel_Size_Set"/>.<br></br><br></br>
-		/// - The width of the canvas size can be checked with <see cref="Size_Width_Get"/>.
-		/// </summary>
-		public static int Size_Height_Get() => canvas_size.Y;
+		public static Size Pixel_Size_Get() => pixel_size;
+		public static Size Size_Get() => canvas_size;
 		/// <summary>
 		/// - Sets the background color's hues to <paramref name="red"/>, <paramref name="green"/>, <paramref name="blue"/>.<br></br><br></br>
 		/// - Those values must be between 0 and 255 inclusively.<br></br><br></br>
@@ -650,30 +624,7 @@ public static class Gear
 		/// <see cref="Background_Color_Blue_Get"/><br></br>
 		/// </summary>
 		public static void Background_Color_Set(byte red, byte green, byte blue) => background_color = new Color(red, green, blue);
-		/// <summary>
-		/// - Gets the red hue in the background color and returns it.<br></br><br></br>
-		/// - The background color can be changed through <see cref="Background_Color_Set"/>.<br></br><br></br>
-		/// - The other two hues can be checked with <br></br>
-		/// <see cref="Background_Color_Green_Get"/><br></br>
-		/// <see cref="Background_Color_Blue_Get"/>
-		/// </summary>
-		public static byte Background_Color_Red_Get() => background_color.R;
-		/// <summary>
-		/// - Gets the green hue in the background color and returns it.<br></br><br></br>
-		/// - The background color can be changed through <see cref="Background_Color_Set"/>.<br></br><br></br>
-		/// - The other two hues can be checked with <br></br>
-		/// <see cref="Background_Color_Red_Get"/><br></br>
-		/// <see cref="Background_Color_Blue_Get"/>
-		/// </summary>
-		public static byte Background_Color_Green_Get() => background_color.G;
-		/// <summary>
-		/// - Gets the blue hue in the background color and returns it.<br></br><br></br>
-		/// - The background color can be changed through <see cref="Background_Color_Set"/>.<br></br><br></br>
-		/// - The other two hues can be checked with <br></br>
-		/// <see cref="Background_Color_Red_Get"/><br></br>
-		/// <see cref="Background_Color_Green_Get"/>
-		/// </summary>
-		public static byte Background_Color_Blue_Get() => background_color.B;
+		public static Color Background_Color_Get() => background_color;
 	}
 	public static class Window
 	{
@@ -756,9 +707,9 @@ public static class Gear
 		[JsonProperty]
 		private Color sprite_color, boundaries_color, origin_color, angle_color;
 		[JsonProperty]
-		private Microsoft.Xna.Framework.Point sprite_index, sprite_size;
+		private Size size, sprite_size;
 		[JsonProperty]
-		private Vector2 position, sprite_origin, size;
+		private Point position, sprite_origin, sprite_index;
 		[JsonProperty]
 		private int uid, sprite_grid_size;
 		[JsonProperty]
@@ -795,14 +746,12 @@ public static class Gear
 			body_unique_names.Add(unique_name, this);
 		}
 
-		public float Position_X_Get() => position.X;
-		public float Position_Y_Get() => position.Y;
 		public void Position_Set(float x, float y)
 		{
-			position.X = x;
-			position.Y = y;
+			position.Set(x, y);
 			render = true;
 		}
+		public Point Position_Get() => position;
 
 		public void Angle_Set(float angle)
 		{
@@ -813,51 +762,40 @@ public static class Gear
 
 		public void Size_Set(float width, float height)
 		{
-			size.X = width;
-			size.Y = height;
+			size.Set(width, height);
 			render = true;
 		}
-		public float Size_Width_Get() => size.X;
-		public float Size_Height_Get() => size.Y;
+		public Size Size_Get() => size;
 
 		#region Display Angle
 		public void Angle_Show(bool show = true, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
 		{
 			angle_shown = show;
-			angle_color = new Color(color_red, color_green, color_blue, opacity);
+			angle_color.Set(color_red, color_green, color_blue, opacity);
 			render = true;
 		}
 		public bool Angle_Is_Shown_Check() => angle_shown;
-		public int Angle_Red_Get() => angle_color.R;
-		public int Angle_Green_Get() => angle_color.G;
-		public int Angle_Blue_Get() => angle_color.B;
-		public int Angle_Opacity_Get() => angle_color.A;
+		public Color Angle_Color_Get() => angle_color;
 		#endregion
 		#region Display Origin
 		public void Origin_Show(bool show = true, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
 		{
 			origin_shown = show;
-			origin_color = new Color(color_red, color_green, color_blue, opacity);
+			origin_color.Set(color_red, color_green, color_blue, opacity);
 			render = true;
 		}
 		public bool Origin_Is_Shown_Check() => origin_shown;
-		public int Origin_Red_Get() => origin_color.R;
-		public int Origin_Green_Get() => origin_color.G;
-		public int Origin_Blue_Get() => origin_color.B;
-		public int Origin_Opacity_Get() => origin_color.A;
+		public Color Origin_Color_Get() => origin_color;
 		#endregion
 		#region Display Boundaries
 		public void Boundaries_Show(bool show = true, byte color_red = 255, byte color_green = 255, byte color_blue = 255, byte opacity = 255)
 		{
 			boundaries_shown = show;
-			boundaries_color = new Color(color_red, color_green, color_blue, opacity);
+			boundaries_color.Set(color_red, color_green, color_blue, opacity);
 			render = true;
 		}
 		public bool Boundaries_Are_Shown_Check() => boundaries_shown;
-		public int Boundaries_Red_Get() => boundaries_color.R;
-		public int Boundaries_Green_Get() => boundaries_color.G;
-		public int Boundaries_Blue_Get() => boundaries_color.B;
-		public int Boundaries_Opacity_Get() => boundaries_color.A;
+		public Color Boundaries_Color_Get() => boundaries_color;
 		#endregion
 		#region Display Sprite
 		public void Sprite_Set(string name, bool show = true, int width = 64, int height = 64, byte red = 255, byte green = 255, byte blue = 255, byte opacity = 255, int origin_x = 0, int origin_y = 0, int grid_size = 0, int index_h = 0, int index_v = 0)
@@ -867,12 +805,12 @@ public static class Gear
 				throw new ArgumentException($"No sprite with name '{name}' was found. In order to load a sprite:\n1. Add it to the 'Content' folder.\n2. Add it to the Solution Explorer's 'Content' folder.\n3. In its properties select Copy to Output Directory: 'Copy Always'.\n4. Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n5. Add it to the Content and build/rebuild it.");
 			}
 			sprite_name = name;
-			size = new Vector2(sprites[name].Width, sprites[name].Height);
-			sprite_size = new Microsoft.Xna.Framework.Point(width, height);
+			size = new Size(sprites[name].Width, sprites[name].Height);
+			sprite_size = new Size(width, height);
 			sprite_color = new Color(red, green, blue, opacity);
-			sprite_origin = new Vector2(origin_x, origin_y);
+			sprite_origin = new Point(origin_x, origin_y);
 			sprite_grid_size = grid_size;
-			sprite_index = new Microsoft.Xna.Framework.Point(index_h, index_v);
+			sprite_index = new Point(index_h, index_v);
 			sprite_shown = show;
 			render = true;
 		}
@@ -881,20 +819,10 @@ public static class Gear
 		public bool Sprite_Is_Shown_Check() => sprite_shown;
 
 		public int Sprite_Grid_Size_Get() => sprite_grid_size;
-
-		public int Sprite_Index_Horizontal_Get() => sprite_index.X;
-		public int Sprite_Index_Vertical_Get() => sprite_index.Y;
-
-		public float Sprite_Origin_X_Get() => sprite_origin.X;
-		public float Sprite_Origin_Y_Get() => sprite_origin.Y;
-
-		public float Sprite_Width_Get() => sprite_size.X;
-		public float Sprite_Height_Get() => sprite_size.Y;
-
-		public int Sprite_Red_Get() => sprite_color.R;
-		public int Sprite_Green_Get() => sprite_color.G;
-		public int Sprite_Blue_Get() => sprite_color.B;
-		public int Sprite_Opacity_Get() => sprite_color.A;
+		public Point Sprite_Grid_Indexes_Get() => sprite_index;
+		public Point Sprite_Origin_Get() => sprite_origin;
+		public Size Sprite_Size_Get() => sprite_size;
+		public Color Sprite_Color_Get() => sprite_color;
 		#endregion
 	}
 	/// <summary>
@@ -915,14 +843,8 @@ public static class Gear
 			Days_To_Minutes, Days_To_Hours, Days_To_Weeks,
 			Weeks_To_Hours, Weeks_To_Days
 		}
-		public static float Unsigned_Get(float number)
-		{
-			return Math.Abs(number);
-		}
-		public static float Averaged_Get(float number_a, float number_b)
-		{
-			return (number_a + number_b) / 2;
-		}
+		public static float Unsigned_Get(float number) => Math.Abs(number);
+		public static float Averaged_Get(float number_a, float number_b) => (number_a + number_b) / 2;
 		public static float Randomized_Get(float lower_bound, float upper_bound, int precision)
 		{
 			precision = (int)Limited_Get(precision, 0, 5);
@@ -980,10 +902,7 @@ public static class Gear
 
 			return result.X;
 		}
-		public static float Changed_Get(float number, float numbers_per_second)
-		{
-			return number + (numbers_per_second * ticks_delta_time);
-		}
+		public static float Changed_Get(float number, float numbers_per_second) => number + (numbers_per_second * ticks_delta_time);
 		public static float Towards_Target_Get(float number, float target_number, float numbers_per_second)
 		{
 			if (number <= target_number && target_number * ticks_delta_time < 0)
@@ -1203,10 +1122,10 @@ public static class Gear
 
 			var sample_size = fonts[text_display_font].MeasureString("a");
 			var sample_size_scaled = sample_size * text_display_scale;
-			var visible_lines = (int)(canvas_size.Y / sample_size_scaled.Y);
+			var visible_lines = (int)(canvas_size.Height_Get() / sample_size_scaled.Y);
 			var size = fonts[text_display_font].MeasureString(text_display_message) * text_display_scale;
 			var lines = text_display_message.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-			if (size.Y > canvas_size.Y + sample_size_scaled.Y && lines.Count > 2 && visible_lines < lines.Count)
+			if (size.Y > canvas_size.Height_Get() + sample_size_scaled.Y && lines.Count > 2 && visible_lines < lines.Count)
 			{
 				text_display_message = "";
 				lines[lines.Count - visible_lines] = "...";
@@ -1345,16 +1264,7 @@ public static class Gear
 	}
 	public static class Hardware
 	{
-		/// <summary>
-		/// - Gets the user's screen width in pixels.<br></br><br></br>
-		/// - The user's screen height can be checked with <see cref="Screen_Size_Height_Get"/>.
-		/// </summary>
-		public static int Screen_Size_Width_Get() => screen_size.X;
-		/// <summary>
-		/// - Gets the user's screen height in pixels.<br></br><br></br>
-		/// - The user's screen width can be checked with <see cref="Screen_Size_Width_Get"/>.
-		/// </summary>
-		public static int Screen_Size_Height_Get() => screen_size.Y;
+		public static Size Screen_Size_Get() => screen_size;
 		/// <summary>
 		/// - When <paramref name="activated"/> the user's computer will stay active at all times, even when left idle.<br></br><br></br>
 		/// - A check wether sleep prevention is activated can be done via <see cref="Computer_Sleep_Prevention_Is_Activated_Check"/>.
@@ -1515,49 +1425,6 @@ public static class Gear
 		public static string Console_Read() => System.Console.ReadLine();
 		private static void DeviceFound(object sender, DeviceEventArgs args) => args.Device.CreatePortMap(new Mapping(Protocol.Tcp, server_port, server_port));
 	}
-	public static class AI
-	{
-		public static void Test()
-		{
-			var input = new float[][]
-			{
-				new []{ 1f, 1f },
-				new []{ 1f, 0f },
-				new []{ 0f, 0f },
-			};
-			var expected = new float[][]
-			{
-				new []{ 1f },
-				new []{ 1f },
-				new []{ 0f },
-			};
-
-			var nn = new TinyNeuralNetwork(input[0].Length, input.Length, expected[0].Length);
-			var learning_rate = 1f;
-			for (int j = 0; j < 1000; j++)
-			{
-				for (int i = 0; i < input.Length; i++)
-				{
-					nn.Train(input[i], expected[i], learning_rate);
-					learning_rate *= 0.99f;
-				}
-				Shuffle(input, expected);
-			}
-			var output = nn.Predict(new[] { 1f, 0f });
-		}
-
-		private static void Shuffle(float[][] input, float[][] output)
-		{
-			var random = new Random(0);
-
-			for (int i = 0; i < input.Length; i++)
-			{
-				var j = random.Next(input.Length);
-				(input[i], input[j]) = (input[j], input[i]);
-				(output[i], output[j]) = (output[j], output[i]);
-			}
-		}
-	}
 	public static class Camera
 	{
 		/// <summary>
@@ -1567,29 +1434,28 @@ public static class Gear
 		/// </summary>
 		public static void Screenshot(string path, string name, bool scaled)
 		{
-			var size = new Microsoft.Xna.Framework.Point(
-				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : canvas_size.X,
-				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : canvas_size.Y);
-			var buffer = new int[size.X * size.Y];
-			var texture = new Texture2D(game.GraphicsDevice, size.X, size.Y);
+			var size = new Size(
+				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : canvas_size.Width_Get(),
+				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : canvas_size.Height_Get());
+			var buffer = new int[(int)(size.Width_Get() * size.Height_Get())];
+			var texture = new Texture2D(game.GraphicsDevice, (int)size.Width_Get(), (int)size.Height_Get());
 			var final_path = $"{main_dir}{path}";
 
 			if (Directory.Exists(final_path) == false) Directory.CreateDirectory(final_path);
 
 			if (scaled) game.GraphicsDevice.GetBackBufferData(buffer);
-			else render_target.GetData(0, new Rectangle(0, 0, size.X, size.Y), buffer, 0, size.X * size.Y);
+			else render_target.GetData(0, new Rectangle(0, 0, (int)size.Width_Get(), (int)size.Height_Get()), buffer, 0, (int)(size.Width_Get() * size.Height_Get()));
 
 			texture.SetData(buffer);
 			using (Stream stream = File.Create($"{final_path}\\{name}.png"))
 			{
-				texture.SaveAsPng(stream, size.X, size.Y);
+				texture.SaveAsPng(stream, (int)size.Width_Get(), (int)size.Height_Get());
 			}
 			sprites[name] = texture;
 		}
 
-		public static void Position_Set(float x, float y) => camera_position = new Vector2(x, y);
-		public static float Position_X_Get() => camera_position.X;
-		public static float Position_Y_Get() => camera_position.Y;
+		public static void Position_Set(float x, float y) => camera_position = new Point(x, y);
+		public static Point Position_Get() => camera_position;
 	}
 	/// <summary>
 	/// - Holds information about the current input of the user.
@@ -1688,13 +1554,13 @@ public static class Gear
 		public static List<Keys> Keys_Just_Released_Get() => new List<Keys>(keys_just_released);
 		public static bool Key_Is_Pressed_Check(Keys key) => Keyboard.GetState().IsKeyDown((Microsoft.Xna.Framework.Input.Keys)(int)key);
 
-		public static Vector2 Mouse_Cursor_Position_World_Get()
+		public static Point Mouse_Cursor_Position_World_Get()
 		{
-			var scale = new Vector2((float)canvas_size.X / screen_size.X, (float)canvas_size.Y / screen_size.Y);
-			var pos = new Vector2(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
+			var scale = new Point(canvas_size.Width_Get() / screen_size.Height_Get(), canvas_size.Width_Get() / screen_size.Height_Get());
+			var pos = new Point(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
 			return pos;
 		}
-		public static Vector2 Mouse_Cursor_Position_Window_Get() => Mouse_Cursor_Position_World_Get() + new Vector2(Camera.Position_X_Get(), Camera.Position_Y_Get());
+		public static Point Mouse_Cursor_Position_Window_Get() => Mouse_Cursor_Position_World_Get() + camera_position;
 		public static void Mouse_Cursor_Show(bool shown) => game.IsMouseVisible = shown;
 		public static bool Mouse_Cursor_Is_Shown_Check() => game.IsMouseVisible == false;
 		public static bool Mouse_Button_Is_Pressed_Left_Check() => Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
@@ -1852,40 +1718,78 @@ public static class Gear
 		}
 	}
 
-	private class Pair
+	public struct Angle
+	{
+		private float angle;
+
+		public Angle(float angle) { this.angle = angle; To_360_Degrees(); }
+		public void Set(float angle) { this.angle = angle; To_360_Degrees(); }
+		public float Get() => angle;
+		public void To_360_Degrees() => angle = ((angle % 360) + 360) % 360;
+		public void Rotate(float degrees_per_second) { angle = Number.Changed_Get(angle, degrees_per_second); To_360_Degrees(); }
+		public void Rotate_Towards_Target(Angle target_angle, float degrees_per_second)
+		{
+			To_360_Degrees();
+			target_angle.To_360_Degrees();
+			degrees_per_second = Math.Abs(degrees_per_second);
+			var difference = angle - target_angle.Get();
+
+			// stops the rotation with an else when close enough
+			// prevents the rotation from staying behind after the stop
+			if (Math.Abs(difference) < degrees_per_second * ticks_delta_time) angle = target_angle.Get();
+			else if (difference > 0 && difference < 180) Rotate(-degrees_per_second);
+			else if (difference > -180 && difference < 0) Rotate(degrees_per_second);
+			else if (difference > -360 && difference < -180) Rotate(-degrees_per_second);
+			else if (difference > 180 && difference < 360) Rotate(degrees_per_second);
+
+			// detects speed greater than possible
+			// prevents jiggle when passing 0-360 & 360-0 | simple to fix yet took me half a day
+			if (Math.Abs(difference) > 360 - degrees_per_second * ticks_delta_time) angle = target_angle.Get();
+		}
+		public void Percent_Towards_Target(Angle target_angle, float percent)
+		{
+			To_360_Degrees();
+			target_angle.To_360_Degrees();
+			angle = Number.Percented_Towards_Target_Get(angle, target_angle.Get(), percent);
+		}
+
+		public override string ToString() => $"angle[degrees:{angle}]";
+	}
+	public struct Pair
 	{
 		private object first;
 		private object second;
 
-		public Pair() { }
-		public void Set(object first, object second)
-		{
-			this.first = first;
-			this.second = second;
-		}
+		public Pair(object first, object second) { this.first = first; this.second = second; }
+		public void Set(object first, object second) { this.first = first; this.second = second; }
 		public T First_Get<T>() => (T)first;
 		public T Second_Get<T>() => (T)second;
 		public override string ToString() => $"pair[first:{first}][second:{second}]";
 	}
-
-	public class Pair_Texts
+	public struct Pair_Texts
 	{
-		private Pair pair = new Pair();
+		private Pair pair;
 
-		public static Pair_Texts Created_Get() => new Pair_Texts();
-		public Pair_Texts() { }
+		public Pair_Texts(string first, string second) { pair = new Pair(); pair.Set(first, second); }
 		public void Set(string first, string second) => pair.Set(first, second);
 		public string First_Get() => pair.First_Get<string>();
 		public string Second_Get() => pair.Second_Get<string>();
 		public override string ToString() => $"pair_texts[first:{First_Get()}][second:{Second_Get()}]";
 	}
-
-	public class Pair_Numbers
+	public struct Pair_Numbers
 	{
-		private Pair pair = new Pair();
+		private Pair pair;
 
-		public static Pair_Numbers Created_Get(float first = 0, float second = 0) => new Pair_Numbers(first, second);
-		public Pair_Numbers(float first = 0, float second = 0) => pair.Set(first, second);
+		public static Pair_Numbers To_Grid_Get(Pair_Numbers pair_numbers, Size grid_size)
+		{
+			var result = new Pair_Numbers();
+			var grid_width = Number.Limited_Get(grid_size.Width_Get(), 1, screen_size.Width_Get());
+			var grid_height = Number.Limited_Get(grid_size.Height_Get(), 1, screen_size.Height_Get());
+			if (grid_size.Width_Get() > 0) result.Set(grid_width * (float)Math.Round((float)pair_numbers.First_Get() / grid_width), result.Second_Get());
+			if (grid_size.Height_Get() > 0) result.Set(result.First_Get(), grid_height * (float)Math.Round((float)pair_numbers.Second_Get() / grid_height));
+			return result;
+		}
+		public Pair_Numbers(float first = 0, float second = 0) => pair = new Pair(first, second);
 		public void Set(float first, float second) => pair.Set(first, second);
 		public float First_Get() => pair.First_Get<float>();
 		public float Second_Get() => pair.Second_Get<float>();
@@ -1896,52 +1800,59 @@ public static class Gear
 		public static Pair_Numbers operator *(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() * b.First_Get(), a.Second_Get() * b.Second_Get());
 		public static Pair_Numbers operator /(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() / b.First_Get(), a.Second_Get() / b.Second_Get());
 	}
-	public class Point
+	public struct Size
 	{
-		private Pair_Numbers point = new Pair_Numbers();
+		private Pair_Numbers size;
 
-		public static Point Created_Get(float x = 0, float y = 0) => new Point(x, y);
-		public Point(float x = 0, float y = 0) => point.Set(x, y);
-		public virtual void Set(float x, float y) => point.Set(x, y);
-		public float X_Get() => point.First_Get();
-		public float Y_Get() => point.Second_Get();
-		public override string ToString() => $"point[x:{X_Get()}][y:{Y_Get()}]";
-	}
-	public class Size
-	{
-		private Pair_Numbers size = new Pair_Numbers();
-
-		public static Size Created_Get(float width = 1, float height = 1) => new Size();
-		public Size(float width = 1, float height = 1) => size.Set(width, height);
-		public virtual void Set(float width, float height) => size.Set(width, height);
+		public Size(float width, float height) => size = new Pair_Numbers(width, height);
+		public void Set(float width, float height) => size.Set(width, height);
 		public float Width_Get() => size.First_Get();
 		public float Height_Get() => size.Second_Get();
 		public override string ToString() => $"size[width:{Width_Get()}][height:{Height_Get()}]";
+
+		public static Size operator +(Size a, Size b) => new Size(a.Width_Get() + b.Width_Get(), a.Height_Get() + b.Height_Get());
+		public static Size operator -(Size a, Size b) => new Size(a.Width_Get() - b.Width_Get(), a.Height_Get() - b.Height_Get());
+		public static Size operator *(Size a, Size b) => new Size(a.Width_Get() * b.Width_Get(), a.Height_Get() * b.Height_Get());
+		public static Size operator *(Size a, float b) => new Size(a.Width_Get() * b, a.Height_Get() * b);
+		public static Size operator /(Size a, Size b) => new Size(a.Width_Get() / b.Width_Get(), a.Height_Get() / b.Height_Get());
+		public static Size operator /(Size a, float b) => new Size(a.Width_Get() / b, a.Height_Get() / b);
 	}
-
-	public class Point_Grid
+	public struct Point
 	{
-		private Point original_point = new Point();
-		private Point point = new Point();
-		private Size grid_size = new Size();
+		private Pair_Numbers point;
 
-		public static Point_Grid Created_Get(float x = 0, float y = 0, float grid_width = 1, float grid_height = 1) => new Point_Grid(x, y, grid_width, grid_height);
-		public Point_Grid(float x = 0, float y = 0, float grid_width = 1, float grid_height = 1) => Set(new Point(x, y), new Size(grid_width, grid_height));
-		public void Set(Point point, Size grid_size)
-		{
-			grid_size.Set(Number.Limited_Get(grid_size.Width_Get(), 1, screen_size.X), Number.Limited_Get(grid_size.Height_Get(), 1, screen_size.Y));
-			this.grid_size = grid_size;
-			original_point = point;
-			var x = original_point.X_Get();
-			var y = original_point.Y_Get();
-			if (grid_size.Width_Get() > 0) x = grid_size.Width_Get() * (float)Math.Round((float)point.X_Get() / grid_size.Width_Get());
-			if (grid_size.Height_Get() > 0) y = grid_size.Height_Get() * (float)Math.Round((float)point.Y_Get() / grid_size.Height_Get());
-			this.point.Set(x, y);
-		}
-		public Point Original_Get() => original_point;
-		public Point Get() => point;
-		public Size Size_Get() => grid_size;
-		public override string ToString() => $"point_grid(original_{original_point})(grid_{point})(grid_{grid_size})";
+		public Point(float x, float y) => point = new Pair_Numbers(x, y);
+		public void Set(float x, float y) => point.Set(x, y);
+		public float X_Get() => point.First_Get();
+		public float Y_Get() => point.Second_Get();
+		public override string ToString() => $"point[x:{X_Get()}][y:{Y_Get()}]";
+
+		public static Point operator +(Point a, Point b) => new Point(a.X_Get() + b.X_Get(), a.Y_Get() + b.Y_Get());
+		public static Point operator -(Point a, Point b) => new Point(a.X_Get() - b.X_Get(), a.Y_Get() - b.Y_Get());
+		public static Point operator *(Point a, Point b) => new Point(a.X_Get() * b.X_Get(), a.Y_Get() * b.Y_Get());
+		public static Point operator /(Point a, Point b) => new Point(a.X_Get() / b.X_Get(), a.Y_Get() / b.Y_Get());
+	}
+	public struct Direction
+	{
+
+	}
+	public struct Color
+	{
+		private byte red;
+		private byte green;
+		private byte blue;
+		private byte opacity;
+
+		public Color(byte red, byte green, byte blue, byte opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; }
+		public void Set(byte red, byte green, byte blue, byte opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; }
+		public byte Red_Get() => red;
+		public byte Green_Get() => green;
+		public byte Blue_Get() => blue;
+		public byte Opacity_Get() => opacity;
+		public override string ToString() => $"color[red:{red}][green:{green}][blue:{blue}][opacity:{opacity}]";
+
+		public static Color operator +(Color a, Color b) => new Color((byte)(a.red + b.red), (byte)(a.green + b.green), (byte)(a.blue + b.blue));
+		public static Color operator -(Color a, Color b) => new Color((byte)(a.red - b.red), (byte)(a.green - b.green), (byte)(a.blue - b.blue));
 	}
 
 	private class Session : TcpSession
@@ -2196,10 +2107,24 @@ public static class Gear
 		System.Console.Title = $"Console | {Window.Title_Get()}";
 		System.Console.WriteLine($"{connect_info}{clients_connected}{console_log}");
 	}
-	private static void _Draw_Tile(Texture2D texture, Vector2 position, Microsoft.Xna.Framework.Point tile_index, int grid_size, Microsoft.Xna.Framework.Point size, Vector2 origin, Vector2 scale, Color color, float angle, SpriteEffects spriteEffects)
+	private static void _Draw_Tile(Texture2D texture, Point position, Point tile_index, int grid_size, Size size, Point origin, Size scale, Color color, float angle, SpriteEffects spriteEffects)
 	{
-		var texture_start_position = new Microsoft.Xna.Framework.Point(tile_index.X * size.X + (grid_size * tile_index.X), tile_index.Y * size.Y + (grid_size * tile_index.Y));
-		sprite_batch.Draw(texture, position, new Rectangle(texture_start_position.X, texture_start_position.Y, size.X, size.Y), color, (float)Math.PI / 180 * angle, origin, scale, spriteEffects, 0);
+		var texture_start_position = new Point(
+			tile_index.X_Get() * size.Width_Get() + (grid_size * tile_index.X_Get()),
+			tile_index.Y_Get() * size.Height_Get() + (grid_size * tile_index.Y_Get()));
+
+		sprite_batch.Draw(
+			texture,
+			new Vector2(position.X_Get(), position.Y_Get()),
+			new Rectangle((int)texture_start_position.X_Get(),
+			(int)texture_start_position.Y_Get(),
+			(int)size.Width_Get(),
+			(int)size.Height_Get()),
+			new Microsoft.Xna.Framework.Color((int)color.Red_Get(), (int)color.Green_Get(), (int)color.Blue_Get(), (int)color.Opacity_Get()),
+			(float)Math.PI / 180 * angle, new Vector2(origin.X_Get(), origin.Y_Get()),
+			new Vector2(scale.Width_Get(), scale.Height_Get()),
+			spriteEffects,
+			0);
 	}
 	private static bool _Rectangle_Contains_Point(Vector2 rectA, Vector2 rectB, Vector2 rectC, Vector2 point)
 	{

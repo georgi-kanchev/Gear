@@ -10,7 +10,6 @@
     <PackageReference Include="MonoGame.Framework.WindowsDX" Version="3.8.0.1641" />
     <PackageReference Include="NetCoreServer" Version="5.0.7" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
-    <PackageReference Include="Tinn" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>

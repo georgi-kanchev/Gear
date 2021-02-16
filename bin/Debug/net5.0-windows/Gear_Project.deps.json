@@ -11,8 +11,7 @@
           "Mono.Nat": "3.0.1",
           "MonoGame.Framework.WindowsDX": "3.8.0.1641",
           "NetCoreServer": "5.0.7",
-          "Newtonsoft.Json": "12.0.3",
-          "Tinn": "1.0.0"
+          "Newtonsoft.Json": "12.0.3"
         },
         "runtime": {
           "Gear_Project.dll": {}
@@ -1500,14 +1499,6 @@
           "System.Xml.XDocument": "4.0.11",
           "System.Xml.XPath": "4.0.1"
         }
-      },
-      "Tinn/1.0.0": {
-        "runtime": {
-          "lib/netstandard2.0/Tinn.dll": {
-            "assemblyVersion": "1.0.0.0",
-            "fileVersion": "1.0.0.0"
-          }
-        }
       }
     }
   },
@@ -2377,13 +2368,6 @@
       "sha512": "sha512-FLhdYJx4331oGovQypQ8JIw2kEmNzCsjVOVYY/16kZTUoquZG85oVn7yUhBE2OZt1yGPSXAL0HTEfzjlbNpM7Q==",
       "path": "system.xml.xpath.xdocument/4.0.1",
       "hashPath": "system.xml.xpath.xdocument.4.0.1.nupkg.sha512"
-    },
-    "Tinn/1.0.0": {
-      "type": "package",
-      "serviceable": true,
-      "sha512": "sha512-GcmYoUmsZpKenjwG133LL+id3wMGN2vQNggwAmhYLjWDZDG+vJfEvAK1h8IgG3BfHYtotK4vr1mrc1UTmKJOHA==",
-      "path": "tinn/1.0.0",
-      "hashPath": "tinn.1.0.0.nupkg.sha512"
     }
   }
 }

@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "JFOzJ/I/oHOBSdLaPJWRvmxy4XH//mgDG+XNWjEXrum1jDRgRYlXDG0RIlHP2Js5/zGT9nLwm023smdlJfJB4Q==",
+  "dgSpecHash": "MdV2m/6Hi2GxXSJRr3GEIV4lkfdxdva52iLKUOwbfcBjWBoMLDpBDc3lfczh9H5nunEFNvX/vwc9PzWRsVe/Eg==",
   "success": true,
   "projectFilePath": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
   "expectedPackageFiles": [
@@ -126,8 +126,7 @@
     "C:\\Users\\PC PC\\.nuget\\packages\\system.xml.xdocument\\4.0.11\\system.xml.xdocument.4.0.11.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\system.xml.xmldocument\\4.0.1\\system.xml.xmldocument.4.0.1.nupkg.sha512",
     "C:\\Users\\PC PC\\.nuget\\packages\\system.xml.xpath\\4.0.1\\system.xml.xpath.4.0.1.nupkg.sha512",
-    "C:\\Users\\PC PC\\.nuget\\packages\\system.xml.xpath.xdocument\\4.0.1\\system.xml.xpath.xdocument.4.0.1.nupkg.sha512",
-    "C:\\Users\\PC PC\\.nuget\\packages\\tinn\\1.0.0\\tinn.1.0.0.nupkg.sha512"
+    "C:\\Users\\PC PC\\.nuget\\packages\\system.xml.xpath.xdocument\\4.0.1\\system.xml.xpath.xdocument.4.0.1.nupkg.sha512"
   ],
   "logs": []
 }

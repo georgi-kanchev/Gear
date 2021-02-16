@@ -2281,15 +2281,6 @@
         "runtime": {
           "lib/netstandard1.3/System.Xml.XPath.XDocument.dll": {}
         }
-      },
-      "Tinn/1.0.0": {
-        "type": "package",
-        "compile": {
-          "lib/netstandard2.0/Tinn.dll": {}
-        },
-        "runtime": {
-          "lib/netstandard2.0/Tinn.dll": {}
-        }
       }
     }
   },
@@ -7376,20 +7367,6 @@
         "system.xml.xpath.xdocument.4.0.1.nupkg.sha512",
         "system.xml.xpath.xdocument.nuspec"
       ]
-    },
-    "Tinn/1.0.0": {
-      "sha512": "GcmYoUmsZpKenjwG133LL+id3wMGN2vQNggwAmhYLjWDZDG+vJfEvAK1h8IgG3BfHYtotK4vr1mrc1UTmKJOHA==",
-      "type": "package",
-      "path": "tinn/1.0.0",
-      "files": [
-        ".nupkg.metadata",
-        ".signature.p7s",
-        "icon.png",
-        "lib/netstandard2.0/Tinn.dll",
-        "lib/netstandard2.0/Tinn.xml",
-        "tinn.1.0.0.nupkg.sha512",
-        "tinn.nuspec"
-      ]
     }
   },
   "projectFileDependencyGroups": {
@@ -7397,8 +7374,7 @@
       "Mono.Nat >= 3.0.1",
       "MonoGame.Framework.WindowsDX >= 3.8.0.1641",
       "NetCoreServer >= 5.0.7",
-      "Newtonsoft.Json >= 12.0.3",
-      "Tinn >= 1.0.0"
+      "Newtonsoft.Json >= 12.0.3"
     ]
   },
   "packageFolders": {
@@ -7455,10 +7431,6 @@
           "Newtonsoft.Json": {
             "target": "Package",
             "version": "[12.0.3, )"
-          },
-          "Tinn": {
-            "target": "Package",
-            "version": "[1.0.0, )"
           }
         },
         "imports": [

@@ -43,4 +43,3 @@ D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.dll
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\ref\Gear_Project.dll
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.pdb
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.genruntimeconfig.cache
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Tinn.dll
