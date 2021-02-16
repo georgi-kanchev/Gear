@@ -70,6 +70,10 @@ public static class Gear
 	{
 		Connection, Unique_Name_Change, Client_Connected, Client_Disconnected, Client_Online, Message_To_All, Message_To_Client
 	}
+	public enum Rotation_Samples
+	{
+		Left, Right, Up, Down, Up_Left, Up_Right, Down_Left, Down_Right
+	}
 
 	private static PerformanceCounter ram_available = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ram_used_percent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -1723,11 +1727,41 @@ public static class Gear
 		private float angle;
 
 		public Angle(float angle) { this.angle = angle; To_360_Degrees(); }
-		public void Set(float angle) { this.angle = angle; To_360_Degrees(); }
 		public float Get() => angle;
 		public void To_360_Degrees() => angle = ((angle % 360) + 360) % 360;
+		public void Set(float angle) { this.angle = angle; To_360_Degrees(); }
+		public void Set_From_Rotation_Sample(Rotation_Samples angle)
+		{
+			switch (angle)
+			{
+				case Rotation_Samples.Up: this.angle = 270; break;
+				case Rotation_Samples.Left: this.angle = 180; break;
+				case Rotation_Samples.Right: this.angle = 0; break;
+				case Rotation_Samples.Down: this.angle = 90; break;
+				case Rotation_Samples.Up_Left: this.angle = 225; break;
+				case Rotation_Samples.Up_Right: this.angle = 315; break;
+				case Rotation_Samples.Down_Left: this.angle = 135; break;
+				case Rotation_Samples.Down_Right: this.angle = 45; break;
+			}
+		}
+		public void Set_From_Direction(Direction direction)
+		{
+			//Vector2 to Radians: atan2(Vector2.y, Vector2.x)
+			//Radians to Angle: radians * (180 / Math.PI)
+			if (direction != new Direction()) direction.Normalize();
+			var rad = (double)Math.Atan2(direction.End_Point_Get().Y_Get(), direction.End_Point_Get().X_Get());
+			angle = (float)(rad * (180 / Math.PI));
+			To_360_Degrees();
+		}
+		public void Set_To_Percent_Towards_Angle(Angle target_angle, float percent)
+		{
+			To_360_Degrees();
+			target_angle.To_360_Degrees();
+			angle = Number.Percented_Towards_Target_Get(angle, target_angle.Get(), percent);
+		}
+		public void Set_From_Between_Points(Point point, Point target_point) { var dir = new Direction(); dir.Set_From_Between_Points(point, target_point); Set_From_Direction(dir); }
 		public void Rotate(float degrees_per_second) { angle = Number.Changed_Get(angle, degrees_per_second); To_360_Degrees(); }
-		public void Rotate_Towards_Target(Angle target_angle, float degrees_per_second)
+		public void Rotate_Towards_Angle(Angle target_angle, float degrees_per_second)
 		{
 			To_360_Degrees();
 			target_angle.To_360_Degrees();
@@ -1746,39 +1780,58 @@ public static class Gear
 			// prevents jiggle when passing 0-360 & 360-0 | simple to fix yet took me half a day
 			if (Math.Abs(difference) > 360 - degrees_per_second * ticks_delta_time) angle = target_angle.Get();
 		}
-		public void Percent_Towards_Target(Angle target_angle, float percent)
-		{
-			To_360_Degrees();
-			target_angle.To_360_Degrees();
-			angle = Number.Percented_Towards_Target_Get(angle, target_angle.Get(), percent);
-		}
 
 		public override string ToString() => $"angle[degrees:{angle}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 	}
 	public struct Pair
 	{
-		private object first;
-		private object second;
+		private object first, second;
 
 		public Pair(object first, object second) { this.first = first; this.second = second; }
 		public void Set(object first, object second) { this.first = first; this.second = second; }
 		public T First_Get<T>() => (T)first;
 		public T Second_Get<T>() => (T)second;
+
 		public override string ToString() => $"pair[first:{first}][second:{second}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 	}
 	public struct Pair_Texts
 	{
-		private Pair pair;
+		private string first, second;
 
-		public Pair_Texts(string first, string second) { pair = new Pair(); pair.Set(first, second); }
-		public void Set(string first, string second) => pair.Set(first, second);
-		public string First_Get() => pair.First_Get<string>();
-		public string Second_Get() => pair.Second_Get<string>();
+		public Pair_Texts(string first, string second) { this.first = first; this.second = second; }
+		public void Set(string first, string second) { this.first = first; this.second = second; }
+		public string First_Get() => first;
+		public string Second_Get() => second;
+
 		public override string ToString() => $"pair_texts[first:{First_Get()}][second:{Second_Get()}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 	}
 	public struct Pair_Numbers
 	{
-		private Pair pair;
+		private float first, second;
 
 		public static Pair_Numbers To_Grid_Get(Pair_Numbers pair_numbers, Size grid_size)
 		{
@@ -1789,11 +1842,19 @@ public static class Gear
 			if (grid_size.Height_Get() > 0) result.Set(result.First_Get(), grid_height * (float)Math.Round((float)pair_numbers.Second_Get() / grid_height));
 			return result;
 		}
-		public Pair_Numbers(float first = 0, float second = 0) => pair = new Pair(first, second);
-		public void Set(float first, float second) => pair.Set(first, second);
-		public float First_Get() => pair.First_Get<float>();
-		public float Second_Get() => pair.Second_Get<float>();
+		public Pair_Numbers(float first = 0, float second = 0) { this.first = first; this.second = second; }
+		public void Set(float first, float second) { this.first = first; this.second = second; }
+		public float First_Get() => first;
+		public float Second_Get() => second;
 		public override string ToString() => $"pair_numbers[first:{First_Get()}][second:{Second_Get()}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 
 		public static Pair_Numbers operator +(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() + b.First_Get(), a.Second_Get() + b.Second_Get());
 		public static Pair_Numbers operator -(Pair_Numbers a, Pair_Numbers b) => new Pair_Numbers(a.First_Get() - b.First_Get(), a.Second_Get() - b.Second_Get());
@@ -1808,7 +1869,16 @@ public static class Gear
 		public void Set(float width, float height) => size.Set(width, height);
 		public float Width_Get() => size.First_Get();
 		public float Height_Get() => size.Second_Get();
+
 		public override string ToString() => $"size[width:{Width_Get()}][height:{Height_Get()}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 
 		public static Size operator +(Size a, Size b) => new Size(a.Width_Get() + b.Width_Get(), a.Height_Get() + b.Height_Get());
 		public static Size operator -(Size a, Size b) => new Size(a.Width_Get() - b.Width_Get(), a.Height_Get() - b.Height_Get());
@@ -1822,26 +1892,131 @@ public static class Gear
 		private Pair_Numbers point;
 
 		public Point(float x, float y) => point = new Pair_Numbers(x, y);
+		public Point(Point point) => this.point = new Pair_Numbers(point.X_Get(), point.Y_Get());
 		public void Set(float x, float y) => point.Set(x, y);
 		public float X_Get() => point.First_Get();
 		public float Y_Get() => point.Second_Get();
+		public float Distance_To_Point_Get(Point point) => Vector2.Distance(new Vector2(X_Get(), Y_Get()), new Vector2(point.X_Get(), point.Y_Get()));
+		public void Move_In_Direction(Direction direction, float pixels_per_second)
+		{
+			pixels_per_second *= ticks_delta_time;
+			direction.Normalize();
+			point += new Pair_Numbers(direction.End_Point_Get().X_Get() * pixels_per_second, direction.End_Point_Get().Y_Get() * pixels_per_second);
+		}
+		public void Move_At_Angle(Angle angle, float pixels_per_second) { var dir = new Direction(); dir.Set_From_Angle(angle); Move_In_Direction(dir, pixels_per_second); }
+		public void Move_Towards_Point(Point target_point, float pixels_per_second) { var dir = new Direction(target_point - this); Move_In_Direction(dir, pixels_per_second); }
+		public void Set_To_Percent_Towards_Point(Point target_point, float percent)
+		{
+			var vec = Vector2.Lerp(new Vector2(X_Get(), Y_Get()), new Vector2(target_point.X_Get(), target_point.Y_Get()), (float)percent / 100);
+			point = new Pair_Numbers(vec.X, vec.Y);
+		}
+
 		public override string ToString() => $"point[x:{X_Get()}][y:{Y_Get()}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 
 		public static Point operator +(Point a, Point b) => new Point(a.X_Get() + b.X_Get(), a.Y_Get() + b.Y_Get());
 		public static Point operator -(Point a, Point b) => new Point(a.X_Get() - b.X_Get(), a.Y_Get() - b.Y_Get());
 		public static Point operator *(Point a, Point b) => new Point(a.X_Get() * b.X_Get(), a.Y_Get() * b.Y_Get());
 		public static Point operator /(Point a, Point b) => new Point(a.X_Get() / b.X_Get(), a.Y_Get() / b.Y_Get());
+		public static bool operator ==(Point a, Point b) => a.X_Get() == b.X_Get() && a.Y_Get() == b.Y_Get();
+		public static bool operator !=(Point a, Point b) => a.X_Get() != b.X_Get() && a.Y_Get() != b.Y_Get();
 	}
 	public struct Direction
 	{
+		private Point end_point;
 
+		public Direction(Point end_point) { this.end_point = end_point; Normalize(); }
+		public Point End_Point_Get() => end_point;
+		public void Normalize()
+		{
+			var vec = new Vector2(end_point.X_Get(), end_point.Y_Get());
+			if (vec != Vector2.Zero) vec.Normalize();
+			end_point = new Point(vec.X, vec.Y);
+		}
+		public void Set_From_Rotation_Sample(Rotation_Samples direction)
+		{
+			switch (direction)
+			{
+				case Rotation_Samples.Up: end_point = new Point(0, -1); break;
+				case Rotation_Samples.Left: end_point = new Point(-1, 0); break;
+				case Rotation_Samples.Right: end_point = new Point(1, 0); break;
+				case Rotation_Samples.Down: end_point = new Point(0, 1); break;
+				case Rotation_Samples.Up_Left: end_point = new Point(-1, -1); break;
+				case Rotation_Samples.Up_Right: end_point = new Point(1, -1); break;
+				case Rotation_Samples.Down_Left: end_point = new Point(-1, 1); break;
+				case Rotation_Samples.Down_Right: end_point = new Point(1, 1); break;
+			}
+			Normalize();
+		}
+		public void Set_From_Angle(Angle angle)
+		{
+			//Angle to Radians : (Math.PI / 180) * angle
+			//Radians to Vector2 : Vector2.x = cos(angle) | Vector2.y = sin(angle)
+
+			var rad = Math.PI / 180 * angle.Get();
+			var dir = new Vector2((float)Math.Cos(rad), (float)Math.Sin(rad));
+			dir.Normalize();
+			end_point = new Point(dir.X, dir.Y);
+		}
+		public void Set_From_Between_Points(Point point, Point target_point) { end_point = new Point(target_point - point); Normalize(); }
+		public void Set_To_Percent_Towards_Direction(Direction target_direction, float percent)
+		{
+			Normalize();
+			target_direction.Normalize();
+			var angle = new Angle();
+			var target_angle = new Angle();
+			angle.Set_From_Direction(this);
+			target_angle.Set_From_Direction(target_direction);
+			angle.Set_To_Percent_Towards_Angle(target_angle, percent);
+			Set_From_Angle(angle);
+		}
+		public void Rotate(float degrees_per_second)
+		{
+			Normalize();
+			var angle = new Angle();
+			angle.Set_From_Direction(this);
+			angle.Rotate(degrees_per_second);
+			Set_From_Angle(angle);
+		}
+		public void Rotate_Towards_Direction(Direction target_direction, float degrees_per_second)
+		{
+			Normalize();
+			target_direction.Normalize();
+			var angle = new Angle();
+			var target_angle = new Angle();
+			angle.Set_From_Direction(this);
+			target_angle.Set_From_Direction(target_direction);
+			angle.Rotate_Towards_Angle(target_angle, degrees_per_second);
+			Set_From_Angle(angle);
+		}
+
+		public static Direction operator +(Direction a, Direction b) => new Direction(a.end_point + b.end_point);
+		public static Direction operator -(Direction a, Direction b) => new Direction(a.end_point - b.end_point);
+		public static Direction operator *(Direction a, Direction b) => new Direction(a.end_point * b.end_point);
+		public static Direction operator /(Direction a, Direction b) => new Direction(a.end_point / b.end_point);
+		public static bool operator ==(Direction a, Direction b) => a.end_point == b.end_point;
+		public static bool operator !=(Direction a, Direction b) => a.end_point != b.end_point;
+
+		public override string ToString() => $"direction[end_point:{end_point}]";
+		/// <summary>
+		/// A default <see cref="object"/> method. Not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// A default <see cref="object"/> method. Not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 	}
 	public struct Color
 	{
-		private byte red;
-		private byte green;
-		private byte blue;
-		private byte opacity;
+		private byte red, green, blue, opacity;
 
 		public Color(byte red, byte green, byte blue, byte opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; }
 		public void Set(byte red, byte green, byte blue, byte opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; }
@@ -1849,7 +2024,16 @@ public static class Gear
 		public byte Green_Get() => green;
 		public byte Blue_Get() => blue;
 		public byte Opacity_Get() => opacity;
+
 		public override string ToString() => $"color[red:{red}][green:{green}][blue:{blue}][opacity:{opacity}]";
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj) => default;
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode() => default;
 
 		public static Color operator +(Color a, Color b) => new Color((byte)(a.red + b.red), (byte)(a.green + b.green), (byte)(a.blue + b.blue));
 		public static Color operator -(Color a, Color b) => new Color((byte)(a.red - b.red), (byte)(a.green - b.green), (byte)(a.blue - b.blue));

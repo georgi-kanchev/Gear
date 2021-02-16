@@ -4,15 +4,13 @@
 	public override string[] Loading_Screen_Prepare() => new string[] { "font.spritefont" };
 	public override void Each_Loading_Screen_Update(int percent_loaded) { }
 
-	Gear.Angle angle = new Gear.Angle(0);
 	public override void Each_Tick(int tick_count)
 	{
 		if (tick_count == 1)
 		{
-			var target = new Gear.Angle(50);
-			angle.Percent_Towards_Target(target, 10);
-			Gear.Text.Display("font", angle, overwrite: true);
+			var angle = new Gear.Angle();
+			angle.Set_From_Rotation_Sample(Gear.Rotation_Samples.Down_Right);
+			Gear.Text.Display("font", $"{angle}", overwrite: true);
 		}
-
-    }
+	}
 }
