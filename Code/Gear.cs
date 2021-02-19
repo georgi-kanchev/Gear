@@ -80,7 +80,7 @@ public static class Gear
 	}
 	public enum Event_Type
 	{
-		Network_Message_Received_From_Client, Network_Message_Received_From_Server
+		Network_Packet_Received_From_Client, Network_Packet_Received_From_Server
 	}
 	public enum Input_Keys
 	{
@@ -111,14 +111,13 @@ public static class Gear
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signal_pauses = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gate_entries_count = new Dictionary<string, int>();
 	private static Dictionary<string, string> client_ids = new Dictionary<string, string>();
-	private static Dictionary<string, List<string>> network_last_client_messages = new Dictionary<string, List<string>>();
 	private static Dictionary<string, float> signal_end_times = new Dictionary<string, float>(), signal_start_times = new Dictionary<string, float>(), signal_delays = new Dictionary<string, float>();
 
-	private static List<Event_Type> events_just_occuring = new List<Event_Type>();
 	private static List<Input_Keys> last_frame_keys_pressed = new List<Input_Keys>(), keys_just_pressed = new List<Input_Keys>(), keys_just_released = new List<Input_Keys>();
 	private static List<Body> bodies_all = new List<Body>();
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
-	private static List<string> client_unique_names = new List<string>(), network_last_server_messages = new List<string>();
+	private static List<string> client_unique_names = new List<string>();
+	private static List<Network_Packet> network_last_client_messages = new List<Network_Packet>(), network_last_server_messages = new List<Network_Packet>();
 
 	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, server_port = 1234;
 	private static bool text_display_draw, loading = true, pause_unfocus, render, sleep_prevented, console_shown, client_is_connected, server_is_running, network_log_messages_to_console;
@@ -180,14 +179,16 @@ public static class Gear
 		/// </summary>
 		public abstract void Each_Tick(int tick_count);
 
+		public abstract void Event_Just_Occured(Event_Type event_type, object parameter);
+
 		protected override void Initialize()
 		{
 			sprite_batch = new SpriteBatch(game.GraphicsDevice);
 
-			//graphics.PreferredBackBufferWidth = (int)screen_size.Width_Get();
-			//graphics.PreferredBackBufferHeight = (int)screen_size.Height_Get();
-			//graphics.HardwareModeSwitch = false;
-			//graphics.IsFullScreen = true;
+			graphics.PreferredBackBufferWidth = (int)screen_size.Width_Get();
+			graphics.PreferredBackBufferHeight = (int)screen_size.Height_Get();
+			graphics.HardwareModeSwitch = false;
+			graphics.IsFullScreen = true;
 			game.Window.Position = new Microsoft.Xna.Framework.Point(0, 0);
 
 			render_sampler_state = SamplerState.PointWrap;
@@ -240,16 +241,15 @@ public static class Gear
 				catch (Exception ex)
 				{
 					AllocConsole();
-					System.Console.WriteLine(ex.Message);
+					System.Console.WriteLine($"{ex.Source}: {ex.Message}");
 					System.Console.ReadLine();
 					throw;
 				}
-				events_just_occuring.Clear();
-				network_last_client_messages.Clear();
-				network_last_server_messages.Clear();
+
 			}
 			base.Update(gameTime);
 		}
+
 		private static void Advance_Tick_Time()
 		{
 			var delta = last_tick_time == default ? default : DateTime.Now - last_tick_time;
@@ -1309,9 +1309,7 @@ public static class Gear
 	}
 	public static class Network
 	{
-		public static Dictionary<string, List<string>> Messages_Last_Received_From_Clients_Get() => new Dictionary<string, List<string>>(network_last_client_messages);
-		public static List<string> Messages_Last_Received_From_Server_Get() => new List<string>(network_last_server_messages);
-		public static void Messages_To_Console_Log(bool log) => network_log_messages_to_console = log;
+		public static void Packets_To_Console_Log(bool log) => network_log_messages_to_console = log;
 
 		public static int Clients_Connected_Count_Get() => client_unique_names.Count;
 
@@ -1839,10 +1837,6 @@ public static class Gear
 			_Console_Update();
 		}
 	}
-	public static class Event
-	{
-		public static bool Just_Occured(Event_Type event_type) => events_just_occuring.Contains(event_type);
-	}
 
 	public struct Angle
 	{
@@ -2079,6 +2073,9 @@ public static class Gear
 			if (vec != Vector2.Zero) vec.Normalize();
 			end_point = new Point(vec.X, vec.Y);
 		}
+		public void Reverse() { end_point = new Point(-end_point.X_Get(), -end_point.Y_Get());  Normalize(); }
+		public void Reverse_Horizontally() { end_point = new Point(-end_point.X_Get(), end_point.Y_Get());  Normalize(); }
+		public void Reverse_Vertically() { end_point = new Point(end_point.X_Get(), -end_point.Y_Get());  Normalize(); }
 		public void Set(Point end_point) { this.end_point = end_point; Normalize(); }
 		public void Set_From_Angle(Angle angle)
 		{
@@ -2239,6 +2236,17 @@ public static class Gear
 		public static Color operator -(Color a, Color b) => new Color((byte)(a.red - b.red), (byte)(a.green - b.green), (byte)(a.blue - b.blue));
 	}
 
+	public class Network_Packet
+	{
+		private int received_at_tick;
+		private string sender;
+		private string message;
+
+		public Network_Packet(string sender, string message, int tick) { this.sender = sender; this.message = message; received_at_tick = tick; }
+		public string Sender_Get() => sender;
+		public string Message_Get() => message;
+		public int Received_At_Tick_Get() => received_at_tick;
+	}
 	private class Session : TcpSession
 	{
 		public Session(TcpServer server) : base(server) { }
@@ -2301,24 +2309,21 @@ public static class Gear
 						}
 					case Message_Type.Client_Message_To_Server: // A client sent me (the server) a message
 						{
-							_Clients_Last_Messages_Add(components[1], components[2]);
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Client, new Network_Packet(components[1], components[2], tick));
 							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
 							break;
 						}
 					case Message_Type.Client_Message_To_All_And_Server: // A client is sending me (the server) and all other clients a message
 						{
-							_Clients_Last_Messages_Add(components[1], components[2]);
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Client, new Network_Packet(components[1], components[2], tick));
 							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
+							message_back = $"{message_back}~{message}";
 							break;
 						}
 				}
 			}
 			if (network_log_messages_to_console) _Console_Update();
-			if (message_back != "")
-			{
-				server.Multicast(message_back);
-			}
-			if (network_last_client_messages.Count > 0) events_just_occuring.Add(Event_Type.Network_Message_Received_From_Client);
+			if (message_back != "") server.Multicast(message_back);
 		}
 		protected override void OnError(SocketError error)
 		{
@@ -2406,6 +2411,7 @@ public static class Gear
 								client_unique_names.Remove(client_unique_name);
 								client_unique_name = components[2];
 								client_unique_names.Add(client_unique_name);
+								_Console_Update();
 							}
 							break;
 						}
@@ -2415,6 +2421,7 @@ public static class Gear
 							{
 								client_unique_names.Add(components[1]);
 								console_log = $"{console_log}\nClient [{components[1]}] just connected.";
+								_Console_Update();
 							}
 							break;
 						}
@@ -2427,28 +2434,23 @@ public static class Gear
 					case Message_Type.Client_Online: // Someone just connected and is getting updated on who is already online
 						{
 							if (components[1] == client_unique_name) // For me?
-							{
 								for (int i = 2; i < components.Length; i++)
-								{
 									if (client_unique_names.Contains(components[i]) == false)
-									{
 										client_unique_names.Add(components[i]);
-									}
-								}
-							}
+							_Console_Update();
 							break;
 						}
 					case Message_Type.Client_Message_To_All: // A client is sending a message to all clients
 						{
 							if (components[1] == client_unique_name) break; // Is this my message coming back to me?
-							_Clients_Last_Messages_Add(components[1], components[2]);
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Client, new Network_Packet(components[1], components[2], tick));
 							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
 							break;
 						}
 					case Message_Type.Client_Message_To_All_And_Server: // A client is sending a message to the server and all clients
 						{
 							if (components[1] == client_unique_name) break; // Is this my message coming back to me?
-							_Clients_Last_Messages_Add(components[1], components[2]);
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Client, new Network_Packet(components[1], components[2], tick));
 							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
 							break;
 						}
@@ -2457,13 +2459,13 @@ public static class Gear
 							if (components[1] == client_unique_name) return; // Is this my message coming back to me? (unlikely)
 							if (components[2] != client_unique_name) return; // Not for me?
 
-							_Clients_Last_Messages_Add(components[1], components[2]);
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Client, new Network_Packet(components[1], components[3], tick));
 							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[3]}";
 							break;
 						}
 					case Message_Type.Server_Message_To_All: // The server sent everyone a message
 						{
-							if (network_last_server_messages.Contains(components[1]) == false) network_last_server_messages.Add(components[1]);
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Server, new Network_Packet(null, components[1], tick));
 							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Server: {components[1]}";
 							break;
 						}
@@ -2471,16 +2473,14 @@ public static class Gear
 						{
 							if (components[1] != client_unique_name) return; // Not for me?
 
-							if (network_last_server_messages.Contains(components[1]) == false) network_last_server_messages.Add(components[1]);
-							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Server: {components[2]}";
+							program.Event_Just_Occured(Event_Type.Network_Packet_Received_From_Server, new Network_Packet(null, components[1], tick));
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Server: {components[1]}";
 							break;
 						}
 				}
 			}
 			if (network_log_messages_to_console) _Console_Update();
 			if (message_back != "") client.SendAsync(message_back);
-			if (network_last_client_messages.Count > 0) events_just_occuring.Add(Event_Type.Network_Message_Received_From_Client);
-			if (network_last_server_messages.Count > 0) events_just_occuring.Add(Event_Type.Network_Message_Received_From_Server);
 		}
 		protected override void OnError(SocketError error)
 		{
@@ -2499,11 +2499,6 @@ public static class Gear
 			result = $"{result}[{client_unique_names[i]}]{separator}";
 		}
 		return result;
-	}
-	private static void _Clients_Last_Messages_Add(string sender, string message)
-	{
-		if (network_last_client_messages.ContainsKey(sender) == false) network_last_client_messages.Add(sender, new List<string>());
-		else if (network_last_client_messages[sender].Contains(message) == false) network_last_client_messages[sender].Add(message);
 	}
 	private static void _Console_Update()
 	{
