@@ -62,17 +62,42 @@ public static class Gear
 	private static SpriteBatch sprite_batch;
 	private static RenderTarget2D render_target;
 	private static SamplerState render_sampler_state;
-	private static Canvas.Pixel_Filter render_pixel_filter;
+	private static Canvas_Pixel_Filter render_pixel_filter;
 	private static Server server;
 	private static Client client;
 
 	private enum Message_Type
 	{
-		Connection, Unique_Name_Change, Client_Connected, Client_Disconnected, Client_Online, Message_To_All, Message_To_Client
+		Connection, Unique_Name_Change, Client_Connected, Client_Disconnected, Client_Online, Client_Message_To_All, Client_Message_To_Client, Client_Message_To_Server, Server_Message_To_All, Server_Message_To_Client, Client_Message_To_All_And_Server
 	}
 	public enum Rotation_Samples
 	{
 		Left, Right, Up, Down, Up_Left, Up_Right, Down_Left, Down_Right
+	}
+	public enum Canvas_Pixel_Filter
+	{
+		Lowest, Medium, Highest
+	}
+	public enum Event_Type
+	{
+		Network_Message_Received_From_Client, Network_Message_Received_From_Server
+	}
+	public enum Input_Keys
+	{
+		None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, Left = 37, Up = 38, Right = 39, Down = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, Minus_Dash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
+	}
+	public enum Number_Round_Type
+	{
+		Closest, Up, Down
+	}
+	public enum Number_Time_Convert_Type
+	{
+		Milliseconds_To_Seconds,
+		Seconds_To_Milliseconds, Seconds_To_Minutes, Seconds_To_Hours,
+		Minutes_To_Milliseconds, Minutes_To_Seconds, Minutes_To_Hours, Minutes_To_Days,
+		Hours_To_Seconds, Hours_To_Minutes, Hours_To_Days, Hours_To_Weeks,
+		Days_To_Minutes, Days_To_Hours, Days_To_Weeks,
+		Weeks_To_Hours, Weeks_To_Days
 	}
 
 	private static PerformanceCounter ram_available = new PerformanceCounter("Memory", "Available MBytes");
@@ -83,19 +108,20 @@ public static class Gear
 	private static Dictionary<string, SoundEffectInstance> sounds = new Dictionary<string, SoundEffectInstance>();
 	private static Dictionary<string, SoundEffect> sounds_raw = new Dictionary<string, SoundEffect>();
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
-	private static Dictionary<string, List<string>> last_messages = new Dictionary<string, List<string>>();
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signal_pauses = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gate_entries_count = new Dictionary<string, int>();
 	private static Dictionary<string, string> client_ids = new Dictionary<string, string>();
+	private static Dictionary<string, List<string>> network_last_client_messages = new Dictionary<string, List<string>>();
 	private static Dictionary<string, float> signal_end_times = new Dictionary<string, float>(), signal_start_times = new Dictionary<string, float>(), signal_delays = new Dictionary<string, float>();
 
-	private static List<Input.Keys> last_frame_keys_pressed = new List<Input.Keys>(), keys_just_pressed = new List<Input.Keys>(), keys_just_released = new List<Input.Keys>();
+	private static List<Event_Type> events_just_occuring = new List<Event_Type>();
+	private static List<Input_Keys> last_frame_keys_pressed = new List<Input_Keys>(), keys_just_pressed = new List<Input_Keys>(), keys_just_released = new List<Input_Keys>();
 	private static List<Body> bodies_all = new List<Body>();
 	private static List<float> tps_averages = new List<float>(), fps_averages = new List<float>();
-	private static List<string> client_unique_names = new List<string>();
+	private static List<string> client_unique_names = new List<string>(), network_last_server_messages = new List<string>();
 
 	private static int tick, frame, frame_rendered, tps_average_index, fps_average_index, loading_percent, loading_screen_update_per_files = 10, loaded_files, content_file_count, server_port = 1234;
-	private static bool text_display_draw, loading = true, pause_unfocus, render, sleep_prevented, console_shown, client_is_connected, server_is_running;
+	private static bool text_display_draw, loading = true, pause_unfocus, render, sleep_prevented, console_shown, client_is_connected, server_is_running, network_log_messages_to_console;
 	private static float text_display_scale, tps, tps_average, fps, fps_average, ticks_delta_time, frames_delta_time, time;
 	private static string text_display_font, text_display_message, main_dir = AppDomain.CurrentDomain.BaseDirectory, console_log, connect_to_server_info, client_unique_name;
 
@@ -158,10 +184,10 @@ public static class Gear
 		{
 			sprite_batch = new SpriteBatch(game.GraphicsDevice);
 
-			graphics.PreferredBackBufferWidth = (int)screen_size.Width_Get();
-			graphics.PreferredBackBufferHeight = (int)screen_size.Height_Get();
-			graphics.HardwareModeSwitch = false;
-			graphics.IsFullScreen = true;
+			//graphics.PreferredBackBufferWidth = (int)screen_size.Width_Get();
+			//graphics.PreferredBackBufferHeight = (int)screen_size.Height_Get();
+			//graphics.HardwareModeSwitch = false;
+			//graphics.IsFullScreen = true;
 			game.Window.Position = new Microsoft.Xna.Framework.Point(0, 0);
 
 			render_sampler_state = SamplerState.PointWrap;
@@ -206,7 +232,21 @@ public static class Gear
 				tick++;
 				Advance_Tick_Time();
 				Update_On_Keys();
-				program.Each_Tick(tick);
+
+				try
+				{
+					program.Each_Tick(tick);
+				}
+				catch (Exception ex)
+				{
+					AllocConsole();
+					System.Console.WriteLine(ex.Message);
+					System.Console.ReadLine();
+					throw;
+				}
+				events_just_occuring.Clear();
+				network_last_client_messages.Clear();
+				network_last_server_messages.Clear();
 			}
 			base.Update(gameTime);
 		}
@@ -578,32 +618,27 @@ public static class Gear
 
 	public static class Canvas
 	{
-		public enum Pixel_Filter
-		{
-			Lowest,
-			Medium,
-			Highest
-		}
+
 		/// <summary>
 		/// - Smooths out the edges of the pixels according to the <paramref name="pixel_filter"/>. Higher filters apply better image quality but cost more performance.<br></br><br></br>- Pixel art projects go best with <see cref="Pixel_Filter.Lowest"/>.<br></br>- High resolution projects go best with the rest. <br></br><br></br>
 		/// - The current filter can be checked with <see cref="Canvas_Pixel_Filter_Get"/>.
 		/// </summary>
 		/// <param name="pixel_filter"></param>
-		public static void Pixel_Filter_Set(Pixel_Filter pixel_filter)
+		public static void Pixel_Filter_Set(Canvas_Pixel_Filter pixel_filter)
 		{
 			render_pixel_filter = pixel_filter;
 			switch (render_pixel_filter)
 			{
-				case Pixel_Filter.Lowest: render_sampler_state = SamplerState.PointWrap; break;
-				case Pixel_Filter.Medium: render_sampler_state = SamplerState.LinearWrap; break;
-				case Pixel_Filter.Highest: render_sampler_state = SamplerState.AnisotropicWrap; break;
+				case Canvas_Pixel_Filter.Lowest: render_sampler_state = SamplerState.PointWrap; break;
+				case Canvas_Pixel_Filter.Medium: render_sampler_state = SamplerState.LinearWrap; break;
+				case Canvas_Pixel_Filter.Highest: render_sampler_state = SamplerState.AnisotropicWrap; break;
 			}
 		}
 		/// <summary>
 		/// - Gets the current pixel filter and returns it.<br></br><br></br>
 		/// - Pixel filters can be changed and researched through <see cref="Canvas_Pixel_Filter_Get"/>.
 		/// </summary>
-		public static Pixel_Filter Canvas_Pixel_Filter_Get() => render_pixel_filter;
+		public static Canvas_Pixel_Filter Pixel_Filter_Get() => render_pixel_filter;
 		/// <summary>
 		/// - Sets the size of the displayed pixel relative to the user's monitor resolution. Each displayed pixel is equal to <paramref name="width"/> and <paramref name="height"/> of screen pixels.<br></br><br></br> - The canvas size can be checked with <see cref="Size_Width_Get"/> and <see cref="Size_Height_Get"/>.<br></br> - The user's screen size can be checked with <see cref="User.Screen_Size_Width_Get"/> and <see cref="User.Screen_Size_Width_Get"/>.
 		/// </summary>
@@ -692,13 +727,8 @@ public static class Gear
 		private static int ID;
 		private static Dictionary<string, Body> body_unique_names = new Dictionary<string, Body>();
 
-		public enum Pick_Number_Comparison
-		{
-			Lowest, Less, Equals, Greater, Highest
-		}
-
 		public static List<Body> Bodies_All_Get() => new List<Body>(bodies_all);
-		public static Body Pick_By_Name_Get(string unique_name)
+		public static Body Pick_By_Unique_Name_Get(string unique_name)
 		{
 			if (unique_name == null || body_unique_names.ContainsKey(unique_name) == false)
 			{
@@ -834,19 +864,6 @@ public static class Gear
 	/// </summary>
 	public static class Number
 	{
-		public enum Round_Type
-		{
-			Closest, Up, Down
-		}
-		public enum Time_Convert_Type
-		{
-			Milliseconds_To_Seconds,
-			Seconds_To_Milliseconds, Seconds_To_Minutes, Seconds_To_Hours,
-			Minutes_To_Milliseconds, Minutes_To_Seconds, Minutes_To_Hours, Minutes_To_Days,
-			Hours_To_Seconds, Hours_To_Minutes, Hours_To_Days, Hours_To_Weeks,
-			Days_To_Minutes, Days_To_Hours, Days_To_Weeks,
-			Weeks_To_Hours, Weeks_To_Days
-		}
 		public static float Unsigned_Get(float number) => Math.Abs(number);
 		public static float Averaged_Get(float number_a, float number_b) => (number_a + number_b) / 2;
 		public static float Randomized_Get(float lower_bound, float upper_bound, int precision)
@@ -864,7 +881,7 @@ public static class Gear
 
 			return randInt / (float)Math.Pow(10, precision);
 		}
-		public static float Rounded_Get(float number, int precision, Round_Type number_round_type)
+		public static float Rounded_Get(float number, int precision, Number_Round_Type number_round_type)
 		{
 			precision = (int)Limited_Get(precision, 0, 5);
 			var a = (float)Math.Pow(10, Precision_Get(number));
@@ -872,12 +889,9 @@ public static class Gear
 			var c = number * a;
 			switch (number_round_type)
 			{
-				case Round_Type.Closest:
-					return Convert.ToInt32(c) / b;
-				case Round_Type.Up:
-					return (float)Math.Ceiling(c) / b;
-				default:
-					return (float)Math.Floor(c) / b;
+				case Number_Round_Type.Closest: return Convert.ToInt32(c) / b;
+				case Number_Round_Type.Up: return (float)Math.Ceiling(c) / b;
+				default: return (float)Math.Floor(c) / b;
 			}
 		}
 		public static float Limited_Get(float number, float minimum, float maximum)
@@ -919,27 +933,27 @@ public static class Gear
 			}
 			return Changed_Get(number, numbers_per_second);
 		}
-		public static float Time_Converted_Get(float time, Time_Convert_Type time_convert_type)
+		public static float Time_Converted_Get(float time, Number_Time_Convert_Type time_convert_type)
 		{
 			switch (time_convert_type)
 			{
-				case Time_Convert_Type.Milliseconds_To_Seconds: return time / 1_000;
-				case Time_Convert_Type.Seconds_To_Milliseconds: return time * 1_000;
-				case Time_Convert_Type.Seconds_To_Minutes: return time / 60;
-				case Time_Convert_Type.Seconds_To_Hours: return time / 3_600;
-				case Time_Convert_Type.Minutes_To_Milliseconds: return time * 60_000;
-				case Time_Convert_Type.Minutes_To_Seconds: return time * 60;
-				case Time_Convert_Type.Minutes_To_Hours: return time / 60;
-				case Time_Convert_Type.Minutes_To_Days: return time / 1_440;
-				case Time_Convert_Type.Hours_To_Seconds: return time * 3_600;
-				case Time_Convert_Type.Hours_To_Minutes: return time * 60;
-				case Time_Convert_Type.Hours_To_Days: return time / 24;
-				case Time_Convert_Type.Hours_To_Weeks: return time / 168;
-				case Time_Convert_Type.Days_To_Minutes: return time * 1_440;
-				case Time_Convert_Type.Days_To_Hours: return time * 24;
-				case Time_Convert_Type.Days_To_Weeks: return time / 7;
-				case Time_Convert_Type.Weeks_To_Hours: return time * 168;
-				case Time_Convert_Type.Weeks_To_Days: return time * 7;
+				case Number_Time_Convert_Type.Milliseconds_To_Seconds: return time / 1_000;
+				case Number_Time_Convert_Type.Seconds_To_Milliseconds: return time * 1_000;
+				case Number_Time_Convert_Type.Seconds_To_Minutes: return time / 60;
+				case Number_Time_Convert_Type.Seconds_To_Hours: return time / 3_600;
+				case Number_Time_Convert_Type.Minutes_To_Milliseconds: return time * 60_000;
+				case Number_Time_Convert_Type.Minutes_To_Seconds: return time * 60;
+				case Number_Time_Convert_Type.Minutes_To_Hours: return time / 60;
+				case Number_Time_Convert_Type.Minutes_To_Days: return time / 1_440;
+				case Number_Time_Convert_Type.Hours_To_Seconds: return time * 3_600;
+				case Number_Time_Convert_Type.Hours_To_Minutes: return time * 60;
+				case Number_Time_Convert_Type.Hours_To_Days: return time / 24;
+				case Number_Time_Convert_Type.Hours_To_Weeks: return time / 168;
+				case Number_Time_Convert_Type.Days_To_Minutes: return time * 1_440;
+				case Number_Time_Convert_Type.Days_To_Hours: return time * 24;
+				case Number_Time_Convert_Type.Days_To_Weeks: return time / 7;
+				case Number_Time_Convert_Type.Weeks_To_Hours: return time * 168;
+				case Number_Time_Convert_Type.Weeks_To_Days: return time * 7;
 			}
 			return 0;
 		}
@@ -949,6 +963,7 @@ public static class Gear
 			var n = Randomized_Get(1, 100, 0);
 			return n <= percent;
 		}
+		public static float From_Text_Get(string text) => float.Parse(text);
 		public static int Precision_Get(float number)
 		{
 			var result = 0;
@@ -1121,6 +1136,7 @@ public static class Gear
 			text_display_font = font;
 			if (overwrite) text_display_message = "";
 			text_display_message = $"{text_display_message}{message}";
+			text_display_message = text_display_message.Replace("∞", "Infinity");
 			scale = Number.Limited_Get(scale, 0.001f, 5000);
 			text_display_scale = scale;
 
@@ -1158,11 +1174,11 @@ public static class Gear
 			{
 				var spl = seconds_str.Split('.');
 				ms = int.Parse(spl[1]) * 100;
-				seconds = Number.Rounded_Get(seconds, 0, Number.Round_Type.Down);
+				seconds = Number.Rounded_Get(seconds, 0, Number_Round_Type.Down);
 			}
 			var sec = seconds % 60;
-			var min = Number.Rounded_Get(seconds / 60 % 60, 0, Number.Round_Type.Down);
-			var hr = Number.Rounded_Get(seconds / 3_600, 0, Number.Round_Type.Down);
+			var min = Number.Rounded_Get(seconds / 60 % 60, 0, Number_Round_Type.Down);
+			var hr = Number.Rounded_Get(seconds / 3_600, 0, Number_Round_Type.Down);
 			var ms_str = ms_show ? $"{ms}" : "";
 			var sec_str = sec_show ? $"{sec}" : "";
 			var min_str = min_show ? $"{min}" : "";
@@ -1293,26 +1309,33 @@ public static class Gear
 	}
 	public static class Network
 	{
+		public static Dictionary<string, List<string>> Messages_Last_Received_From_Clients_Get() => new Dictionary<string, List<string>>(network_last_client_messages);
+		public static List<string> Messages_Last_Received_From_Server_Get() => new List<string>(network_last_server_messages);
+		public static void Messages_To_Console_Log(bool log) => network_log_messages_to_console = log;
+
+		public static int Clients_Connected_Count_Get() => client_unique_names.Count;
+
+		public static string Server_IP_Same_Device_Get() => "127.0.0.1";
 		public static void Server_Start()
 		{
+			var func_name = $"{nameof(Server_Start)}()";
 			try
 			{
 				if (server_is_running)
 				{
-					console_log = $"{console_log}\nServer_Start(): Server is already starting/started.";
+					console_log = $"{console_log}\n{func_name}: Server is already starting/started.";
 					_Console_Update();
 					return;
 				}
 				if (client_is_connected)
 				{
-					console_log = $"{console_log}\nServer_Start(): Cannot start a server while connected to one.";
+					console_log = $"{console_log}\n{func_name}: Cannot start a server while a client.";
 					_Console_Update();
 					return;
 				}
 				server = new Server(IPAddress.Any, server_port);
-				console_log = $"{console_log}\nServer_Start(): Starging a LAN Server on port {server_port}...";
 				server.Start();
-				console_log = $"{console_log}\nServer_Start(): Done!";
+				console_log = $"{console_log}\n{func_name}: Started a LAN Server on port {server_port}.";
 
 				var host_name = Dns.GetHostName();
 				var host_entry = Dns.GetHostEntry(host_name);
@@ -1328,21 +1351,68 @@ public static class Gear
 				}
 
 				server_is_running = true;
-				NatUtility.DeviceFound += DeviceFound;
-				NatUtility.StartDiscovery();
+				//NatUtility.DeviceFound += DeviceFound;
+				//NatUtility.StartDiscovery();
 				_Console_Update();
 			}
 			catch (Exception ex)
 			{
 				server_is_running = false;
-				console_log = $"{console_log}\nServer_Start() Error: {ex.Message}";
+				console_log = $"{console_log}\n{func_name} Error: {ex.Message}";
 				_Console_Update();
 				return;
 			}
 		}
+		public static void Server_Stop()
+		{
+			var func_name = $"{nameof(Server_Stop)}()";
+			try
+			{
+				if (server_is_running == false)
+				{
+					console_log = $"{console_log}\n{func_name}: Server is not running.";
+					_Console_Update();
+					return;
+				}
+				if (client_is_connected)
+				{
+					console_log = $"{console_log}\n{func_name}: Cannot stop a server while a client.";
+					_Console_Update();
+					return;
+				}
+				server_is_running = false;
+				server.Stop();
+				console_log = $"{console_log}\n{func_name}: The LAN Server on port {server_port} was stopped.";
+				_Console_Update();
+			}
+			catch (Exception ex)
+			{
+				server_is_running = false;
+				console_log = $"{console_log}\n{func_name} Error: {ex.Message}";
+				_Console_Update();
+				return;
+			}
+		}
+		public static void Server_Message_Send_To_All_Clients(string message)
+		{
+			var func_name = $"{nameof(Server_Message_Send_To_All_Clients)}(\"{message}\")";
+			if (Server_Cannot_Send_Message(func_name)) return;
+
+			Server_Message_Sent(func_name);
+			server.Multicast($"~{(int)Message_Type.Server_Message_To_All}|{message}");
+		}
+		public static void Server_Message_Send_To_Client(string receiver_unique_name, string message)
+		{
+			var func_name = $"{nameof(Server_Message_Send_To_Client)}(\"{receiver_unique_name}\", \"{message}\")";
+			if (Server_Cannot_Send_Message(func_name)) return;
+
+			Server_Message_Sent(func_name);
+			server.Multicast($"~{(int)Message_Type.Server_Message_To_Client}|{receiver_unique_name}|{message}");
+		}
+
 		public static void Client_Connect(string unique_name, string ip)
 		{
-			var func_name = $"Client_Connect(\"{unique_name}\", \"{ip}\")";
+			var func_name = $"{nameof(Client_Connect)}(\"{unique_name}\", \"{ip}\")";
 			if (client_is_connected)
 			{
 				console_log = $"{console_log}\n{func_name}: Already connecting/connected.";
@@ -1352,6 +1422,12 @@ public static class Gear
 			if (server_is_running)
 			{
 				console_log = $"{console_log}\n{func_name}: Cannot connect as a client while a server.";
+				_Console_Update();
+				return;
+			}
+			if (unique_name == null)
+			{
+				console_log = $"{console_log}\n{func_name}: Client's unique names cannot be null.";
 				_Console_Update();
 				return;
 			}
@@ -1385,48 +1461,89 @@ public static class Gear
 			}
 			client.DisconnectAndStop();
 		}
-		public static void Clinet_Message_Send_To_All(string message)
+		public static string Client_Unique_Name_Get() => client_is_connected ? client_unique_name : default;
+		public static void Clinet_Message_Send_To_All_Clients(string message)
 		{
-			if (client_is_connected == false && server_is_running == false)
-			{
-				console_log = $"{console_log}\nClinet_Message_Send_To_All(): Cannot send a message while disconnected.";
-				_Console_Update();
-				return;
-			}
-			else if (server_is_running)
-			{
-				console_log = $"{console_log}\nClinet_Message_Send_To_All(): Cannot send a message while a server. Only clients can send messages.";
-				_Console_Update();
-				return;
-			}
-			console_log = $"{console_log}\nSending a message to all clients: {message}";
-			_Console_Update();
-			client.SendAsync($"{(int)Message_Type.Message_To_All}|{client_unique_name}|{message}");
+			var func_name = $"{nameof(Clinet_Message_Send_To_All_Clients)}(\"{message}\")";
+			if (Client_Cannot_Send_Message(func_name)) return;
+
+			Client_Message_Sent(func_name);
+			client.SendAsync($"~{(int)Message_Type.Client_Message_To_All}|{client_unique_name}|{message}");
 		}
 		public static void Clinet_Message_Send_To_Client(string receiver_unique_name, string message)
 		{
-			if (client_unique_name == receiver_unique_name)
-			{
-				return;
-			}
-			if (client_is_connected == false && server_is_running == false)
-			{
-				console_log = $"{console_log}\nClinet_Message_Send_To_Client(): Cannot send a message while disconnected.";
-				_Console_Update();
-				return;
-			}
-			else if (server_is_running)
-			{
-				console_log = $"{console_log}\nClinet_Message_Send_To_Client(): Cannot send a message while a server. Only clients can send messages.";
-				_Console_Update();
-				return;
-			}
-			console_log = $"{console_log}\nSending a message to client [{receiver_unique_name}]: {message}";
-			_Console_Update();
-			client.SendAsync($"{(int)Message_Type.Message_To_Client}|{client_unique_name}|{receiver_unique_name}|{message}");
+			var func_name = $"{nameof(Clinet_Message_Send_To_Client)}(\"{receiver_unique_name}\", \"{message}\")";
+			if (client_unique_name == receiver_unique_name) return;
+			if (Client_Cannot_Send_Message(func_name)) return;
+
+			Client_Message_Sent(func_name);
+			client.SendAsync($"~{(int)Message_Type.Client_Message_To_Client}|{client_unique_name}|{receiver_unique_name}|{message}");
+		}
+		public static void Client_Message_Send_To_Server(string message)
+		{
+			var func_name = $"{nameof(Client_Message_Send_To_Server)}(\"{message}\")";
+			if (Client_Cannot_Send_Message(func_name)) return;
+
+			Client_Message_Sent(func_name);
+			client.SendAsync($"~{(int)Message_Type.Client_Message_To_Server}|{client_unique_name}|{message}");
+		}
+		public static void Client_Message_Send_To_Server_And_All_Clients(string message)
+		{
+			var func_name = $"{nameof(Client_Message_Send_To_Server_And_All_Clients)}(\"{message}\")";
+			if (Client_Cannot_Send_Message(func_name)) return;
+
+			Client_Message_Sent(func_name);
+			client.SendAsync($"~{(int)Message_Type.Client_Message_To_All_And_Server}|{client_unique_name}|{message}");
 		}
 
-		public static string Console_Read() => System.Console.ReadLine();
+		private static bool Client_Cannot_Send_Message(string func_name)
+		{
+			if (Message_Disconnected(func_name)) return true;
+			else if (server_is_running)
+			{
+				if (network_log_messages_to_console == false) return true;
+				console_log = $"{console_log}\n{func_name}: Cannot send a client message while a server.";
+				_Console_Update();
+				return true;
+			}
+			return false;
+		}
+		private static void Client_Message_Sent(string func_name)
+		{
+			if (network_log_messages_to_console == false) return;
+			console_log = $"{console_log}\n{func_name}: Sent.";
+			_Console_Update();
+		}
+		private static bool Server_Cannot_Send_Message(string func_name)
+		{
+			if (Message_Disconnected(func_name)) return true;
+			else if (client_is_connected)
+			{
+				if (network_log_messages_to_console == false) return true;
+				console_log = $"{console_log}\n{func_name}: Cannot send a server message while a client.";
+				_Console_Update();
+				return true;
+			}
+			return false;
+		}
+		private static void Server_Message_Sent(string func_name)
+		{
+			if (network_log_messages_to_console == false) return;
+			console_log = $"{console_log}\n{func_name}: Sent.";
+			_Console_Update();
+		}
+		private static bool Message_Disconnected(string func_name)
+		{
+			if (client_is_connected == false && server_is_running == false)
+			{
+				if (network_log_messages_to_console == false) return true;
+				console_log = $"{console_log}\n{func_name}: Cannot send a message while disconnected.";
+				_Console_Update();
+				return true;
+			}
+			return false;
+		}
+
 		private static void DeviceFound(object sender, DeviceEventArgs args) => args.Device.CreatePortMap(new Mapping(Protocol.Tcp, server_port, server_port));
 	}
 	public static class Camera
@@ -1466,97 +1583,93 @@ public static class Gear
 	/// </summary>
 	public static class Input
 	{
-		public enum Keys
+		public static string Key_To_Text_Get(Input_Keys key)
 		{
-			None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, Left = 37, Up = 38, Right = 39, Down = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, Minus_Dash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
-		}
-		public static string Key_To_Text_Get(Keys key)
-		{
-			var shift = Key_Is_Pressed_Check(Keys.ShiftLeft) || Key_Is_Pressed_Check(Keys.ShiftRight);
+			var shift = Key_Is_Pressed_Check(Input_Keys.ShiftLeft) || Key_Is_Pressed_Check(Input_Keys.ShiftRight);
 			var result = "";
 			switch (key)
 			{
-				case Keys.Space: result = " "; break;
-				case Keys._0: result = shift ? ")" : "0"; break;
-				case Keys._1: result = shift ? "!" : "1"; break;
-				case Keys._2: result = shift ? "@" : "2"; break;
-				case Keys._3: result = shift ? "#" : "3"; break;
-				case Keys._4: result = shift ? "$" : "4"; break;
-				case Keys._5: result = shift ? "%" : "5"; break;
-				case Keys._6: result = shift ? "^" : "6"; break;
-				case Keys._7: result = shift ? "&" : "7"; break;
-				case Keys._8: result = shift ? "*" : "8"; break;
-				case Keys._9: result = shift ? "(" : "9"; break;
-				case Keys.A: result = "a"; break;
-				case Keys.B: result = "b"; break;
-				case Keys.C: result = "c"; break;
-				case Keys.D: result = "d"; break;
-				case Keys.E: result = "e"; break;
-				case Keys.F: result = "f"; break;
-				case Keys.G: result = "g"; break;
-				case Keys.H: result = "h"; break;
-				case Keys.I: result = "i"; break;
-				case Keys.J: result = "j"; break;
-				case Keys.K: result = "k"; break;
-				case Keys.L: result = "l"; break;
-				case Keys.M: result = "m"; break;
-				case Keys.N: result = "n"; break;
-				case Keys.O: result = "o"; break;
-				case Keys.P: result = "p"; break;
-				case Keys.Q: result = "q"; break;
-				case Keys.R: result = "r"; break;
-				case Keys.S: result = "s"; break;
-				case Keys.T: result = "t"; break;
-				case Keys.U: result = "u"; break;
-				case Keys.V: result = "v"; break;
-				case Keys.W: result = "w"; break;
-				case Keys.X: result = "x"; break;
-				case Keys.Y: result = "y"; break;
-				case Keys.Z: result = "z"; break;
-				case Keys.Num0: result = "0"; break;
-				case Keys.Num1: result = "1"; break;
-				case Keys.Num2: result = "2"; break;
-				case Keys.Num3: result = "3"; break;
-				case Keys.Num4: result = "4"; break;
-				case Keys.Num5: result = "5"; break;
-				case Keys.Num6: result = "6"; break;
-				case Keys.Num7: result = "7"; break;
-				case Keys.Num8: result = "8"; break;
-				case Keys.Num9: result = "9"; break;
-				case Keys.NumMultiply: result = "*"; break;
-				case Keys.NumAdd: result = "+"; break;
-				case Keys.NumSubtract: result = "-"; break;
-				case Keys.NumDecimal: result = "."; break;
-				case Keys.NumDivide: result = "/"; break;
-				case Keys.Semicolon: result = shift ? ":" : ";"; break;
-				case Keys.Equals: result = shift ? "+" : "="; break;
-				case Keys.Comma: result = shift ? "<" : ","; break;
-				case Keys.Minus_Dash: result = shift ? "_" : "-"; break;
-				case Keys.Dot: result = shift ? ">" : "."; break;
-				case Keys.Slash: result = shift ? "?" : "/"; break;
-				case Keys.GraveAccent: result = shift ? "~" : "`"; break;
-				case Keys.SquareBracketOpen: result = shift ? "{" : "["; break;
-				case Keys.Backslash: result = shift ? "|" : "\\"; break;
-				case Keys.SquareBracketClose: result = shift ? "}" : "]"; break;
-				case Keys.Quote: result = shift ? "\"" : "'"; break;
+				case Input_Keys.Space: result = " "; break;
+				case Input_Keys._0: result = shift ? ")" : "0"; break;
+				case Input_Keys._1: result = shift ? "!" : "1"; break;
+				case Input_Keys._2: result = shift ? "@" : "2"; break;
+				case Input_Keys._3: result = shift ? "#" : "3"; break;
+				case Input_Keys._4: result = shift ? "$" : "4"; break;
+				case Input_Keys._5: result = shift ? "%" : "5"; break;
+				case Input_Keys._6: result = shift ? "^" : "6"; break;
+				case Input_Keys._7: result = shift ? "&" : "7"; break;
+				case Input_Keys._8: result = shift ? "*" : "8"; break;
+				case Input_Keys._9: result = shift ? "(" : "9"; break;
+				case Input_Keys.A: result = "a"; break;
+				case Input_Keys.B: result = "b"; break;
+				case Input_Keys.C: result = "c"; break;
+				case Input_Keys.D: result = "d"; break;
+				case Input_Keys.E: result = "e"; break;
+				case Input_Keys.F: result = "f"; break;
+				case Input_Keys.G: result = "g"; break;
+				case Input_Keys.H: result = "h"; break;
+				case Input_Keys.I: result = "i"; break;
+				case Input_Keys.J: result = "j"; break;
+				case Input_Keys.K: result = "k"; break;
+				case Input_Keys.L: result = "l"; break;
+				case Input_Keys.M: result = "m"; break;
+				case Input_Keys.N: result = "n"; break;
+				case Input_Keys.O: result = "o"; break;
+				case Input_Keys.P: result = "p"; break;
+				case Input_Keys.Q: result = "q"; break;
+				case Input_Keys.R: result = "r"; break;
+				case Input_Keys.S: result = "s"; break;
+				case Input_Keys.T: result = "t"; break;
+				case Input_Keys.U: result = "u"; break;
+				case Input_Keys.V: result = "v"; break;
+				case Input_Keys.W: result = "w"; break;
+				case Input_Keys.X: result = "x"; break;
+				case Input_Keys.Y: result = "y"; break;
+				case Input_Keys.Z: result = "z"; break;
+				case Input_Keys.Num0: result = "0"; break;
+				case Input_Keys.Num1: result = "1"; break;
+				case Input_Keys.Num2: result = "2"; break;
+				case Input_Keys.Num3: result = "3"; break;
+				case Input_Keys.Num4: result = "4"; break;
+				case Input_Keys.Num5: result = "5"; break;
+				case Input_Keys.Num6: result = "6"; break;
+				case Input_Keys.Num7: result = "7"; break;
+				case Input_Keys.Num8: result = "8"; break;
+				case Input_Keys.Num9: result = "9"; break;
+				case Input_Keys.NumMultiply: result = "*"; break;
+				case Input_Keys.NumAdd: result = "+"; break;
+				case Input_Keys.NumSubtract: result = "-"; break;
+				case Input_Keys.NumDecimal: result = "."; break;
+				case Input_Keys.NumDivide: result = "/"; break;
+				case Input_Keys.Semicolon: result = shift ? ":" : ";"; break;
+				case Input_Keys.Equals: result = shift ? "+" : "="; break;
+				case Input_Keys.Comma: result = shift ? "<" : ","; break;
+				case Input_Keys.Minus_Dash: result = shift ? "_" : "-"; break;
+				case Input_Keys.Dot: result = shift ? ">" : "."; break;
+				case Input_Keys.Slash: result = shift ? "?" : "/"; break;
+				case Input_Keys.GraveAccent: result = shift ? "~" : "`"; break;
+				case Input_Keys.SquareBracketOpen: result = shift ? "{" : "["; break;
+				case Input_Keys.Backslash: result = shift ? "|" : "\\"; break;
+				case Input_Keys.SquareBracketClose: result = shift ? "}" : "]"; break;
+				case Input_Keys.Quote: result = shift ? "\"" : "'"; break;
 				default: result = null; break;
 			}
 			result = shift && result != null ? result.ToUpper() : result;
 			return result;
 		}
-		public static List<Keys> Keys_Pressed_Get()
+		public static List<Input_Keys> Keys_Pressed_Get()
 		{
-			var result = new List<Keys>();
+			var result = new List<Input_Keys>();
 			var keysPressed = Keyboard.GetState().GetPressedKeys();
 			for (int i = 0; i < keysPressed.Length; i++)
 			{
-				result.Add((Keys)(int)keysPressed[i]);
+				result.Add((Input_Keys)(int)keysPressed[i]);
 			}
 			return result;
 		}
-		public static List<Keys> Keys_Just_Pressed_Get() => new List<Keys>(keys_just_pressed);
-		public static List<Keys> Keys_Just_Released_Get() => new List<Keys>(keys_just_released);
-		public static bool Key_Is_Pressed_Check(Keys key) => Keyboard.GetState().IsKeyDown((Microsoft.Xna.Framework.Input.Keys)(int)key);
+		public static List<Input_Keys> Keys_Just_Pressed_Get() => new List<Input_Keys>(keys_just_pressed);
+		public static List<Input_Keys> Keys_Just_Released_Get() => new List<Input_Keys>(keys_just_released);
+		public static bool Key_Is_Pressed_Check(Input_Keys key) => Keyboard.GetState().IsKeyDown((Microsoft.Xna.Framework.Input.Keys)(int)key);
 
 		public static Point Mouse_Cursor_Position_World_Get()
 		{
@@ -1720,6 +1833,15 @@ public static class Gear
 			console_log = $"{console_log}{message}";
 			_Console_Update();
 		}
+		public static void Clear()
+		{
+			console_log = "";
+			_Console_Update();
+		}
+	}
+	public static class Event
+	{
+		public static bool Just_Occured(Event_Type event_type) => events_just_occuring.Contains(event_type);
 	}
 
 	public struct Angle
@@ -1730,20 +1852,6 @@ public static class Gear
 		public float Get() => angle;
 		public void To_360_Degrees() => angle = ((angle % 360) + 360) % 360;
 		public void Set(float angle) { this.angle = angle; To_360_Degrees(); }
-		public void Set_From_Rotation_Sample(Rotation_Samples angle)
-		{
-			switch (angle)
-			{
-				case Rotation_Samples.Up: this.angle = 270; break;
-				case Rotation_Samples.Left: this.angle = 180; break;
-				case Rotation_Samples.Right: this.angle = 0; break;
-				case Rotation_Samples.Down: this.angle = 90; break;
-				case Rotation_Samples.Up_Left: this.angle = 225; break;
-				case Rotation_Samples.Up_Right: this.angle = 315; break;
-				case Rotation_Samples.Down_Left: this.angle = 135; break;
-				case Rotation_Samples.Down_Right: this.angle = 45; break;
-			}
-		}
 		public void Set_From_Direction(Direction direction)
 		{
 			//Vector2 to Radians: atan2(Vector2.y, Vector2.x)
@@ -1753,13 +1861,27 @@ public static class Gear
 			angle = (float)(rad * (180 / Math.PI));
 			To_360_Degrees();
 		}
+		public void Set_From_Between_Points(Point point, Point target_point) { var dir = new Direction(); dir.Set_From_Between_Points(point, target_point); Set_From_Direction(dir); }
+		public void Set_To_Rotation_Sample(Rotation_Samples angle)
+		{
+			switch (angle)
+			{
+				case Rotation_Samples.Up: this = new Angle(270); break;
+				case Rotation_Samples.Left: this = new Angle(180); break;
+				case Rotation_Samples.Right: this = new Angle(0); break;
+				case Rotation_Samples.Down: this = new Angle(90); break;
+				case Rotation_Samples.Up_Left: this = new Angle(225); break;
+				case Rotation_Samples.Up_Right: this = new Angle(315); break;
+				case Rotation_Samples.Down_Left: this = new Angle(135); break;
+				case Rotation_Samples.Down_Right: this = new Angle(45); break;
+			}
+		}
 		public void Set_To_Percent_Towards_Angle(Angle target_angle, float percent)
 		{
 			To_360_Degrees();
 			target_angle.To_360_Degrees();
 			angle = Number.Percented_Towards_Target_Get(angle, target_angle.Get(), percent);
 		}
-		public void Set_From_Between_Points(Point point, Point target_point) { var dir = new Direction(); dir.Set_From_Between_Points(point, target_point); Set_From_Direction(dir); }
 		public void Rotate(float degrees_per_second) { angle = Number.Changed_Get(angle, degrees_per_second); To_360_Degrees(); }
 		public void Rotate_Towards_Angle(Angle target_angle, float degrees_per_second)
 		{
@@ -1781,7 +1903,7 @@ public static class Gear
 			if (Math.Abs(difference) > 360 - degrees_per_second * ticks_delta_time) angle = target_angle.Get();
 		}
 
-		public override string ToString() => $"angle[degrees:{angle}]";
+		public override string ToString() => $"angle[degrees:{angle:F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1846,7 +1968,7 @@ public static class Gear
 		public void Set(float first, float second) { this.first = first; this.second = second; }
 		public float First_Get() => first;
 		public float Second_Get() => second;
-		public override string ToString() => $"pair_numbers[first:{First_Get()}][second:{Second_Get()}]";
+		public override string ToString() => $"pair_numbers[first:{First_Get():F2}][second:{Second_Get():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1869,8 +1991,19 @@ public static class Gear
 		public void Set(float width, float height) => size.Set(width, height);
 		public float Width_Get() => size.First_Get();
 		public float Height_Get() => size.Second_Get();
+		public void Scale(float pixels_per_second)
+		{
+			pixels_per_second *= ticks_delta_time;
+			size = new Pair_Numbers(size.First_Get() + (float)pixels_per_second, size.Second_Get() + (float)pixels_per_second);
+		}
+		public void Scale_Towards_Target(Size target_size, float pixels_per_second)
+		{
+			Scale(pixels_per_second);
+			var dist = Vector2.Distance(new Vector2(Width_Get(), Height_Get()), new Vector2(target_size.Width_Get(), target_size.Height_Get()));
+			if (dist < pixels_per_second * ticks_delta_time * 2) size = new Pair_Numbers(target_size.Width_Get(), target_size.Height_Get());
+		}
 
-		public override string ToString() => $"size[width:{Width_Get()}][height:{Height_Get()}]";
+		public override string ToString() => $"size[width:{Width_Get():F2}][height:{Height_Get():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1904,14 +2037,20 @@ public static class Gear
 			point += new Pair_Numbers(direction.End_Point_Get().X_Get() * pixels_per_second, direction.End_Point_Get().Y_Get() * pixels_per_second);
 		}
 		public void Move_At_Angle(Angle angle, float pixels_per_second) { var dir = new Direction(); dir.Set_From_Angle(angle); Move_In_Direction(dir, pixels_per_second); }
-		public void Move_Towards_Point(Point target_point, float pixels_per_second) { var dir = new Direction(target_point - this); Move_In_Direction(dir, pixels_per_second); }
+		public void Move_Towards_Point(Point target_point, float pixels_per_second)
+		{
+			var dir = new Direction(target_point - this);
+			Move_In_Direction(dir, pixels_per_second);
+			var dist = Vector2.Distance(new Vector2(X_Get(), Y_Get()), new Vector2(target_point.X_Get(), target_point.Y_Get()));
+			if (dist < pixels_per_second * ticks_delta_time * 2) point = new Pair_Numbers(target_point.X_Get(), target_point.Y_Get());
+		}
 		public void Set_To_Percent_Towards_Point(Point target_point, float percent)
 		{
 			var vec = Vector2.Lerp(new Vector2(X_Get(), Y_Get()), new Vector2(target_point.X_Get(), target_point.Y_Get()), (float)percent / 100);
 			point = new Pair_Numbers(vec.X, vec.Y);
 		}
 
-		public override string ToString() => $"point[x:{X_Get()}][y:{Y_Get()}]";
+		public override string ToString() => $"point[x:{X_Get():F2}][y:{Y_Get():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1940,21 +2079,7 @@ public static class Gear
 			if (vec != Vector2.Zero) vec.Normalize();
 			end_point = new Point(vec.X, vec.Y);
 		}
-		public void Set_From_Rotation_Sample(Rotation_Samples direction)
-		{
-			switch (direction)
-			{
-				case Rotation_Samples.Up: end_point = new Point(0, -1); break;
-				case Rotation_Samples.Left: end_point = new Point(-1, 0); break;
-				case Rotation_Samples.Right: end_point = new Point(1, 0); break;
-				case Rotation_Samples.Down: end_point = new Point(0, 1); break;
-				case Rotation_Samples.Up_Left: end_point = new Point(-1, -1); break;
-				case Rotation_Samples.Up_Right: end_point = new Point(1, -1); break;
-				case Rotation_Samples.Down_Left: end_point = new Point(-1, 1); break;
-				case Rotation_Samples.Down_Right: end_point = new Point(1, 1); break;
-			}
-			Normalize();
-		}
+		public void Set(Point end_point) { this.end_point = end_point; Normalize(); }
 		public void Set_From_Angle(Angle angle)
 		{
 			//Angle to Radians : (Math.PI / 180) * angle
@@ -1966,6 +2091,21 @@ public static class Gear
 			end_point = new Point(dir.X, dir.Y);
 		}
 		public void Set_From_Between_Points(Point point, Point target_point) { end_point = new Point(target_point - point); Normalize(); }
+		public void Set_To_Rotation_Sample(Rotation_Samples direction)
+		{
+			switch (direction)
+			{
+				case Rotation_Samples.Up: this = new Direction(new Point(0, -1)); break;
+				case Rotation_Samples.Left: this = new Direction(new Point(-1, 0)); break;
+				case Rotation_Samples.Right: this = new Direction(new Point(1, 0)); break;
+				case Rotation_Samples.Down: this = new Direction(new Point(0, 1)); break;
+				case Rotation_Samples.Up_Left: this = new Direction(new Point(-1, -1)); break;
+				case Rotation_Samples.Up_Right: this = new Direction(new Point(1, -1)); break;
+				case Rotation_Samples.Down_Left: this = new Direction(new Point(-1, 1)); break;
+				case Rotation_Samples.Down_Right: this = new Direction(new Point(1, 1)); break;
+			}
+			Normalize();
+		}
 		public void Set_To_Percent_Towards_Direction(Direction target_direction, float percent)
 		{
 			Normalize();
@@ -2016,16 +2156,76 @@ public static class Gear
 	}
 	public struct Color
 	{
-		private byte red, green, blue, opacity;
+		private float red, green, blue, opacity;
 
-		public Color(byte red, byte green, byte blue, byte opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; }
-		public void Set(byte red, byte green, byte blue, byte opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; }
-		public byte Red_Get() => red;
-		public byte Green_Get() => green;
-		public byte Blue_Get() => blue;
-		public byte Opacity_Get() => opacity;
+		public Color(float red, float green, float blue, float opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; To_255_Shades(); }
+		public void Set(float red, float green, float blue, float opacity = 255) { this.red = red; this.green = green; this.blue = blue; this.opacity = opacity; To_255_Shades(); }
+		public void To_255_Shades()
+		{
+			red = Number.Limited_Get(red, 0, 255);
+			green = Number.Limited_Get(green, 0, 255);
+			blue = Number.Limited_Get(blue, 0, 255);
+			opacity = Number.Limited_Get(opacity, 0, 255);
+		}
+		public void Lighten(float shades_per_second)
+		{
+			shades_per_second *= ticks_delta_time;
+			red += shades_per_second;
+			green += shades_per_second;
+			blue += shades_per_second;
+			To_255_Shades();
+		}
+		public void Tint_Red(float shades_per_second) { red += shades_per_second * ticks_delta_time; To_255_Shades(); }
+		public void Tint_Green(float shades_per_second) { green += shades_per_second * ticks_delta_time; To_255_Shades(); }
+		public void Tint_Blue(float shades_per_second) { blue += shades_per_second * ticks_delta_time; To_255_Shades(); }
+		public void Appear(float shades_per_second) { opacity += shades_per_second * ticks_delta_time; To_255_Shades(); }
+		public void Tint_Towards_Red(float target_red, float shades_per_second)
+		{
+			Tint_Red(red < target_red ? shades_per_second : -shades_per_second);
+			var dist = Math.Abs(red - target_red);
+			if (dist < shades_per_second * ticks_delta_time * 2) red = target_red;
+		}
+		public void Tint_Towards_Green(float target_green, float shades_per_second)
+		{
+			Tint_Green(red < target_green ? shades_per_second : -shades_per_second);
+			var dist = Math.Abs(green - target_green);
+			if (dist < shades_per_second * ticks_delta_time * 2) green = target_green;
+		}
+		public void Tint_Towards_Blue(float target_blue, float shades_per_second)
+		{
+			Tint_Blue(blue < target_blue ? shades_per_second : -shades_per_second);
+			var dist = Math.Abs(blue - target_blue);
+			if (dist < shades_per_second * ticks_delta_time * 2) blue = target_blue;
+		}
+		public void Appear_Towards_Opacity(float target_opacity, float shades_per_second)
+		{
+			Appear(opacity < target_opacity ? shades_per_second : -shades_per_second);
+			var dist = Math.Abs(opacity - target_opacity);
+			if (dist < shades_per_second * ticks_delta_time * 2) opacity = target_opacity;
+		}
+		public void Tint_Towards_Color(Color target_color, float shades_per_second)
+		{
+			Tint_Red(target_color.red > red ? shades_per_second : -shades_per_second);
+			Tint_Green(target_color.green > green ? shades_per_second : -shades_per_second);
+			Tint_Blue(target_color.blue > blue ? shades_per_second : -shades_per_second);
 
-		public override string ToString() => $"color[red:{red}][green:{green}][blue:{blue}][opacity:{opacity}]";
+			var red_dist = Math.Abs(target_color.red - red);
+			var green_dist = Math.Abs(target_color.green - green);
+			var blue_dist = Math.Abs(target_color.blue - blue);
+
+			shades_per_second *= ticks_delta_time;
+			if (red_dist < shades_per_second * 2) red = target_color.red;
+			if (green_dist < shades_per_second * 2) green = target_color.green;
+			if (blue_dist < shades_per_second * 2) blue = target_color.blue;
+
+			To_255_Shades();
+		}
+		public float Red_Get() => red;
+		public float Green_Get() => green;
+		public float Blue_Get() => blue;
+		public float Opacity_Get() => opacity;
+
+		public override string ToString() => $"color[red:{red:F2}][green:{green:F2}][blue:{blue:F2}][opacity:{opacity:F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -2089,22 +2289,36 @@ public static class Gear
 							_Console_Update();
 							break;
 						}
-					case Message_Type.Message_To_All: // A client wants to send a message to everyone
+					case Message_Type.Client_Message_To_All: // A client wants to send a message to everyone
 						{
 							message_back = $"{message_back}~{message}";
 							break;
 						}
-					case Message_Type.Message_To_Client: // A client wants to send a message to another client
+					case Message_Type.Client_Message_To_Client: // A client wants to send a message to another client
 						{
 							message_back = $"{message_back}~{message}";
+							break;
+						}
+					case Message_Type.Client_Message_To_Server: // A client sent me (the server) a message
+						{
+							_Clients_Last_Messages_Add(components[1], components[2]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
+							break;
+						}
+					case Message_Type.Client_Message_To_All_And_Server: // A client is sending me (the server) and all other clients a message
+						{
+							_Clients_Last_Messages_Add(components[1], components[2]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
 							break;
 						}
 				}
 			}
+			if (network_log_messages_to_console) _Console_Update();
 			if (message_back != "")
 			{
 				server.Multicast(message_back);
 			}
+			if (network_last_client_messages.Count > 0) events_just_occuring.Add(Event_Type.Network_Message_Received_From_Client);
 		}
 		protected override void OnError(SocketError error)
 		{
@@ -2224,36 +2438,49 @@ public static class Gear
 							}
 							break;
 						}
-					case Message_Type.Message_To_All: // A client is sending a message to everybody
+					case Message_Type.Client_Message_To_All: // A client is sending a message to all clients
 						{
-							if (components[1] == client_unique_name) // Is this my message coming back to me?
-							{
-								break;
-							}
-							_Add_Message(components[1], components[2]);
-							console_log = $"{console_log}\nClient [{components[1]}] sent everyone a message: {components[2]}";
+							if (components[1] == client_unique_name) break; // Is this my message coming back to me?
+							_Clients_Last_Messages_Add(components[1], components[2]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
 							break;
 						}
-					case Message_Type.Message_To_Client: // A client is sending a message to another client
+					case Message_Type.Client_Message_To_All_And_Server: // A client is sending a message to the server and all clients
 						{
-							if (components[1] == client_unique_name) // Is this my message coming back to me?
-							{
-								break;
-							}
-							if (components[2] == client_unique_name) // Is it for me?
-							{
-								_Add_Message(components[1], components[3]);
-								console_log = $"{console_log}\nClient [{components[1]}] sent me a message: {components[3]}";
-							}
+							if (components[1] == client_unique_name) break; // Is this my message coming back to me?
+							_Clients_Last_Messages_Add(components[1], components[2]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[2]}";
+							break;
+						}
+					case Message_Type.Client_Message_To_Client: // A client is sending a message to another client
+						{
+							if (components[1] == client_unique_name) return; // Is this my message coming back to me? (unlikely)
+							if (components[2] != client_unique_name) return; // Not for me?
+
+							_Clients_Last_Messages_Add(components[1], components[2]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Client [{components[1]}]: {components[3]}";
+							break;
+						}
+					case Message_Type.Server_Message_To_All: // The server sent everyone a message
+						{
+							if (network_last_server_messages.Contains(components[1]) == false) network_last_server_messages.Add(components[1]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Server: {components[1]}";
+							break;
+						}
+					case Message_Type.Server_Message_To_Client: // The server sent some client a message
+						{
+							if (components[1] != client_unique_name) return; // Not for me?
+
+							if (network_last_server_messages.Contains(components[1]) == false) network_last_server_messages.Add(components[1]);
+							if (network_log_messages_to_console) console_log = $"{console_log}\nMessage received from Server: {components[2]}";
 							break;
 						}
 				}
 			}
-			_Console_Update();
-			if (message_back != "")
-			{
-				client.SendAsync(message_back);
-			}
+			if (network_log_messages_to_console) _Console_Update();
+			if (message_back != "") client.SendAsync(message_back);
+			if (network_last_client_messages.Count > 0) events_just_occuring.Add(Event_Type.Network_Message_Received_From_Client);
+			if (network_last_server_messages.Count > 0) events_just_occuring.Add(Event_Type.Network_Message_Received_From_Server);
 		}
 		protected override void OnError(SocketError error)
 		{
@@ -2273,13 +2500,10 @@ public static class Gear
 		}
 		return result;
 	}
-	private static void _Add_Message(string from, string message)
+	private static void _Clients_Last_Messages_Add(string sender, string message)
 	{
-		if (last_messages.ContainsKey(from) == false)
-		{
-			last_messages[from] = new List<string>();
-		}
-		last_messages[from].Add(message);
+		if (network_last_client_messages.ContainsKey(sender) == false) network_last_client_messages.Add(sender, new List<string>());
+		else if (network_last_client_messages[sender].Contains(message) == false) network_last_client_messages[sender].Add(message);
 	}
 	private static void _Console_Update()
 	{

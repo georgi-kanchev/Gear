@@ -4,13 +4,11 @@
   <Platform>Windows</Platform>
   <Config />
   <SourceFiles>
-    <File>D:/code/MonoGame/Gear/Content/empty.png</File>
+    <File>D:/code/MonoGame/Gear/Content/ball.png</File>
     <File>D:/code/MonoGame/Gear/Content/font.spritefont</File>
-    <File>D:/code/MonoGame/Gear/Content/red.png</File>
-    <File>D:/code/MonoGame/Gear/Content/test.png</File>
+    <File>D:/code/MonoGame/Gear/Content/paddle.png</File>
   </SourceFiles>
   <DestFiles>
-    <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
     <File xsi:nil="true" />
