@@ -5,6 +5,8 @@
 	public override void Each_Loading_Screen_Update(int percent_loaded) { }
 
 	Gear.Direction ball_movement_direction;
+	float ball_speed = 50;
+	Gear.Pair_Numbers score;
 	public override void Each_Tick(int tick_count)
 	{
 		if (tick_count == 1)
@@ -16,22 +18,25 @@
 			Gear.Console.Log("type 'server' to start a server or 'client' to connect to a local server: ");
 			var input = Gear.Console.Input_Get();
 			Gear.Console.Clear();
-
 			if (input == "server") Gear.Network.Server_Start();
 			else if (input == "client")
 			{
-				Gear.Network.Client_Connect(unique_name: "client", ip: Gear.Network.Server_IP_Same_Device_Get());
+				Gear.Console.Log("type the IP: ");
+				var ip = Gear.Console.Input_Get();
+				Gear.Network.Client_Connect(unique_name: "client", ip);
+				Gear.Text.Display("font", $"0:0", overwrite: true);
 			}
 			Gear.Window.Show(true);
 			var paddle_client_1 = new Gear.Body();
-			paddle_client_1.Sprite_Set(name: "paddle", width: 22, height: 64, red: 255, green: 255, blue: 255);
+			paddle_client_1.Sprite_Set(name: "paddle", width: 22, height: 64, red: 255, green: 255, blue: 255, origin_x: 11, origin_y: 16);
+			paddle_client_1.Position_Set(x: 11, y: 16);
 			paddle_client_1.Size_Set(width: 11, height: 32);
 			paddle_client_1.Unique_Name_Set(name: "client");
 
 			var paddle_client_2 = new Gear.Body();
-			paddle_client_2.Sprite_Set(name: "paddle", width: 22, height: 64, red: 0, green: 255, blue: 0);
+			paddle_client_2.Sprite_Set(name: "paddle", width: 22, height: 64, red: 0, green: 255, blue: 0, origin_y: 16);
 			paddle_client_2.Size_Set(width: 11, height: 32);
-			paddle_client_2.Position_Set(x: Gear.Canvas.Size_Get().Width_Get() - 11, y: 0);
+			paddle_client_2.Position_Set(x: Gear.Canvas.Size_Get().Width_Get() - 11, y: 16);
 			paddle_client_2.Unique_Name_Set(name: "client1");
 
 			var ball = new Gear.Body();
@@ -39,7 +44,7 @@
 			ball.Position_Set(x: Gear.Canvas.Size_Get().Width_Get() / 2, y: Gear.Canvas.Size_Get().Height_Get() / 2);
 			ball.Unique_Name_Set("ball");
 			ball_movement_direction = new Gear.Direction();
-			ball_movement_direction.Set_To_Rotation_Sample(Gear.Rotation_Samples.Right);
+			ball_movement_direction.Set_To_Rotation_Sample(Gear.Rotation_Samples.Left);
 		}
 
 		if (Gear.Network.Client_Unique_Name_Get() != default)
@@ -51,25 +56,25 @@
 			var speed = 50;
 
 			if (Gear.Input.Keys_Pressed_Get().Contains(Gear.Input_Keys.Up) &&
-				my_paddle.Position_Get().Y_Get() > 0)
+				my_paddle.Position_Get().Y_Get() - my_paddle.Size_Get().Height_Get() / 2 > 0)
 			{
 				direction.Set_To_Rotation_Sample(Gear.Rotation_Samples.Up);
 			}
 			if (Gear.Input.Keys_Pressed_Get().Contains(Gear.Input_Keys.Down) &&
-				my_paddle.Position_Get().Y_Get() < Gear.Canvas.Size_Get().Height_Get() - my_paddle.Size_Get().Height_Get())
+				my_paddle.Position_Get().Y_Get() + my_paddle.Size_Get().Height_Get() / 2 < Gear.Canvas.Size_Get().Height_Get())
 			{
 				direction.Set_To_Rotation_Sample(Gear.Rotation_Samples.Down);
 			}
 			new_position.Move_In_Direction(direction, pixels_per_second: speed);
 			my_paddle.Position_Set(new_position.X_Get(), new_position.Y_Get());
 
-			Gear.Network.Client_Message_Send_To_Server_And_All_Clients($"{my_paddle.Position_Get().X_Get()} {my_paddle.Position_Get().Y_Get()}");
+			if (tick_count % 3 == 0)
+				Gear.Network.Client_Message_Send_To_Server_And_All_Clients($"{my_paddle.Position_Get().X_Get()} {my_paddle.Position_Get().Y_Get()}");
 		}
 		else if (Gear.Network.Clients_Connected_Count_Get() > 1)
 		{
 			var ball = Gear.Body.Pick_By_Unique_Name_Get("ball");
 			var ball_new_position = ball.Position_Get();
-			var ball_speed = 20;
 			ball_new_position.Move_In_Direction(ball_movement_direction, pixels_per_second: ball_speed);
 
 			ball.Position_Set(ball_new_position.X_Get(), ball_new_position.Y_Get());
@@ -79,10 +84,37 @@
 
 			var distance_to_right_paddle = ball.Position_Get().Distance_To_Point_Get(right_paddle.Position_Get());
 			var distance_to_left_paddle = ball.Position_Get().Distance_To_Point_Get(left_paddle.Position_Get());
+			var random_rotations = new float[] { -500, -250, 0, 250, 500 };
+			var rotation = random_rotations[(int)Gear.Number.Randomized_Get(0, random_rotations.Length - 1, 0)];
 
-			if (distance_to_right_paddle < 12 || distance_to_left_paddle < 12) ball_movement_direction.Reverse_Horizontally();
+			if ((distance_to_right_paddle < 20 && ball_movement_direction.End_Point_Get().X_Get() > 0) ||
+				(distance_to_left_paddle < 20 && ball_movement_direction.End_Point_Get().X_Get() < 0))
+			{
+				ball_movement_direction.Reverse_Horizontally();
+				ball_movement_direction.Rotate(rotation);
+				ball_speed += 5;
+			}
+			if (ball.Position_Get().Y_Get() - ball.Size_Get().Height_Get() / 2 < 0 ||
+				ball.Position_Get().Y_Get() + ball.Size_Get().Height_Get() / 2 > Gear.Canvas.Size_Get().Height_Get())
+			{
+				ball_movement_direction.Reverse_Vertically();
+			}
+			if (ball.Position_Get().X_Get() < 0)
+				score.Set(score.First_Get(), score.Second_Get() + 1);
+			else if (ball.Position_Get().X_Get() > Gear.Canvas.Size_Get().Width_Get())
+				score.Set(score.First_Get() + 1, score.Second_Get());
 
-			Gear.Network.Server_Message_Send_To_All_Clients($"{ball.Position_Get().X_Get()} {ball.Position_Get().Y_Get()}");
+			if (ball.Position_Get().X_Get() < 0 || ball.Position_Get().X_Get() > Gear.Canvas.Size_Get().Width_Get())
+			{
+				ball.Position_Set(Gear.Canvas.Size_Get().Width_Get() / 2, Gear.Canvas.Size_Get().Height_Get() / 2);
+				ball_movement_direction.Set_To_Rotation_Sample(ball.Position_Get().X_Get() < 0 ? Gear.Rotation_Samples.Right : Gear.Rotation_Samples.Left);
+				ball_movement_direction.Rotate(rotation);
+				ball_speed = 50;
+				//Gear.Network.Server_Message_Send_To_All_Clients($"score {score.First_Get()} {score.Second_Get()}");
+			}
+
+			if (tick_count % 3 == 0)
+				Gear.Network.Server_Message_Send_To_All_Clients($"ball {ball.Position_Get().X_Get()} {ball.Position_Get().Y_Get()}");
 		}
 	}
 	public override void Event_Just_Occured(Gear.Event_Type event_type, object parameter)
@@ -103,11 +135,24 @@
 		{
 			var packet = (Gear.Network_Packet) parameter;
 			var message = packet.Message_Get().Split();
-			var ball_x = Gear.Number.From_Text_Get(message[0]);
-			var ball_y = Gear.Number.From_Text_Get(message[1]);
-			var ball = Gear.Body.Pick_By_Unique_Name_Get("ball");
+			Gear.Text.Display("font", packet.Message_Get(), overwrite: true, scale: 0.4f);
 
-			ball.Position_Set(ball_x, ball_y);
+			if (message[0] == "ball")
+			{
+				var ball_x = Gear.Number.From_Text_Get(message[1]);
+				var ball_y = Gear.Number.From_Text_Get(message[2]);
+				var ball = Gear.Body.Pick_By_Unique_Name_Get("ball");
+
+				ball.Position_Set(ball_x, ball_y);
+			}
+			else if (message[0] == "score")
+			{
+				var score_left = Gear.Number.From_Text_Get(message[1]);
+				var score_right = Gear.Number.From_Text_Get(message[2]);
+
+				score.Set(score_left, score_right);
+				Gear.Text.Display("font", $"{score.First_Get()}:{score.Second_Get()}", overwrite: true);
+			}
 		}
 	}
 }

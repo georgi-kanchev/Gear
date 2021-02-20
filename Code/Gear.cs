@@ -875,15 +875,19 @@ public static class Gear
 				lower_bound = upper_bound;
 				upper_bound = swap;
 			}
+			var precision_value = (float)Math.Pow(10, precision);
 			var lowerInt = Convert.ToInt32(lower_bound * Math.Pow(10, Precision_Get(lower_bound)));
 			var upperInt = Convert.ToInt32(upper_bound * Math.Pow(10, Precision_Get(upper_bound)));
-			var randInt = new Random(Guid.NewGuid().GetHashCode()).Next(lowerInt, upperInt + 1);
+			var randInt = new Random(Guid.NewGuid().GetHashCode()).Next((int)(lowerInt * precision_value), (int)(upperInt * precision_value) + 1);
+			var result = randInt / precision_value;
 
-			return randInt / (float)Math.Pow(10, precision);
+			return result;
 		}
-		public static float Rounded_Get(float number, int precision, Number_Round_Type number_round_type)
+		//public static float Rounded_Get(float number, int precision, Number_Round_Type number_round_type)
+		public static float Rounded_Get(float number, Number_Round_Type number_round_type)
 		{
-			precision = (int)Limited_Get(precision, 0, 5);
+			// doesn't work with values like 0.00300007 or 0.1234567
+			var precision = 0; //(int)Limited_Get(precision, 0, 5);
 			var a = (float)Math.Pow(10, Precision_Get(number));
 			var b = (float)Math.Pow(10, precision);
 			var c = number * a;
@@ -963,7 +967,12 @@ public static class Gear
 			var n = Randomized_Get(1, 100, 0);
 			return n <= percent;
 		}
-		public static float From_Text_Get(string text) => float.Parse(text);
+		public static float From_Text_Get(string text)
+		{
+			var result = 0f;
+			float.TryParse(text, out result);
+			return result;
+		}
 		public static int Precision_Get(float number)
 		{
 			var result = 0;
@@ -1174,11 +1183,11 @@ public static class Gear
 			{
 				var spl = seconds_str.Split('.');
 				ms = int.Parse(spl[1]) * 100;
-				seconds = Number.Rounded_Get(seconds, 0, Number_Round_Type.Down);
+				seconds = Number.Rounded_Get(seconds, Number_Round_Type.Down);
 			}
 			var sec = seconds % 60;
-			var min = Number.Rounded_Get(seconds / 60 % 60, 0, Number_Round_Type.Down);
-			var hr = Number.Rounded_Get(seconds / 3_600, 0, Number_Round_Type.Down);
+			var min = Number.Rounded_Get(seconds / 60 % 60, Number_Round_Type.Down);
+			var hr = Number.Rounded_Get(seconds / 3_600, Number_Round_Type.Down);
 			var ms_str = ms_show ? $"{ms}" : "";
 			var sec_str = sec_show ? $"{sec}" : "";
 			var min_str = min_show ? $"{min}" : "";

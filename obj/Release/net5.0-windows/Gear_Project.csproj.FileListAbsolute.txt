@@ -1,8 +1,5 @@
 D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Gear_Project.exe
-D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Content\empty.png
 D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Content\font.spritefont
-D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Content\red.png
-D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Content\test.png
 D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Gear_Project.deps.json
 D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Gear_Project.runtimeconfig.json
 D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Gear_Project.runtimeconfig.dev.json
@@ -43,3 +40,5 @@ D:\code\MonoGame\Gear\obj\Release\net5.0-windows\Gear_Project.dll
 D:\code\MonoGame\Gear\obj\Release\net5.0-windows\ref\Gear_Project.dll
 D:\code\MonoGame\Gear\obj\Release\net5.0-windows\Gear_Project.pdb
 D:\code\MonoGame\Gear\obj\Release\net5.0-windows\Gear_Project.genruntimeconfig.cache
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Content\ball.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows\Content\paddle.png

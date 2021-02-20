@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SourceFile>D:/code/MonoGame/Gear/Content/test.png</SourceFile>
-  <SourceTime>2015-03-27T12:53:44.8417729+02:00</SourceTime>
-  <DestFile>D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/test.xnb</DestFile>
-  <DestTime>2021-02-09T22:20:17.2133784+02:00</DestTime>
+  <SourceFile>D:/code/MonoGame/Gear/Content/paddle.png</SourceFile>
+  <SourceTime>2021-02-19T00:50:17.8069338+02:00</SourceTime>
+  <DestFile>D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/paddle.xnb</DestFile>
+  <DestTime>2021-02-20T13:36:38.2143641+02:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2020-08-10T16:17:54+03:00</ImporterTime>
   <Processor>TextureProcessor</Processor>
