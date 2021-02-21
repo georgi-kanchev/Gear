@@ -19,6 +19,7 @@ using System.Net;
 using System.Threading;
 using Mono.Nat;
 using System.Threading.Tasks;
+using System.Globalization;
 
 public static class Gear
 {
@@ -970,7 +971,10 @@ public static class Gear
 		public static float From_Text_Get(string text)
 		{
 			var result = 0f;
-			float.TryParse(text, out result);
+			text = text.Replace(',', '.');
+			var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
+			if (parsed) return result;
+			else Console.Log_Error($"{nameof(From_Text_Get)}(\"{text}\"): The provided text is not a number.");
 			return result;
 		}
 		public static int Precision_Get(float number)
@@ -1449,7 +1453,7 @@ public static class Gear
 			catch (Exception)
 			{
 				client_is_connected = false;
-				console_log = $"{console_log}{func_name}: {ip} is an invalid IP.";
+				Console.Log_Error($"{func_name}: {ip} is an invalid IP.");
 				return;
 			}
 			client_unique_name = unique_name;
@@ -1839,6 +1843,12 @@ public static class Gear
 		{
 			console_log = $"{console_log}{message}";
 			_Console_Update();
+		}
+		public static void Log_Error(string message)
+		{
+			AllocConsole();
+			System.Console.Clear();
+			throw new Exception(message);
 		}
 		public static void Clear()
 		{
@@ -2498,7 +2508,6 @@ public static class Gear
 			_Console_Update();
 		}
 	}
-
 	private static string _Clients_Online_Get()
 	{
 		var result = "";
