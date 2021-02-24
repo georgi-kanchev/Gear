@@ -1669,7 +1669,7 @@ public static class Gear
 
 		public static Point MouseCursorPositionWorldGet()
 		{
-			var scale = new Point(canvasSize.WidthGet() / screenSize.HeightGet(), canvasSize.WidthGet() / screenSize.HeightGet());
+			var scale = new Point(canvasSize.WidthGet() / screenSize.WidthGet(), canvasSize.HeightGet() / screenSize.HeightGet());
 			var pos = new Point(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
 			return pos;
 		}
@@ -1898,7 +1898,7 @@ public static class Gear
 			if (Math.Abs(difference) > 360 - degreesPerSecond * ticksDeltaTime) angle = targetAngle.Get();
 		}
 
-		public override string ToString() => $"angle[degrees:{angle:F2}]";
+		public override string ToString() => $"{nameof(Angle)}[degrees:{angle:F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1917,7 +1917,7 @@ public static class Gear
 		public T FirstGet<T>() => (T)first;
 		public T SecondGet<T>() => (T)second;
 
-		public override string ToString() => $"pair[first:{first}][second:{second}]";
+		public override string ToString() => $"{nameof(Pair)}[first:{first}][second:{second}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1936,7 +1936,7 @@ public static class Gear
 		public string FirstGet() => first;
 		public string SecondGet() => second;
 
-		public override string ToString() => $"pairtexts[first:{FirstGet()}][second:{SecondGet()}]";
+		public override string ToString() => $"{nameof(PairTexts)}[first:{FirstGet()}][second:{SecondGet()}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1963,7 +1963,7 @@ public static class Gear
 		public void Set(float first, float second) { this.first = first; this.second = second; }
 		public float FirstGet() => first;
 		public float SecondGet() => second;
-		public override string ToString() => $"pairnumbers[first:{FirstGet():F2}][second:{SecondGet():F2}]";
+		public override string ToString() => $"{nameof(PairNumbers)}[first:{FirstGet():F2}][second:{SecondGet():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -1998,7 +1998,7 @@ public static class Gear
 			if (dist < pixelsPerSecond * ticksDeltaTime * 2) size = new PairNumbers(targetSize.WidthGet(), targetSize.HeightGet());
 		}
 
-		public override string ToString() => $"size[width:{WidthGet():F2}][height:{HeightGet():F2}]";
+		public override string ToString() => $"{nameof(Size)}[width:{WidthGet():F2}][height:{HeightGet():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -2045,7 +2045,7 @@ public static class Gear
 			point = new PairNumbers(vec.X, vec.Y);
 		}
 
-		public override string ToString() => $"point[x:{XGet():F2}][y:{YGet():F2}]";
+		public override string ToString() => $"{nameof(Point)}[x:{XGet():F2}][y:{YGet():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -2059,6 +2059,8 @@ public static class Gear
 		public static Point operator -(Point a, Point b) => new Point(a.XGet() - b.XGet(), a.YGet() - b.YGet());
 		public static Point operator *(Point a, Point b) => new Point(a.XGet() * b.XGet(), a.YGet() * b.YGet());
 		public static Point operator /(Point a, Point b) => new Point(a.XGet() / b.XGet(), a.YGet() / b.YGet());
+		public static Point operator /(Point a, float b) => new Point(a.XGet() / b, a.YGet() / b);
+		public static Point operator *(Point a, float b) => new Point(a.XGet() * b, a.YGet() * b);
 		public static bool operator ==(Point a, Point b) => a.XGet() == b.XGet() && a.YGet() == b.YGet();
 		public static bool operator !=(Point a, Point b) => a.XGet() != b.XGet() && a.YGet() != b.YGet();
 	}
@@ -2142,7 +2144,7 @@ public static class Gear
 		public static bool operator ==(Direction a, Direction b) => a.endPoint == b.endPoint;
 		public static bool operator !=(Direction a, Direction b) => a.endPoint != b.endPoint;
 
-		public override string ToString() => $"direction[endpoint:{endPoint}]";
+		public override string ToString() => $"{nameof(Direction)}[endpoint:{endPoint}]";
 		/// <summary>
 		/// A default <see cref="object"/> method. Not implemented.
 		/// </summary>
@@ -2237,7 +2239,7 @@ public static class Gear
 		public float BlueGet() => blue;
 		public float OpacityGet() => opacity;
 
-		public override string ToString() => $"color[red:{red:F2}][green:{green:F2}][blue:{blue:F2}][opacity:{opacity:F2}]";
+		public override string ToString() => $"{nameof(Color)}[red:{red:F2}][green:{green:F2}][blue:{blue:F2}][opacity:{opacity:F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
@@ -2249,6 +2251,80 @@ public static class Gear
 
 		public static Color operator +(Color a, Color b) => new Color((byte)(a.red + b.red), (byte)(a.green + b.green), (byte)(a.blue + b.blue));
 		public static Color operator -(Color a, Color b) => new Color((byte)(a.red - b.red), (byte)(a.green - b.green), (byte)(a.blue - b.blue));
+	}
+	public struct Circle
+	{
+		private Point position;
+		private float radius;
+
+		public Circle(Point position, float radius)
+		{
+			radius = Number.LimitedGet(radius, 2, 1_000_000);
+			this.position = position;
+			this.radius = radius;
+		}
+		public void Set(Point position, float radius)
+		{
+			radius = Number.LimitedGet(radius, 2, 1_000_000);
+			this.position = position;
+			this.radius = radius;
+		}
+
+		public Point PositionGet() => position;
+		public float RadiusGet() => radius;
+
+		public List<Point> CrossPointsWithLineGet(Line line)
+		{
+			return GetLineCircleCrossPoints(position, radius, line.PointStartGet(), line.PointEndGet());
+		}
+		public bool IsCrossedByLine(Line line)
+		{
+			return GetLineCircleCrossPoints(position, radius, line.PointStartGet(), line.PointEndGet()).Count > 0;
+		}
+	}
+	public struct Line
+	{
+		private Point pointStart;
+		private Point pointEnd;
+
+		public Line(Point pointStart, Point pointEnd)
+		{
+			this.pointStart = pointStart;
+			this.pointEnd = pointEnd;
+		}
+		public void Set(Point pointStart, Point pointEnd)
+		{
+			this.pointStart = pointStart;
+			this.pointEnd = pointEnd;
+		}
+
+		public Point PointStartGet() => pointStart;
+		public Point PointEndGet() => pointEnd;
+		public float LengthGet() => pointStart.DistanceToPointGet(pointEnd);
+
+		public List<Point> CrossPointsWithCircleGet(Circle circle)
+		{
+			return circle.CrossPointsWithLineGet(this);
+		}
+		public bool IsCrossingCircle(Circle circle)
+		{
+			return circle.IsCrossedByLine(this);
+		}
+		public List<Point> CrossPointWithLine(Line line)
+		{
+			var segmentsCross = false;
+			var linesCross = false;
+			var intersection = new List<Point>();
+			var closestCrossPointToMe = new Point();
+			var closestCrossPointToLine = new Point();
+
+			GetCrossPointOfTwoLines(pointStart, pointEnd, line.pointStart, line.pointEnd, out linesCross, out segmentsCross, out intersection, out closestCrossPointToMe, out closestCrossPointToLine);
+			return intersection;
+		}
+		public bool IsCrossingLine(Line line)
+		{
+			return LineCrossesLine(pointStart, pointEnd, line.pointStart, line.pointEnd);
+		}
 	}
 
 	private class Session : TcpSession
@@ -2493,6 +2569,7 @@ public static class Gear
 			ConsoleUpdate();
 		}
 	}
+
 	private static string ClientsOnlineGet()
 	{
 		var result = "";
@@ -2549,33 +2626,100 @@ public static class Gear
 
 		return (0 <= dot1 && dot1 < dot2) && (0 <= dot3 && dot3 < dot4);
 	}
-	private static bool LineCrossesLine(Vector2 startA, Vector2 endA, Vector2 startB, Vector2 endB)
+	private static bool LineCrossesLine(Point startA, Point endA, Point startB, Point endB)
 	{
 		return ccw(startA, startB, endB) != ccw(endA, startB, endB) && ccw(startA, endA, startB) != ccw(startA, endA, endB);
+		
+		static bool ccw(Point a, Point b, Point c) => (c.YGet() - a.YGet()) * (b.XGet() - a.XGet()) > (b.YGet() - a.YGet()) * (c.XGet() - a.XGet());
 	}
-	private static bool ccw(Vector2 a, Vector2 b, Vector2 c)
+	// Find the point of intersection between
+	// the lines p1 --> p2 and p3 --> p4.
+	private static void GetCrossPointOfTwoLines(Point startA, Point endA, Point startB, Point endB,
+		 out bool lines_intersect, out bool segments_intersect,
+		 out List<Point> intersection,
+		 out Point close_p1, out Point close_p2)
 	{
-		return (c.Y - a.Y) * (b.X - a.X) > (b.Y - a.Y) * (c.X - a.X);
+		var lineLength = startA.DistanceToPointGet(endA);
+		intersection = new List<Point>();
+
+		// Get the segments' parameters.
+		float dx12 = endA.XGet() - startA.XGet();
+		float dy12 = endA.YGet() - startA.YGet();
+		float dx34 = endB.XGet() - startB.XGet();
+		float dy34 = endB.YGet() - startB.YGet();
+
+		// Solve for t1 and t2
+		float denominator = (dy12 * dx34 - dx12 * dy34);
+
+		float t1 = ((startA.XGet() - startB.XGet()) * dy34 + (startB.YGet() - startA.YGet()) * dx34) / denominator;
+		if (float.IsInfinity(t1))
+		{
+			// The lines are parallel (or close enough to it).
+			lines_intersect = false;
+			segments_intersect = false;
+			close_p1 = new Point(float.NaN, float.NaN);
+			close_p2 = new Point(float.NaN, float.NaN);
+			return;
+		}
+		lines_intersect = true;
+
+		float t2 = ((startB.XGet() - startA.XGet()) * dy12 + (startA.YGet() - startB.YGet()) * dx12) / -denominator;
+
+		// Find the point of intersection.
+		var point = new Point(startA.XGet() + dx12 * t1, startA.YGet() + dy12 * t1);
+		if (point.DistanceToPointGet(startA) <= lineLength) intersection.Add(point);
+
+		// The segments intersect if t1 and t2 are between 0 and 1.
+		segments_intersect = ((t1 >= 0) && (t1 <= 1) && (t2 >= 0) && (t2 <= 1));
+
+		// Find the closest points on the segments.
+		if (t1 < 0) t1 = 0;
+		else if (t1 > 1) t1 = 1;
+
+		if (t2 < 0) t2 = 0;
+		else if (t2 > 1) t2 = 1;
+
+		close_p1 = new Point(startA.XGet() + dx12 * t1, startA.YGet() + dy12 * t1);
+		close_p2 = new Point(startB.XGet() + dx34 * t2, startB.YGet() + dy34 * t2);
 	}
-	private static Vector2 GetCrossPointOfTwoLines(Vector2 startA, Vector2 endA, Vector2 startB, Vector2 endB)
+	private static List<Point> GetLineCircleCrossPoints(Point circlePosition, float circleRadius, Point pointA, Point pointB)
 	{
-		var p1 = startA;
-		var p2 = startB;
-		var n1 = endA - startA;
-		var n2 = endB - startB;
+		var result = new List<Point>();
+		var t = 0f;
+		var dx = pointB.XGet() - pointA.XGet();
+		var dy = pointB.YGet() - pointA.YGet();
+		var cx = circlePosition.XGet();
+		var cy = circlePosition.YGet();
+		var r = circleRadius;
+		var A = dx * dx + dy * dy;
+		var B = 2 * (dx * (pointA.XGet() - cx) + dy * (pointA.YGet() - cy));
+		var C = (pointA.XGet() - cx) * (pointA.XGet() - cx) + (pointA.YGet() - cy) * (pointA.YGet() - cy) - r * r;
+		var det = B * B - 4 * A * C;
+		var lineLength = pointA.DistanceToPointGet(pointB);
 
-		Vector2 p1End = p1 + n1; // another point in line p1->n1
-		Vector2 p2End = p2 + n2; // another point in line p2->n2
+		if ((A <= 0.0000001) || (det < 0))
+		{
+			// no real solutions
+			return result;
+		}
+		else if (det == 0)
+		{
+			// one solution
+			t = -B / (2 * A);
+			var point = new Point(pointA.XGet() + t * dx, pointA.YGet() + t * dy);
+			if (point.DistanceToPointGet(pointA) >= lineLength) result.Add(point);
+		}
+		else
+		{
+			// two solutions
+			t = (float)((-B + Math.Sqrt(det)) / (2 * A));
+			var point1 = new Point(pointA.XGet() + t * dx, pointA.YGet() + t * dy);
+			if (point1.DistanceToPointGet(pointA) <= lineLength) result.Add(point1);
 
-		float m1 = (p1End.Y - p1.Y) / (p1End.X - p1.X); // slope of line p1->n1
-		float m2 = (p2End.Y - p2.Y) / (p2End.X - p2.X); // slope of line p2->n2
-
-		float b1 = p1.Y - m1 * p1.X; // y-intercept of line p1->n1
-		float b2 = p2.Y - m2 * p2.X; // y-intercept of line p2->n2
-
-		float px = (b2 - b1) / (m1 - m2); // collision x
-		float py = m1 * px + b1; // collision y
-
-		return new Vector2(px, py); // return statement
+			t = (float)((-B - Math.Sqrt(det)) / (2 * A));
+			var point2 = new Point(pointA.XGet() + t * dx, pointA.YGet() + t * dy);
+			if (point2.DistanceToPointGet(pointA) <= lineLength) result.Add(point2);
+		}
+		return result;
 	}
 }
