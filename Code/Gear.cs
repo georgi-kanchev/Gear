@@ -20,6 +20,7 @@ using System.Threading;
 using Mono.Nat;
 using System.Threading.Tasks;
 using System.Globalization;
+using System.Collections;
 
 public static class Gear
 {
@@ -145,14 +146,14 @@ public static class Gear
 				PreferredBackBufferHeight = GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height
 			};
 			Content.RootDirectory = "Content";
-			game = CreatedGet();
+			game = Create();
 		}
 
 		/// <summary>
 		/// - Example code setup:<br></br>
 		/// <paramref name="public"/> <paramref name="override"/> <see cref="Program"/> <typeparamref name="Create"/>() => <paramref name="this"/>;<br></br>
 		/// </summary>
-		public abstract Program CreatedGet();
+		public abstract Program Create();
 		/// <summary>
 		/// - Has to return a <see cref="string"/>[] containing <paramref name="folder"/>/<paramref name="name"/>.<paramref name="extension"/> for the small amount of content files that need to be loaded before the <typeparamref name="Loading"/> <typeparamref name="Screen"/> so they can be used during <see cref="EachLoadingScreenUpdate"/> while the rest of the content files are being loaded.<br></br>
 		/// - The <paramref name="folder"/> part of the path is skipped if the file is directly inside the Content folder.<br></br><br></br>
@@ -171,7 +172,7 @@ public static class Gear
 		/// <summary>
 		/// - The place for all program code.<br></br>
 		/// - The <see cref="int"/> <paramref name="parameter"/> contains the tick count.<br></br><br></br>
-		/// - The tick count and information about ticks/frames can be checked through <see cref="Performance.TicksCountGet"/>.
+		/// - The tick count and information about ticks/frames can be checked through <see cref="Performance.GetTickCount"/>.
 		/// </summary>
 		public abstract void EachTick(int tickCount);
 
@@ -181,16 +182,16 @@ public static class Gear
 		{
 			spriteBatch = new SpriteBatch(game.GraphicsDevice);
 
-			graphics.PreferredBackBufferWidth = (int)screenSize.WidthGet();
-			graphics.PreferredBackBufferHeight = (int)screenSize.HeightGet();
+			graphics.PreferredBackBufferWidth = (int)screenSize.GetW();
+			graphics.PreferredBackBufferHeight = (int)screenSize.GetH();
 			graphics.HardwareModeSwitch = false;
 			graphics.IsFullScreen = true;
 			game.Window.Position = new Microsoft.Xna.Framework.Point(0, 0);
 
 			renderSamplerState = SamplerState.PointWrap;
 
-			renderTarget = new RenderTarget2D(game.GraphicsDevice, (int)screenSize.WidthGet(), (int)screenSize.HeightGet(), false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-			Canvas.PixelSizeSet(1, 1);
+			renderTarget = new RenderTarget2D(game.GraphicsDevice, (int)screenSize.GetW(), (int)screenSize.GetH(), false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
+			Canvas.SetPixelSize(1, 1);
 
 			graphics.ApplyChanges();
 			game.Window.Title = "Gear";
@@ -277,7 +278,7 @@ public static class Gear
 
 		private static void UpdateOnKeys()
 		{
-			var keysPressed = Input.KeysPressedGet();
+			var keysPressed = Input.GetKeysPressed();
 
 			keysJustPressed.Clear();
 			keysJustReleased.Clear();
@@ -296,7 +297,7 @@ public static class Gear
 				}
 			}
 
-			lastFrameKeysPressed = Input.KeysPressedGet();
+			lastFrameKeysPressed = Input.GetKeysPressed();
 		}
 
 		protected override void Draw(GameTime gameTime)
@@ -309,7 +310,7 @@ public static class Gear
 			GraphicsDevice.SetRenderTarget(renderTarget);
 			GraphicsDevice.DepthStencilState = new DepthStencilState() { DepthBufferEnable = true };
 
-			GraphicsDevice.Clear(new Microsoft.Xna.Framework.Color((int)backgroundColor.RedGet(), (int)backgroundColor.GreenGet(), (int)backgroundColor.BlueGet(), 255));
+			GraphicsDevice.Clear(new Microsoft.Xna.Framework.Color((int)backgroundColor.GetR(), (int)backgroundColor.GetG(), (int)backgroundColor.GetB(), 255));
 
 			// draw =======================================================
 			AdvanceFrameTime();
@@ -318,7 +319,7 @@ public static class Gear
 			// draw =======================================================
 
 			GraphicsDevice.SetRenderTarget(null);
-			var scale = new Vector2(pixelSize.WidthGet(), pixelSize.HeightGet());
+			var scale = new Vector2(pixelSize.GetW(), pixelSize.GetH());
 			spriteBatch.Draw(renderTarget, Vector2.Zero, null, Microsoft.Xna.Framework.Color.White, 0, Vector2.Zero, scale, SpriteEffects.None, 0);
 			render = false;
 			spriteBatch.End();
@@ -356,19 +357,19 @@ public static class Gear
 		{
 			foreach (var body in bodiesAll)
 			{
-				var sprite = body.SpriteNameGet();
+				var sprite = body.GetSpriteName();
 				if (sprite == null)
 				{
 					continue;
 				}
-				var spriteShown = body.SpriteIsShownCheck();
-				var tileIndex = body.SpriteGridIndexesGet();
-				var pos = body.PositionGet() + cameraPosition;
-				var size = body.SizeGet();
-				var spritesize = body.SpriteSizeGet();
+				var spriteShown = body.SpriteIsDisplayed();
+				var tileIndex = body.GetSpriteGridIndexes();
+				var pos = body.GetPosition() + cameraPosition;
+				var size = body.GetSize();
+				var spritesize = body.GetSpriteSize();
 				var scale = size / spritesize;
-				var origin = body.SpriteOriginGet();
-				var color = body.SpriteColorGet();
+				var origin = body.GetSpriteOrigin();
+				var color = body.GetSpriteColor();
 				var boundariesSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var originSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var angleSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
@@ -378,22 +379,22 @@ public static class Gear
 				angleSprite.SetData(data);
 
 				if (spriteShown)
-					DrawTile(sprites[sprite], pos - origin, tileIndex, body.SpriteGridSizeGet(), size / scale, new Point(), scale, color, body.AngleGet(), SpriteEffects.None);
+					DrawTile(sprites[sprite], pos - origin, tileIndex, body.GetSpriteGridSize(), size / scale, new Point(), scale, color, body.GetAngleA(), SpriteEffects.None);
 
-				var boundariescolor = body.BoundariesColorGet();
-				if (boundariesSprite != null && body.BoundariesAreShownCheck())
+				var boundariescolor = body.GetBoundariesColor();
+				if (boundariesSprite != null && body.BoundariesAreDisplayed())
 				{
-					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.WidthGet(), 1), new Point(), new Size(), boundariescolor, body.AngleGet(), SpriteEffects.None);
-					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.HeightGet()), new Point(), new Size(), boundariescolor, body.AngleGet(), SpriteEffects.None);
+					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.GetW(), 1), new Point(), new Size(), boundariescolor, body.GetAngleA(), SpriteEffects.None);
+					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.GetH()), new Point(), new Size(), boundariescolor, body.GetAngleA(), SpriteEffects.None);
 				}
 
-				var anglecolor = body.AngleColorGet();
-				if (angleSprite != null && body.AngleIsShownCheck())
-					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.WidthGet() * 1.1f, 1), new Point(), new Size(1, 1), anglecolor, body.AngleGet(), SpriteEffects.None);
+				var anglecolor = body.GetAngleColor();
+				if (angleSprite != null && body.AngleIsDisplayed())
+					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.GetW() * 1.1f, 1), new Point(), new Size(1, 1), anglecolor, body.GetAngleA(), SpriteEffects.None);
 
-				var origincolor = body.OriginColorGet();
-				if (originSprite != null && body.OriginIsShownCheck())
-					DrawTile(originSprite, pos, new Point(), 0, new Size(1, 1), new Point(), new Size(), origincolor, body.AngleGet(), SpriteEffects.None);
+				var origincolor = body.GetOriginColor();
+				if (originSprite != null && body.OriginIsDisplayed())
+					DrawTile(originSprite, pos, new Point(), 0, new Size(1, 1), new Point(), new Size(), origincolor, body.GetAngleA(), SpriteEffects.None);
 
 				boundariesSprite.Dispose();
 				angleSprite.Dispose();
@@ -620,7 +621,7 @@ public static class Gear
 		/// - The current filter can be checked with <see cref="CanvasPixelFilterGet"/>.
 		/// </summary>
 		/// <param name="pixelfilter"></param>
-		public static void PixelFilterSet(CanvasPixelFilter pixelFilter)
+		public static void SetPixelFilter(CanvasPixelFilter pixelFilter)
 		{
 			renderPixelFilter = pixelFilter;
 			switch (renderPixelFilter)
@@ -634,56 +635,77 @@ public static class Gear
 		/// - Gets the current pixel filter and returns it.<br></br><br></br>
 		/// - Pixel filters can be changed and researched through <see cref="CanvasPixelFilterGet"/>.
 		/// </summary>
-		public static CanvasPixelFilter PixelFilterGet() => renderPixelFilter;
-		/// <summary>
-		/// - Sets the size of the displayed pixel relative to the user's monitor resolution. Each displayed pixel is equal to <paramref name="width"/> and <paramref name="height"/> of screen pixels.<br></br><br></br> - The canvas size can be checked with <see cref="SizeWidthGet"/> and <see cref="SizeHeightGet"/>.<br></br> - The user's screen size can be checked with <see cref="User.ScreenSizeWidthGet"/> and <see cref="User.ScreenSizeWidthGet"/>.
-		/// </summary>
-		public static void PixelSizeSet(int width, int height)
+		public static CanvasPixelFilter GetPixelFilter()
 		{
-			width = (int)Number.LimitedGet(width, 1, screenSize.WidthGet());
-			height = (int)Number.LimitedGet(height, 1, (int)screenSize.HeightGet());
+			return renderPixelFilter;
+		}
+		/// <summary>
+		/// - Sets the size of the displayed pixel relative to the user's monitor resolution. Each displayed pixel is equal to <paramref name="width"/> and <paramref name="height"/> of screen pixels.<br></br><br></br> - The canvas size can be checked with <see cref="SizeGetW"/> and <see cref="SizeGetH"/>.<br></br> - The user's screen size can be checked with <see cref="User.ScreenSizeGetW"/> and <see cref="User.ScreenSizeGetW"/>.
+		/// </summary>
+		public static void SetPixelSize(int width, int height)
+		{
+			width = (int)Number.LimitedGet(width, 1, screenSize.GetW());
+			height = (int)Number.LimitedGet(height, 1, (int)screenSize.GetH());
 			pixelSize = new Size(width, height);
 			canvasSize = screenSize / new Size(width, height);
 			var gd = game.GraphicsDevice;
 			renderTarget = new RenderTarget2D(gd, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight, false, gd.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
 			graphics.ApplyChanges();
 		}
-		public static Size PixelSizeGet() => pixelSize;
-		public static Size SizeGet() => canvasSize;
+		public static Size GetPixelSize()
+		{
+			return pixelSize;
+		}
+		public static Size GetSize()
+		{
+			return canvasSize;
+		}
 		/// <summary>
-		/// - Sets the background color's hues to <paramref name="red"/>, <paramref name="green"/>, <paramref name="blue"/>.<br></br><br></br>
+		/// - Sets the background color's hues to <paramref name="r"/>, <paramref name="g"/>, <paramref name="b"/>.<br></br><br></br>
 		/// - Those values must be between 0 and 255 inclusively.<br></br><br></br>
 		/// - Those hues can be checked through<br></br>
-		/// <see cref="BackgroundColorRedGet"/><br></br>
-		/// <see cref="BackgroundColorGreenGet"/><br></br>
-		/// <see cref="BackgroundColorBlueGet"/><br></br>
+		/// <see cref="BackgroundColorGetRed"/><br></br>
+		/// <see cref="BackgroundColorGetGren"/><br></br>
+		/// <see cref="BackgroundColorGetBlue"/><br></br>
 		/// </summary>
-		public static void BackgroundColorSet(byte red, byte green, byte blue) => backgroundColor = new Color(red, green, blue);
-		public static Color BackgroundColorGet() => backgroundColor;
+		public static void SetBackgroundColor(float r, float g, float b)
+		{
+			backgroundColor = new Color(r, g, b);
+		}
+		public static Color GetBackgroundColor()
+		{
+			return backgroundColor;
+		}
 	}
 	public static class Window
 	{
 		/// <summary>
 		/// - Checks wether the window is currently focused by the user and returns the result.
 		/// </summary>
-		public static bool FocusedCheck() => game.IsActive;
+		public static bool IsFocused() => game.IsActive;
 		/// <summary>
 		/// - Pause is <paramref name="activated"/> when the user has the window unfocused or minimized.<br></br><br></br>
 		/// - A check wether this pause is activated can be done through <see cref="WindowUnfocusedPauseIsActivatedCheck"/>.<br></br><br></br>
 		/// - A check wether the user has focused the window can be done through <see cref="WindowIsFocusedCheck"/>.
 		/// </summary>
-		public static void UnfocusedPauseActivate(bool activated) => pauseUnfocus = activated;
+		public static void PauseWhenUnfocused(bool pause)
+		{
+			pauseUnfocus = pause;
+		}
 		/// <summary>
 		/// - Checks if the window pause when unfocusing or minimizing the window is activated and returns the result.<br></br><br></br>
 		/// - The window pause can be activated or deactivated through <see cref="WindowUnfocusedPauseActivate"/>.<br></br><br></br>
 		/// - A check wether the user has focused the window can be done through <see cref="WindowIsFocusedCheck"/>.
 		/// </summary>
-		public static bool UnfocusedPauseIsActivatedCheck() => pauseUnfocus;
+		public static bool IsPausingWhenUnfocused()
+		{
+			return pauseUnfocus;
+		}
 
-		public static void Show(bool show)
+		public static void Display(bool display)
 		{
 			var form = Control.FromHandle(game.Window.Handle) as Form;
-			if (show) form.Show();
+			if (display) form.Show();
 			else form.Hide();
 		}
 
@@ -691,24 +713,36 @@ public static class Gear
 		/// - Sets the <paramref name="title"/> of the window.<br></br><br></br>
 		/// - The title can be received with <see cref="WindowTitleGet"/>.
 		/// </summary>
-		public static void TitleSet(string title) => game.Window.Title = title;
+		public static void SetTitle(string title)
+		{
+			game.Window.Title = title;
+		}
 		/// <summary>
 		/// - Gets the title of the window and returns it.<br></br><br></br>
 		/// - The title can be changed through <see cref="WindowTitleSet"/>.
 		/// </summary>
-		public static string TitleGet() => game.Window.Title;
+		public static string GetTitle()
+		{
+			return game.Window.Title;
+		}
 
 		/// <summary>
 		/// - Sets the Alt+F4 functionality to <paramref name="activated"/>. When <paramref name="activated"/> pressing Alt+F4 closes the window.<br></br><br></br>
 		/// - A check wether the Alt+F4 functionality is activated can be done through <see cref="WindowCloseHotkeysIsActivatedCheck"/>.<br></br><br></br>
 		/// - The window can be also closed through <see cref="WindowClose"/>.
 		/// </summary>
-		public static void CloseHotkeysActivate(bool activated) => game.Window.AllowAltF4 = activated;
+		public static void ActivateCloseHotkey(bool activated)
+		{
+			game.Window.AllowAltF4 = activated;
+		}
 		/// <summary>
 		/// - Checks wether the Alt+F4 functionality is activated and returns the result.<br></br><br></br>
 		/// - The Alt+F4 functionality can be activated or deactivated with <see cref="WindowCloseHotkeysActivate(bool)"/>.
 		/// </summary>
-		public static bool CloseHotkeysIsActivatedCheck() => game.Window.AllowAltF4;
+		public static bool CloseHotkeyIsActivated()
+		{
+			return game.Window.AllowAltF4;
+		}
 
 		/// <summary>
 		/// - Ends the runtime of the program and closes the window.
@@ -723,8 +757,11 @@ public static class Gear
 		private static int ID;
 		private static Dictionary<string, Body> bodyUniqueNames = new Dictionary<string, Body>();
 
-		public static List<Body> BodiesAllGet() => new List<Body>(bodiesAll);
-		public static Body PickByUniqueNameGet(string uniquename)
+		public static List<Body> GetAllBodies()
+		{
+			return new List<Body>(bodiesAll);
+		}
+		public static Body GetByUniqueName(string uniquename)
 		{
 			if (uniquename == null || bodyUniqueNames.ContainsKey(uniquename) == false)
 			{
@@ -742,89 +779,206 @@ public static class Gear
 		[JsonProperty]
 		private int UID, spriteGridSize;
 		[JsonProperty]
-		private float angle;
+		private Angle angle;
 		[JsonProperty]
 		private string uniqueName, spriteName;
 		[JsonProperty]
 		private bool boundariesShown, originShown, angleShown, spriteShown;
 
-		public Body()
+		public Body(string uniqueName)
 		{
-			if (uniqueName == null) uniqueName = $"{ID}";
+			Instantiate();
+			SetUniqueName(uniqueName);
+		}
+		private void Instantiate()
+		{
 			bodiesAll.Add(this);
-			bodyUniqueNames.Add(uniqueName, this);
 			UID = ID;
 			ID++;
 		}
-
-		//public Body Duplicate() => Text.ToDataConvert<Body>(Text.FromDataConvert(this));
-
-		public override string ToString() => $"[{UID}] {uniqueName}";
-
-		public int UniqueIDGet() => UID;
-		public string UniqueNameGet() => uniqueName;
-		public void UniqueNameSet(string name)
+		public Body Duplicate(string uniqueName)
 		{
-			if (name == uniqueName) return;
-			if (name == null || bodyUniqueNames.ContainsKey(name))
-				Console.LogError($"Another Body with unique name '{name}' already exists. Make sure you are not creating multiple times or each tick.");
-			uniqueName = name;
+			var dup = new Body(uniqueName);
+			dup.spriteColor = spriteColor;
+			dup.boundariesColor = boundariesColor;
+			dup.originColor = originColor;
+			dup.angleColor = angleColor;
+			dup.size = size;
+			dup.spriteSize = spriteSize;
+			dup.position = position;
+			dup.spriteOrigin = spriteOrigin;
+			dup.spriteIndex = spriteIndex;
+			dup.spriteGridSize = spriteGridSize;
+			dup.angle = angle;
+			dup.spriteName = spriteName;
+			dup.boundariesShown = boundariesShown;
+			dup.originShown = originShown;
+			dup.angleShown = angleShown;
+			dup.spriteShown = spriteShown;
+			return dup;
+		}
+
+		public int GetUniqueID()
+		{
+			return UID;
+		}
+		public string GetUniqueName()
+		{
+			return uniqueName;
+		}
+		public void SetUniqueName(string uniqueName)
+		{
+			if (uniqueName == this.uniqueName) return;
+			else if (uniqueName == null)
+			{
+				Console.LogError($"{nameof(Body)}'s {nameof(uniqueName)} cannot be null.");
+			}
+			if (bodyUniqueNames.ContainsKey(uniqueName))
+			{
+				Console.LogError($"Another {nameof(Body)} with {nameof(uniqueName)} '{uniqueName}' already exists." +
+					$"Make sure you are not creating it multiple times or each tick.");
+			}
+
+			this.uniqueName = uniqueName;
 			bodyUniqueNames.Add(uniqueName, this);
 		}
 
-		public void PositionSet(float x, float y)
+		private void _SetPosition(Point pos)
 		{
-			position.Set(x, y);
+			position = pos;
 			render = true;
 		}
-		public Point PositionGet() => position;
+		public void SetPositionXY(float x, float y)
+		{
+			_SetPosition(new Point(x, y));
+		}
+		public void SetPositionX(float x)
+		{
+			_SetPosition(new Point(x, position.GetY()));
+		}
+		public void SetPositionY(float y)
+		{
+			_SetPosition(new Point(position.GetX(), y));
+		}
+		public void SetPosition(Point position)
+		{
+			_SetPosition(position);
+		}
+		public Point GetPosition()
+		{
+			return position;
+		}
+		public float GetPositionX()
+		{
+			return position.GetX();
+		}
+		public float GetPositionY()
+		{
+			return position.GetY();
+		}
 
-		public void AngleSet(float angle)
+		private void _SetAngle(Angle angle)
 		{
 			this.angle = angle;
 			render = true;
 		}
-		public float AngleGet() => angle;
-
-		public void SizeSet(float width, float height)
+		public void SetAngleA(float a)
 		{
-			size.Set(width, height);
+			_SetAngle(new Angle(a));
+		}
+		public void SetAngle(Angle angle)
+		{
+			_SetAngle(angle);
+		}
+		public float GetAngleA()
+		{
+			return angle.GetA();
+		}
+		public Angle GetAngle()
+		{
+			return angle;
+		}
+
+		public void _SetSize(Size size)
+		{
+			this.size = size;
 			render = true;
 		}
-		public Size SizeGet() => size;
+		public void SetSize(Size size)
+		{
+			_SetSize(size);
+		}
+		public void SetSizeWH(float w, float h)
+		{
+			_SetSize(new Size(w, h));
+		}
+		public void SetSizeW(float w)
+		{
+			_SetSize(new Size(w, size.GetH()));
+		}
+		public void SetSizeH(float h)
+		{
+			_SetSize(new Size(size.GetW(), h));
+		}
+		public Size GetSize()
+		{
+			return size;
+		}
+		public float GetSizeW()
+		{
+			return size.GetW();
+		}
+		public float GetSizeH()
+		{
+			return size.GetH();
+		}
 
-		#region Display Angle
-		public void AngleShow(bool show = true, byte red = 255, byte green = 255, byte blue = 255, byte opacity = 255)
+		public void DisplayAngle(bool show = true, float r = 255, float g = 255, float b = 255, float o = 255)
 		{
 			angleShown = show;
-			angleColor.Set(red, green, blue, opacity);
+			angleColor.Set(r, g, b, o);
 			render = true;
 		}
-		public bool AngleIsShownCheck() => angleShown;
-		public Color AngleColorGet() => angleColor;
-		#endregion
-		#region Display Origin
-		public void OriginShow(bool show = true, byte red = 255, byte green = 255, byte blue = 255, byte opacity = 255)
+		public bool AngleIsDisplayed()
+		{
+			return angleShown;
+		}
+		public Color GetAngleColor()
+		{
+			return angleColor;
+		}
+
+		public void DisplayOrigin(bool show = true, float r = 255, float g = 255, float b = 255, float o = 255)
 		{
 			originShown = show;
-			originColor.Set(red, green, blue, opacity);
+			originColor.Set(r, g, b, o);
 			render = true;
 		}
-		public bool OriginIsShownCheck() => originShown;
-		public Color OriginColorGet() => originColor;
-		#endregion
-		#region Display Boundaries
-		public void BoundariesShow(bool show = true, byte colorRed = 255, byte colorGreen = 255, byte colorBlue = 255, byte opacity = 255)
+		public bool OriginIsDisplayed()
+		{
+			return originShown;
+		}
+		public Color GetOriginColor()
+		{
+			return originColor;
+		}
+
+		public void DisplayBoundaries(bool show = true, float colorRed = 255, float colorGreen = 255, float colorBlue = 255, float o = 255)
 		{
 			boundariesShown = show;
-			boundariesColor.Set(colorRed, colorGreen, colorBlue, opacity);
+			boundariesColor.Set(colorRed, colorGreen, colorBlue, o);
 			render = true;
 		}
-		public bool BoundariesAreShownCheck() => boundariesShown;
-		public Color BoundariesColorGet() => boundariesColor;
-		#endregion
-		#region Display Sprite
-		public void SpriteSet(string name, bool show = true, int width = 64, int height = 64, byte red = 255, byte green = 255, byte blue = 255, byte opacity = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0)
+		public bool BoundariesAreDisplayed()
+		{
+			return boundariesShown;
+		}
+		public Color GetBoundariesColor()
+		{
+			return boundariesColor;
+		}
+
+		public void SetSprite(string name, bool show = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0)
 		{
 			if (sprites.ContainsKey(name) == false)
 			{
@@ -833,23 +987,47 @@ public static class Gear
 			spriteName = name;
 			size = new Size(sprites[name].Width, sprites[name].Height);
 			spriteSize = new Size(width, height);
-			spriteColor = new Color(red, green, blue, opacity);
+			spriteColor = new Color(r, g, b, o);
 			spriteOrigin = new Point(originX, originY);
 			spriteGridSize = gridSize;
 			spriteIndex = new Point(indexH, indexV);
 			spriteShown = show;
 			render = true;
 		}
-		public string SpriteNameGet() => spriteName;
+		public string GetSpriteName()
+		{
+			return spriteName;
+		}
 
-		public bool SpriteIsShownCheck() => spriteShown;
+		public bool SpriteIsDisplayed()
+		{
+			return spriteShown;
+		}
+		public int GetSpriteGridSize()
+		{
+			return spriteGridSize;
+		}
+		public Point GetSpriteGridIndexes()
+		{
+			return spriteIndex;
+		}
+		public Point GetSpriteOrigin()
+		{
+			return spriteOrigin;
+		}
+		public Size GetSpriteSize()
+		{
+			return spriteSize;
+		}
+		public Color GetSpriteColor()
+		{
+			return spriteColor;
+		}
 
-		public int SpriteGridSizeGet() => spriteGridSize;
-		public Point SpriteGridIndexesGet() => spriteIndex;
-		public Point SpriteOriginGet() => spriteOrigin;
-		public Size SpriteSizeGet() => spriteSize;
-		public Color SpriteColorGet() => spriteColor;
-		#endregion
+		public override string ToString()
+		{
+			return $"[{UID}] {uniqueName}";
+		}
 	}
 	/// <summary>
 	/// Controls <see cref="float"/> in different ways.
@@ -1140,10 +1318,10 @@ public static class Gear
 
 			var sampleSize = fonts[textDisplayFont].MeasureString("a");
 			var sampleSizeScaled = sampleSize * textDisplayScale;
-			var visibleLines = (int)(canvasSize.HeightGet() / sampleSizeScaled.Y);
+			var visibleLines = (int)(canvasSize.GetH() / sampleSizeScaled.Y);
 			var size = fonts[textDisplayFont].MeasureString(textDisplayMessage) * textDisplayScale;
 			var lines = textDisplayMessage.Split(new char[] { '\n' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-			if (size.Y > canvasSize.HeightGet() + sampleSizeScaled.Y && lines.Count > 2 && visibleLines < lines.Count)
+			if (size.Y > canvasSize.GetH() + sampleSizeScaled.Y && lines.Count > 2 && visibleLines < lines.Count)
 			{
 				textDisplayMessage = "";
 				lines[lines.Count - visibleLines] = "...";
@@ -1235,7 +1413,7 @@ public static class Gear
 		/// - The tick count is also provided as an <see cref="int"/> parameter with <see cref="Program.EachTick(int)"/>.<br></br><br></br>
 		/// - Changing the tick speed and receiving information about ticks/frames may be done through <see cref="TicksPerSecondTargetSet"/>.
 		/// </summary>
-		public static int TicksCountGet() => tick;
+		public static int GetTickCount() => tick;
 
 		public static float RAMGBAvailableGet() => ramAvailable.NextValue() / 1000;
 		public static float RAMPercentUsedGet() => ramUsedPercent.NextValue();
@@ -1546,27 +1724,27 @@ public static class Gear
 	{
 		/// <summary>
 		/// - Creates a screenshot in <paramref name="path"/>/<paramref name="name"/>.png that contains what is currently visible in the window and saves it as a sprite. The result can be <paramref name="scaled"/> to the user's screen resolution, otherwise takes the canvas resolution.<br></br><br></br>
-		/// - The canvas resolution can be received from <see cref="Canvas.SizeWidthGet"/> and <see cref="Canvas.SizeHeightGet"/>.<br></br>
-		/// - The user's screen resolution can be received from <see cref="Hardware.ScreenSizeWidthGet"/> and <see cref="Hardware.ScreenSizeHeightGet"/>.<br></br>
+		/// - The canvas resolution can be received from <see cref="Canvas.SizeGetW"/> and <see cref="Canvas.SizeGetH"/>.<br></br>
+		/// - The user's screen resolution can be received from <see cref="Hardware.ScreenSizeGetW"/> and <see cref="Hardware.ScreenSizeGetH"/>.<br></br>
 		/// </summary>
 		public static void Screenshot(string path, string name, bool scaled)
 		{
 			var size = new Size(
-				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : canvasSize.WidthGet(),
-				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : canvasSize.HeightGet());
-			var buffer = new int[(int)(size.WidthGet() * size.HeightGet())];
-			var texture = new Texture2D(game.GraphicsDevice, (int)size.WidthGet(), (int)size.HeightGet());
+				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferWidth : canvasSize.GetW(),
+				scaled ? game.GraphicsDevice.PresentationParameters.BackBufferHeight : canvasSize.GetH());
+			var buffer = new int[(int)(size.GetW() * size.GetH())];
+			var texture = new Texture2D(game.GraphicsDevice, (int)size.GetW(), (int)size.GetH());
 			var finalPath = $"{mainDir}{path}";
 
 			if (Directory.Exists(finalPath) == false) Directory.CreateDirectory(finalPath);
 
 			if (scaled) game.GraphicsDevice.GetBackBufferData(buffer);
-			else renderTarget.GetData(0, new Rectangle(0, 0, (int)size.WidthGet(), (int)size.HeightGet()), buffer, 0, (int)(size.WidthGet() * size.HeightGet()));
+			else renderTarget.GetData(0, new Rectangle(0, 0, (int)size.GetW(), (int)size.GetH()), buffer, 0, (int)(size.GetW() * size.GetH()));
 
 			texture.SetData(buffer);
 			using (Stream stream = File.Create($"{finalPath}\\{name}.png"))
 			{
-				texture.SaveAsPng(stream, (int)size.WidthGet(), (int)size.HeightGet());
+				texture.SaveAsPng(stream, (int)size.GetW(), (int)size.GetH());
 			}
 			sprites[name] = texture;
 		}
@@ -1653,7 +1831,7 @@ public static class Gear
 			result = shift && result != null ? result.ToUpper() : result;
 			return result;
 		}
-		public static List<InputKeys> KeysPressedGet()
+		public static List<InputKeys> GetKeysPressed()
 		{
 			var result = new List<InputKeys>();
 			var keysPressed = Keyboard.GetState().GetPressedKeys();
@@ -1669,7 +1847,7 @@ public static class Gear
 
 		public static Point MouseCursorPositionWorldGet()
 		{
-			var scale = new Point(canvasSize.WidthGet() / screenSize.WidthGet(), canvasSize.HeightGet() / screenSize.HeightGet());
+			var scale = new Point(canvasSize.GetW() / screenSize.GetW(), canvasSize.GetH() / screenSize.GetH());
 			var pos = new Point(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
 			return pos;
 		}
@@ -1839,27 +2017,235 @@ public static class Gear
 		}
 	}
 
+	public struct Pair<T>
+	{
+		private T f, s;
+
+		public Pair(T f, T s)
+		{
+			this.f = f;
+			this.s = s;
+		}
+		public void SetFS(T f, T s)
+		{
+			this.f = f;
+			this.s = s;
+		}
+		public void SetF(T f)
+		{
+			this.f = f;
+		}
+		public void SetS(T s)
+		{
+			this.s = s;
+		}
+		public T GetF()
+		{
+			return f;
+		}
+		public T GetS()
+		{
+			return s;
+		}
+
+		public override string ToString()
+		{
+			return $"{nameof(Pair<T>)}[f:{f}][s:{s}]";
+		}
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override bool Equals(object obj)
+		{
+			return default;
+		}
+		/// <summary>
+		/// This default <see cref="object"/> method is not implemented.
+		/// </summary>
+		public override int GetHashCode()
+		{
+			return default;
+		}
+	}
+	public struct Storage<UniqueKeyT, ValueT>
+	{
+		private List<int> indexes;
+		private List<UniqueKeyT> keys;
+		private List<ValueT> values;
+		private Dictionary<UniqueKeyT, ValueT> dict;
+
+		public void Expand(int index, UniqueKeyT uniqueKey, ValueT value,
+			bool invalidIndexError = true, bool keyExistsError = true)
+		{
+			if (keys == null) keys = new List<UniqueKeyT>();
+			if (indexes == null) indexes = new List<int>();
+
+			if (values == null) values = new List<ValueT>();
+			if (invalidIndexError && index < 0)
+			{
+				Console.LogError($"The index of [{nameof(uniqueKey)}:{uniqueKey}][{nameof(value)}:{value}] cannot be < 0.");
+			}
+			else if (index < 0) return;
+			if (index >= values.Count)
+			{
+				var oldListK = new List<UniqueKeyT>(keys);
+				var oldListV = new List<ValueT>(values);
+				values = new List<ValueT>();
+				keys = new List<UniqueKeyT>();
+				for (int i = 0; i < index; i++)
+				{
+					values.Add(default);
+					keys.Add(default);
+				}
+				for (int i = 0; i < oldListV.Count; i++)
+				{
+					values[i] = oldListV[i];
+					keys[i] = oldListK[i];
+				}
+			}
+
+			if (dict == null) dict = new Dictionary<UniqueKeyT, ValueT>();
+			if (keyExistsError && dict.ContainsKey(uniqueKey))
+			{
+				Console.LogError($"Unique key '{uniqueKey}' already exists.");
+			}
+			else if (dict.ContainsKey(uniqueKey)) return;
+
+			dict.Add(uniqueKey, value);
+			values.Insert(index, value);
+			keys.Insert(index, uniqueKey);
+			indexes.Add(index);
+
+			var sameIndexMet = false;
+			for (int i = 0; i < indexes.Count; i++)
+			{
+				if (sameIndexMet && indexes[i] == index)
+				{
+					indexes[i]++;
+					continue;
+				}
+				if (indexes[i] > index)
+				{
+					indexes[i]++;
+				}
+				else if (sameIndexMet == false && indexes[i] == index)
+				{
+					sameIndexMet = true;
+				}
+			}
+		}
+		public void ReplaceAt(int index, ValueT value, bool indexNotFoundError = true)
+		{
+			if (indexNotFoundError && indexes.Contains(index) == false)
+			{
+				Console.LogError($"The {this}'s index '{index}' was not found.");
+			}
+			else if (indexes.Contains(index) == false) return;
+
+			values[index] = value;
+			dict[keys[index]] = value;
+		}
+		public void ReplaceIn(UniqueKeyT uniqueKey, ValueT value, bool keyNotFoundError = true)
+		{
+			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
+			{
+				Console.LogError($"The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
+			}
+			else if (dict.ContainsKey(uniqueKey) == false) return;
+
+			dict[uniqueKey] = value;
+			values[keys.IndexOf(uniqueKey)] = value;
+		}
+		public int GetDataAmount()
+		{
+			return values == null ? 0 : values.Count;
+		}
+		public ValueT GetValueIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
+		{
+			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
+			{
+				Console.LogError($"The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
+			}
+			else if (dict.ContainsKey(uniqueKey) == false) return default;
+
+			return dict[uniqueKey];
+		}
+		public ValueT GetValueAt(int index, bool indexNotFoundError = true)
+		{
+			if (indexNotFoundError && indexes.Contains(index) == false)
+			{
+				Console.LogError($"The {this}'s index '{index}' was not found.");
+			}
+			else if (indexes.Contains(index) == false) return default;
+
+			return values[index];
+		}
+		public UniqueKeyT GetUniqueKeyAt(int index, bool indexNotFoundError = true)
+		{
+			if (indexNotFoundError && indexes.Contains(index) == false)
+			{
+				Console.LogError($"The {this}'s index '{index}' was not found.");
+			}
+			else if (indexes.Contains(index) == false) return default;
+
+			return keys[index];
+		}
+		public int GetIndexIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
+		{
+			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
+			{
+				Console.LogError($"The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
+			}
+			else if (dict.ContainsKey(uniqueKey) == false) return default;
+
+			return keys.IndexOf(uniqueKey);
+		}
+		public bool IndexExists(int index)
+		{
+			return indexes.Contains(index);
+		}
+		public bool UniqueKeyExists(UniqueKeyT uniqueKey)
+		{
+			return keys.Contains(uniqueKey);
+		}
+	}
+
 	public struct Angle
 	{
-		private float angle;
+		private float a;
 
-		public Angle(float angle) { this.angle = angle; To360Degrees(); }
-		public float Get() => angle;
-		public void To360Degrees() => angle = ((angle % 360) + 360) % 360;
-		public void Set(float angle) { this.angle = angle; To360Degrees(); }
+		public Angle(float a)
+		{
+			this.a = a;
+			To360();
+		}
+		public float GetA()
+		{
+			return a;
+		}
+		public void SetA(float a)
+		{
+			this.a = a;
+			To360();
+		}
 		public void SetFromDirection(Direction direction)
 		{
 			//Vector2 to Radians: atan2(Vector2.y, Vector2.x)
 			//Radians to Angle: radians * (180 / Math.PI)
 			if (direction != new Direction()) direction.Normalize();
-			var rad = (double)Math.Atan2(direction.EndPointGet().YGet(), direction.EndPointGet().XGet());
-			angle = (float)(rad * (180 / Math.PI));
-			To360Degrees();
+			var rad = (double)Math.Atan2(direction.GetEndPoint().GetY(), direction.GetEndPoint().GetX());
+			a = (float)(rad * (180 / Math.PI));
+			To360();
 		}
-		public void SetFromBetweenPoints(Point point, Point targetPoint) { var dir = new Direction(); dir.SetFromBetweenPoints(point, targetPoint); SetFromDirection(dir); }
-		public void SetToRotationSample(RotationSamples angle)
+		public void SetFromBetweenPoints(Point point, Point targetPoint)
 		{
-			switch (angle)
+			var dir = new Direction();
+			dir.SetFromBetweenPoints(point, targetPoint);
+			SetFromDirection(dir);
+		}
+		public void SetToRotationSample(RotationSamples sample)
+		{
+			switch (sample)
 			{
 				case RotationSamples.Up: this = new Angle(270); break;
 				case RotationSamples.Left: this = new Angle(180); break;
@@ -1873,21 +2259,25 @@ public static class Gear
 		}
 		public void SetToPercentTowardsAngle(Angle targetAngle, float percent)
 		{
-			To360Degrees();
-			targetAngle.To360Degrees();
-			angle = Number.PercentedTowardsTargetGet(angle, targetAngle.Get(), percent);
+			To360();
+			targetAngle.To360();
+			a = Number.PercentedTowardsTargetGet(a, targetAngle.GetA(), percent);
 		}
-		public void Rotate(float degreesPerSecond) { angle = Number.ChangedGet(angle, degreesPerSecond); To360Degrees(); }
+		public void Rotate(float degreesPerSecond)
+		{
+			a = Number.ChangedGet(a, degreesPerSecond);
+			To360();
+		}
 		public void RotateTowardsAngle(Angle targetAngle, float degreesPerSecond)
 		{
-			To360Degrees();
-			targetAngle.To360Degrees();
+			To360();
+			targetAngle.To360();
 			degreesPerSecond = Math.Abs(degreesPerSecond);
-			var difference = angle - targetAngle.Get();
+			var difference = a - targetAngle.GetA();
 
 			// stops the rotation with an else when close enough
 			// prevents the rotation from staying behind after the stop
-			if (Math.Abs(difference) < degreesPerSecond * ticksDeltaTime) angle = targetAngle.Get();
+			if (Math.Abs(difference) < degreesPerSecond * ticksDeltaTime) a = targetAngle.GetA();
 			else if (difference > 0 && difference < 180) Rotate(-degreesPerSecond);
 			else if (difference > -180 && difference < 0) Rotate(degreesPerSecond);
 			else if (difference > -360 && difference < -180) Rotate(-degreesPerSecond);
@@ -1895,202 +2285,296 @@ public static class Gear
 
 			// detects speed greater than possible
 			// prevents jiggle when passing 0-360 & 360-0 | simple to fix yet took me half a day
-			if (Math.Abs(difference) > 360 - degreesPerSecond * ticksDeltaTime) angle = targetAngle.Get();
+			if (Math.Abs(difference) > 360 - degreesPerSecond * ticksDeltaTime) a = targetAngle.GetA();
 		}
 
-		public override string ToString() => $"{nameof(Angle)}[degrees:{angle:F2}]";
-		/// <summary>
-		/// This default <see cref="object"/> method is not implemented.
-		/// </summary>
-		public override bool Equals(object obj) => default;
-		/// <summary>
-		/// This default <see cref="object"/> method is not implemented.
-		/// </summary>
-		public override int GetHashCode() => default;
-	}
-	public struct Pair
-	{
-		private object first, second;
-
-		public Pair(object first, object second) { this.first = first; this.second = second; }
-		public void Set(object first, object second) { this.first = first; this.second = second; }
-		public T FirstGet<T>() => (T)first;
-		public T SecondGet<T>() => (T)second;
-
-		public override string ToString() => $"{nameof(Pair)}[first:{first}][second:{second}]";
-		/// <summary>
-		/// This default <see cref="object"/> method is not implemented.
-		/// </summary>
-		public override bool Equals(object obj) => default;
-		/// <summary>
-		/// This default <see cref="object"/> method is not implemented.
-		/// </summary>
-		public override int GetHashCode() => default;
-	}
-	public struct PairTexts
-	{
-		private string first, second;
-
-		public PairTexts(string first, string second) { this.first = first; this.second = second; }
-		public void Set(string first, string second) { this.first = first; this.second = second; }
-		public string FirstGet() => first;
-		public string SecondGet() => second;
-
-		public override string ToString() => $"{nameof(PairTexts)}[first:{FirstGet()}][second:{SecondGet()}]";
-		/// <summary>
-		/// This default <see cref="object"/> method is not implemented.
-		/// </summary>
-		public override bool Equals(object obj) => default;
-		/// <summary>
-		/// This default <see cref="object"/> method is not implemented.
-		/// </summary>
-		public override int GetHashCode() => default;
-	}
-	public struct PairNumbers
-	{
-		private float first, second;
-
-		public static PairNumbers ToGridGet(PairNumbers pairNumbers, Size gridSize)
+		public override string ToString()
 		{
-			var result = new PairNumbers();
-			var gridWidth = Number.LimitedGet(gridSize.WidthGet(), 1, screenSize.WidthGet());
-			var gridHeight = Number.LimitedGet(gridSize.HeightGet(), 1, screenSize.HeightGet());
-			if (gridSize.WidthGet() > 0) result.Set(gridWidth * (float)Math.Round((float)pairNumbers.FirstGet() / gridWidth), result.SecondGet());
-			if (gridSize.HeightGet() > 0) result.Set(result.FirstGet(), gridHeight * (float)Math.Round((float)pairNumbers.SecondGet() / gridHeight));
-			return result;
+			return $"{nameof(Angle)}[a:{a:F2}]";
 		}
-		public PairNumbers(float first = 0, float second = 0) { this.first = first; this.second = second; }
-		public void Set(float first, float second) { this.first = first; this.second = second; }
-		public float FirstGet() => first;
-		public float SecondGet() => second;
-		public override string ToString() => $"{nameof(PairNumbers)}[first:{FirstGet():F2}][second:{SecondGet():F2}]";
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override bool Equals(object obj) => default;
+		public override bool Equals(object obj)
+		{
+			return default;
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override int GetHashCode() => default;
+		public override int GetHashCode()
+		{
+			return default;
+		}
 
-		public static PairNumbers operator +(PairNumbers a, PairNumbers b) => new PairNumbers(a.FirstGet() + b.FirstGet(), a.SecondGet() + b.SecondGet());
-		public static PairNumbers operator -(PairNumbers a, PairNumbers b) => new PairNumbers(a.FirstGet() - b.FirstGet(), a.SecondGet() - b.SecondGet());
-		public static PairNumbers operator *(PairNumbers a, PairNumbers b) => new PairNumbers(a.FirstGet() * b.FirstGet(), a.SecondGet() * b.SecondGet());
-		public static PairNumbers operator /(PairNumbers a, PairNumbers b) => new PairNumbers(a.FirstGet() / b.FirstGet(), a.SecondGet() / b.SecondGet());
+		private void To360()
+		{
+			a = ((a % 360) + 360) % 360;
+		}
 	}
 	public struct Size
 	{
-		private PairNumbers size;
+		private float w;
+		private float h;
 
-		public Size(float width, float height) => size = new PairNumbers(width, height);
-		public void Set(float width, float height) => size.Set(width, height);
-		public float WidthGet() => size.FirstGet();
-		public float HeightGet() => size.SecondGet();
+		public Size(float w, float h)
+		{
+			this.w = w;
+			this.h = h;
+		}
+		public void SetWH(float w, float h)
+		{
+			this.w = w;
+			this.h = h;
+		}
+		public void SetW(float w)
+		{
+			this.w = w;
+		}
+		public void SetH(float h)
+		{
+			this.h = h;
+		}
+		public float GetW()
+		{
+			return w;
+		}
+		public float GetH()
+		{
+			return h;
+		}
 		public void Scale(float pixelsPerSecond)
 		{
 			pixelsPerSecond *= ticksDeltaTime;
-			size = new PairNumbers(size.FirstGet() + (float)pixelsPerSecond, size.SecondGet() + (float)pixelsPerSecond);
+			w += pixelsPerSecond;
+			h += pixelsPerSecond;
 		}
 		public void ScaleTowardsTarget(Size targetSize, float pixelsPerSecond)
 		{
 			Scale(pixelsPerSecond);
-			var dist = Vector2.Distance(new Vector2(WidthGet(), HeightGet()), new Vector2(targetSize.WidthGet(), targetSize.HeightGet()));
-			if (dist < pixelsPerSecond * ticksDeltaTime * 2) size = new PairNumbers(targetSize.WidthGet(), targetSize.HeightGet());
+			var dist = Vector2.Distance(new Vector2(GetW(), GetH()), new Vector2(targetSize.GetW(), targetSize.GetH()));
+			if (dist < pixelsPerSecond * ticksDeltaTime * 2)
+			{
+				w = targetSize.GetW();
+				h = targetSize.GetH();
+			}
 		}
 
-		public override string ToString() => $"{nameof(Size)}[width:{WidthGet():F2}][height:{HeightGet():F2}]";
+		public override string ToString()
+		{
+			return $"{nameof(Size)}[w:{w:F2}][h:{h:F2}]";
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override bool Equals(object obj) => default;
+		public override bool Equals(object obj)
+		{
+			return default;
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override int GetHashCode() => default;
+		public override int GetHashCode()
+		{
+			return default;
+		}
 
-		public static Size operator +(Size a, Size b) => new Size(a.WidthGet() + b.WidthGet(), a.HeightGet() + b.HeightGet());
-		public static Size operator -(Size a, Size b) => new Size(a.WidthGet() - b.WidthGet(), a.HeightGet() - b.HeightGet());
-		public static Size operator *(Size a, Size b) => new Size(a.WidthGet() * b.WidthGet(), a.HeightGet() * b.HeightGet());
-		public static Size operator *(Size a, float b) => new Size(a.WidthGet() * b, a.HeightGet() * b);
-		public static Size operator /(Size a, Size b) => new Size(a.WidthGet() / b.WidthGet(), a.HeightGet() / b.HeightGet());
-		public static Size operator /(Size a, float b) => new Size(a.WidthGet() / b, a.HeightGet() / b);
+		public static Size operator +(Size a, Size b)
+		{
+			return new Size(a.GetW() + b.GetW(), a.GetH() + b.GetH());
+		}
+		public static Size operator -(Size a, Size b)
+		{
+			return new Size(a.GetW() - b.GetW(), a.GetH() - b.GetH());
+		}
+		public static Size operator *(Size a, Size b)
+		{
+			return new Size(a.GetW() * b.GetW(), a.GetH() * b.GetH());
+		}
+		public static Size operator *(Size a, float b)
+		{
+			return new Size(a.GetW() * b, a.GetH() * b);
+		}
+		public static Size operator /(Size a, Size b)
+		{
+			return new Size(a.GetW() / b.GetW(), a.GetH() / b.GetH());
+		}
+		public static Size operator /(Size a, float b)
+		{
+			return new Size(a.GetW() / b, a.GetH() / b);
+		}
 	}
 	public struct Point
 	{
-		private PairNumbers point;
+		float x;
+		float y;
 
-		public Point(float x, float y) => point = new PairNumbers(x, y);
-		public Point(Point point) => this.point = new PairNumbers(point.XGet(), point.YGet());
-		public void Set(float x, float y) => point.Set(x, y);
-		public float XGet() => point.FirstGet();
-		public float YGet() => point.SecondGet();
-		public float DistanceToPointGet(Point point) => Vector2.Distance(new Vector2(XGet(), YGet()), new Vector2(point.XGet(), point.YGet()));
+		public Point(float x, float y)
+		{
+			this.x = x;
+			this.y = y;
+		}
+		public void SetXY(float x, float y)
+		{
+			this.x = x;
+			this.y = y;
+		}
+		public float GetX()
+		{
+			return x;
+		}
+		public float GetY()
+		{
+			return y;
+		}
+		public void SetX(float x)
+		{
+			this.x = x;
+		}
+		public void SetY(float y)
+		{
+			this.y = y;
+		}
+		public float GetDistanceToPoint(Point point)
+		{
+			return Vector2.Distance(new Vector2(x, y), new Vector2(point.GetX(), point.GetY()));
+		}
 		public void MoveInDirection(Direction direction, float pixelsPerSecond)
 		{
 			pixelsPerSecond *= ticksDeltaTime;
 			direction.Normalize();
-			point += new PairNumbers(direction.EndPointGet().XGet() * pixelsPerSecond, direction.EndPointGet().YGet() * pixelsPerSecond);
+			x += direction.GetEndPoint().GetX() * pixelsPerSecond;
+			y += direction.GetEndPoint().GetY() * pixelsPerSecond;
 		}
-		public void MoveAtAngle(Angle angle, float pixelsPerSecond) { var dir = new Direction(); dir.SetFromAngle(angle); MoveInDirection(dir, pixelsPerSecond); }
+		public void MoveAtAngle(Angle angle, float pixelsPerSecond)
+		{
+			var dir = new Direction();
+			dir.SetFromAngle(angle);
+			MoveInDirection(dir, pixelsPerSecond);
+		}
 		public void MoveTowardsPoint(Point targetPoint, float pixelsPerSecond)
 		{
 			var dir = new Direction(targetPoint - this);
 			MoveInDirection(dir, pixelsPerSecond);
-			var dist = Vector2.Distance(new Vector2(XGet(), YGet()), new Vector2(targetPoint.XGet(), targetPoint.YGet()));
-			if (dist < pixelsPerSecond * ticksDeltaTime * 2) point = new PairNumbers(targetPoint.XGet(), targetPoint.YGet());
+			var dist = Vector2.Distance(new Vector2(x, y), new Vector2(targetPoint.GetX(), targetPoint.GetY()));
+			if (dist < pixelsPerSecond * ticksDeltaTime * 2)
+			{
+				x = targetPoint.GetX();
+				y = targetPoint.GetY();
+			}
 		}
 		public void SetToPercentTowardsPoint(Point targetPoint, float percent)
 		{
-			var vec = Vector2.Lerp(new Vector2(XGet(), YGet()), new Vector2(targetPoint.XGet(), targetPoint.YGet()), (float)percent / 100);
-			point = new PairNumbers(vec.X, vec.Y);
+			var vec = Vector2.Lerp(new Vector2(GetX(), GetY()), new Vector2(targetPoint.GetX(), targetPoint.GetY()), (float)percent / 100);
+			x = vec.X;
+			y = vec.Y;
 		}
 
-		public override string ToString() => $"{nameof(Point)}[x:{XGet():F2}][y:{YGet():F2}]";
+		public override string ToString()
+		{
+			return $"{nameof(Point)}[x:{GetX():F2}][y:{GetY():F2}]";
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override bool Equals(object obj) => default;
+		public override bool Equals(object obj)
+		{
+			return default;
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override int GetHashCode() => default;
+		public override int GetHashCode()
+		{
+			return default;
+		}
 
-		public static Point operator +(Point a, Point b) => new Point(a.XGet() + b.XGet(), a.YGet() + b.YGet());
-		public static Point operator -(Point a, Point b) => new Point(a.XGet() - b.XGet(), a.YGet() - b.YGet());
-		public static Point operator *(Point a, Point b) => new Point(a.XGet() * b.XGet(), a.YGet() * b.YGet());
-		public static Point operator /(Point a, Point b) => new Point(a.XGet() / b.XGet(), a.YGet() / b.YGet());
-		public static Point operator /(Point a, float b) => new Point(a.XGet() / b, a.YGet() / b);
-		public static Point operator *(Point a, float b) => new Point(a.XGet() * b, a.YGet() * b);
-		public static bool operator ==(Point a, Point b) => a.XGet() == b.XGet() && a.YGet() == b.YGet();
-		public static bool operator !=(Point a, Point b) => a.XGet() != b.XGet() && a.YGet() != b.YGet();
+		public static Point operator +(Point a, Point b)
+		{
+			return new Point(a.GetX() + b.GetX(), a.GetY() + b.GetY());
+		}
+		public static Point operator -(Point a, Point b)
+		{
+			return new Point(a.GetX() - b.GetX(), a.GetY() - b.GetY());
+		}
+		public static Point operator *(Point a, Point b)
+		{
+			return new Point(a.GetX() * b.GetX(), a.GetY() * b.GetY());
+		}
+		public static Point operator /(Point a, Point b)
+		{
+			return new Point(a.GetX() / b.GetX(), a.GetY() / b.GetY());
+		}
+		public static Point operator /(Point a, float b)
+		{
+			return new Point(a.GetX() / b, a.GetY() / b);
+		}
+		public static Point operator *(Point a, float b)
+		{
+			return new Point(a.GetX() * b, a.GetY() * b);
+		}
+		public static bool operator ==(Point a, Point b)
+		{
+			return a.GetX() == b.GetX() && a.GetY() == b.GetY();
+		}
+		public static bool operator !=(Point a, Point b)
+		{
+			return a.GetX() != b.GetX() && a.GetY() != b.GetY();
+		}
 	}
 	public struct Direction
 	{
 		private Point endPoint;
 
-		public Direction(Point endPoint) { this.endPoint = endPoint; Normalize(); }
-		public Point EndPointGet() => endPoint;
+		public Direction(Point endPoint)
+		{
+			this.endPoint = endPoint; Normalize();
+		}
+		public Point GetEndPoint()
+		{
+			return endPoint;
+		}
 		public void Normalize()
 		{
-			var vec = new Vector2(endPoint.XGet(), endPoint.YGet());
+			var vec = new Vector2(endPoint.GetX(), endPoint.GetY());
 			if (vec != Vector2.Zero) vec.Normalize();
 			endPoint = new Point(vec.X, vec.Y);
 		}
-		public void Reverse() { endPoint = new Point(-endPoint.XGet(), -endPoint.YGet());  Normalize(); }
-		public void ReverseHorizontally() { endPoint = new Point(-endPoint.XGet(), endPoint.YGet());  Normalize(); }
-		public void ReverseVertically() { endPoint = new Point(endPoint.XGet(), -endPoint.YGet());  Normalize(); }
-		public void Set(Point endPoint) { this.endPoint = endPoint; Normalize(); }
+		public void Reverse()
+		{
+			endPoint = new Point(-endPoint.GetX(), -endPoint.GetY()); 
+			Normalize();
+		}
+		public void ReverseHorizontally()
+		{
+			endPoint = new Point(-endPoint.GetX(), endPoint.GetY()); 
+			Normalize();
+		}
+		public void ReverseVertically()
+		{
+			endPoint = new Point(endPoint.GetX(), -endPoint.GetY()); 
+			Normalize();
+		}
+		public void Set(Point endPoint)
+		{
+			this.endPoint = endPoint;
+			Normalize();
+		}
 		public void SetFromAngle(Angle angle)
 		{
 			//Angle to Radians : (Math.PI / 180) * angle
 			//Radians to Vector2 : Vector2.x = cos(angle) | Vector2.y = sin(angle)
 
-			var rad = Math.PI / 180 * angle.Get();
+			var rad = Math.PI / 180 * angle.GetA();
 			var dir = new Vector2((float)Math.Cos(rad), (float)Math.Sin(rad));
 			dir.Normalize();
 			endPoint = new Point(dir.X, dir.Y);
 		}
-		public void SetFromBetweenPoints(Point point, Point targetPoint) { endPoint = new Point(targetPoint - point); Normalize(); }
+		public void SetFromBetweenPoints(Point point, Point targetPoint)
+		{
+			endPoint = targetPoint - point;
+			Normalize();
+		}
 		public void SetToRotationSample(RotationSamples direction)
 		{
 			switch (direction)
@@ -2137,120 +2621,191 @@ public static class Gear
 			SetFromAngle(angle);
 		}
 
-		public static Direction operator +(Direction a, Direction b) => new Direction(a.endPoint + b.endPoint);
-		public static Direction operator -(Direction a, Direction b) => new Direction(a.endPoint - b.endPoint);
-		public static Direction operator *(Direction a, Direction b) => new Direction(a.endPoint * b.endPoint);
-		public static Direction operator /(Direction a, Direction b) => new Direction(a.endPoint / b.endPoint);
-		public static bool operator ==(Direction a, Direction b) => a.endPoint == b.endPoint;
-		public static bool operator !=(Direction a, Direction b) => a.endPoint != b.endPoint;
+		public static Direction operator +(Direction a, Direction b)
+		{
+			return new Direction(a.endPoint + b.endPoint);
+		}
+		public static Direction operator -(Direction a, Direction b)
+		{
+			return new Direction(a.endPoint - b.endPoint);
+		}
+		public static Direction operator *(Direction a, Direction b)
+		{
+			return new Direction(a.endPoint * b.endPoint);
+		}
+		public static Direction operator /(Direction a, Direction b)
+		{
+			return new Direction(a.endPoint / b.endPoint);
+		}
+		public static bool operator ==(Direction a, Direction b)
+		{
+			return a.endPoint == b.endPoint;
+		}
+		public static bool operator !=(Direction a, Direction b)
+		{
+			return a.endPoint != b.endPoint;
+		}
 
-		public override string ToString() => $"{nameof(Direction)}[endpoint:{endPoint}]";
+		public override string ToString()
+		{
+			return $"{nameof(Direction)}[endpoint:{endPoint}]";
+		}
 		/// <summary>
 		/// A default <see cref="object"/> method. Not implemented.
 		/// </summary>
-		public override bool Equals(object obj) => default;
+		public override bool Equals(object obj)
+		{
+			return default;
+		}
 		/// <summary>
 		/// A default <see cref="object"/> method. Not implemented.
 		/// </summary>
-		public override int GetHashCode() => default;
+		public override int GetHashCode()
+		{
+			return default;
+		}
 	}
 	public struct Color
 	{
-		private float red, green, blue, opacity;
+		private float r, g, b, o;
 
-		public Color(float red, float green, float blue, float opacity = 255)
+		public Color(float r, float g, float b, float o = 255)
 		{
-			this.red = red;
-			this.green = green;
-			this.blue = blue;
-			this.opacity = opacity;
-			To255Shades();
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.o = o;
+			To255();
 		}
-		public void Set(float red, float green, float blue, float opacity = 255)
+		public void Set(float r, float g, float b, float o = 255)
 		{
-			this.red = red;
-			this.green = green;
-			this.blue = blue;
-			this.opacity = opacity;
-			To255Shades();
-		}
-		public void To255Shades()
-		{
-			red = Number.LimitedGet(red, 0, 255);
-			green = Number.LimitedGet(green, 0, 255);
-			blue = Number.LimitedGet(blue, 0, 255);
-			opacity = Number.LimitedGet(opacity, 0, 255);
+			this.r = r;
+			this.g = g;
+			this.b = b;
+			this.o = o;
+			To255();
 		}
 		public void Lighten(float shadesPerSecond)
 		{
 			shadesPerSecond *= ticksDeltaTime;
-			red += shadesPerSecond;
-			green += shadesPerSecond;
-			blue += shadesPerSecond;
-			To255Shades();
+			r += shadesPerSecond;
+			g += shadesPerSecond;
+			b += shadesPerSecond;
+			To255();
 		}
-		public void TintRed(float shadesPerSecond) { red += shadesPerSecond * ticksDeltaTime; To255Shades(); }
-		public void TintGreen(float shadesPerSecond) { green += shadesPerSecond * ticksDeltaTime; To255Shades(); }
-		public void TintBlue(float shadesPerSecond) { blue += shadesPerSecond * ticksDeltaTime; To255Shades(); }
-		public void Appear(float shadesPerSecond) { opacity += shadesPerSecond * ticksDeltaTime; To255Shades(); }
-		public void TintTowardsRed(float targetRed, float shadesPerSecond)
+		public void TintR(float shadesPerSecond)
 		{
-			TintRed(red < targetRed ? shadesPerSecond : -shadesPerSecond);
-			var dist = Math.Abs(red - targetRed);
-			if (dist < shadesPerSecond * ticksDeltaTime * 2) red = targetRed;
+			r += shadesPerSecond * ticksDeltaTime;
+			To255();
 		}
-		public void TintTowardsGreen(float targetGreen, float shadesPerSecond)
+		public void TintG(float shadesPerSecond)
 		{
-			TintGreen(red < targetGreen ? shadesPerSecond : -shadesPerSecond);
-			var dist = Math.Abs(green - targetGreen);
-			if (dist < shadesPerSecond * ticksDeltaTime * 2) green = targetGreen;
+			g += shadesPerSecond * ticksDeltaTime;
+			To255();
 		}
-		public void TintTowardsBlue(float targetBlue, float shadesPerSecond)
+		public void TintB(float shadesPerSecond)
 		{
-			TintBlue(blue < targetBlue ? shadesPerSecond : -shadesPerSecond);
-			var dist = Math.Abs(blue - targetBlue);
-			if (dist < shadesPerSecond * ticksDeltaTime * 2) blue = targetBlue;
+			b += shadesPerSecond * ticksDeltaTime;
+			To255();
 		}
-		public void AppearTowardsOpacity(float targetopacity, float shadesPerSecond)
+		public void Appear(float shadesPerSecond)
 		{
-			Appear(opacity < targetopacity ? shadesPerSecond : -shadesPerSecond);
-			var dist = Math.Abs(opacity - targetopacity);
-			if (dist < shadesPerSecond * ticksDeltaTime * 2) opacity = targetopacity;
+			o += shadesPerSecond * ticksDeltaTime;
+			To255();
+		}
+		public void TintTowardsR(float targetRed, float shadesPerSecond)
+		{
+			TintR(r < targetRed ? shadesPerSecond : -shadesPerSecond);
+			var dist = Math.Abs(r - targetRed);
+			if (dist < shadesPerSecond * ticksDeltaTime * 2) r = targetRed;
+		}
+		public void TintTowardsG(float targetGreen, float shadesPerSecond)
+		{
+			TintG(r < targetGreen ? shadesPerSecond : -shadesPerSecond);
+			var dist = Math.Abs(g - targetGreen);
+			if (dist < shadesPerSecond * ticksDeltaTime * 2) g = targetGreen;
+		}
+		public void TintTowardsB(float targetBlue, float shadesPerSecond)
+		{
+			TintB(b < targetBlue ? shadesPerSecond : -shadesPerSecond);
+			var dist = Math.Abs(b - targetBlue);
+			if (dist < shadesPerSecond * ticksDeltaTime * 2) b = targetBlue;
+		}
+		public void AppearTowardsO(float targeto, float shadesPerSecond)
+		{
+			Appear(o < targeto ? shadesPerSecond : -shadesPerSecond);
+			var dist = Math.Abs(o - targeto);
+			if (dist < shadesPerSecond * ticksDeltaTime * 2) o = targeto;
 		}
 		public void TintTowardsColor(Color targetColor, float shadesPerSecond)
 		{
-			TintRed(targetColor.red > red ? shadesPerSecond : -shadesPerSecond);
-			TintGreen(targetColor.green > green ? shadesPerSecond : -shadesPerSecond);
-			TintBlue(targetColor.blue > blue ? shadesPerSecond : -shadesPerSecond);
+			TintR(targetColor.r > r ? shadesPerSecond : -shadesPerSecond);
+			TintG(targetColor.g > g ? shadesPerSecond : -shadesPerSecond);
+			TintB(targetColor.b > b ? shadesPerSecond : -shadesPerSecond);
 
-			var redDist = Math.Abs(targetColor.red - red);
-			var greenDist = Math.Abs(targetColor.green - green);
-			var blueDist = Math.Abs(targetColor.blue - blue);
+			var rDist = Math.Abs(targetColor.r - r);
+			var gDist = Math.Abs(targetColor.g - g);
+			var bDist = Math.Abs(targetColor.b - b);
 
 			shadesPerSecond *= ticksDeltaTime;
-			if (redDist < shadesPerSecond * 2) red = targetColor.red;
-			if (greenDist < shadesPerSecond * 2) green = targetColor.green;
-			if (blueDist < shadesPerSecond * 2) blue = targetColor.blue;
+			if (rDist < shadesPerSecond * 2) r = targetColor.r;
+			if (gDist < shadesPerSecond * 2) g = targetColor.g;
+			if (bDist < shadesPerSecond * 2) b = targetColor.b;
 
-			To255Shades();
+			To255();
 		}
-		public float RedGet() => red;
-		public float GreenGet() => green;
-		public float BlueGet() => blue;
-		public float OpacityGet() => opacity;
+		public float GetR()
+		{
+			return r;
+		}
+		public float GetG()
+		{
+			return g;
+		}
+		public float GetB()
+		{
+			return b;
+		}
+		public float GetO()
+		{
+			return o;
+		}
 
-		public override string ToString() => $"{nameof(Color)}[red:{red:F2}][green:{green:F2}][blue:{blue:F2}][opacity:{opacity:F2}]";
+		public override string ToString()
+		{
+			return $"{nameof(Color)}[r:{r:F2}][g:{g:F2}][b:{b:F2}][o:{o:F2}]";
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override bool Equals(object obj) => default;
+		public override bool Equals(object obj)
+		{
+			return default;
+		}
 		/// <summary>
 		/// This default <see cref="object"/> method is not implemented.
 		/// </summary>
-		public override int GetHashCode() => default;
+		public override int GetHashCode()
+		{
+			return default;
+		}
 
-		public static Color operator +(Color a, Color b) => new Color((byte)(a.red + b.red), (byte)(a.green + b.green), (byte)(a.blue + b.blue));
-		public static Color operator -(Color a, Color b) => new Color((byte)(a.red - b.red), (byte)(a.green - b.green), (byte)(a.blue - b.blue));
+		private void To255()
+		{
+			r = Number.LimitedGet(r, 0, 255);
+			g = Number.LimitedGet(g, 0, 255);
+			b = Number.LimitedGet(b, 0, 255);
+			o = Number.LimitedGet(o, 0, 255);
+		}
+
+		public static Color operator +(Color a, Color b)
+		{
+			return new Color((a.r + b.r), (a.g + b.g), (a.b + b.b));
+		}
+		public static Color operator -(Color a, Color b)
+		{
+			return new Color((a.r - b.r), (a.g - b.g), (a.b - b.b));
+		}
 	}
 	public struct Circle
 	{
@@ -2270,16 +2825,16 @@ public static class Gear
 			this.radius = radius;
 		}
 
-		public Point PositionGet() => position;
-		public float RadiusGet() => radius;
+		public Point GetPosition() => position;
+		public float GetRadius() => radius;
 
-		public List<Point> CrossPointsWithLineGet(Line line)
+		public List<Point> GetCrossPointsWithLine(Line line)
 		{
-			return GetLineCircleCrossPoints(position, radius, line.PointStartGet(), line.PointEndGet());
+			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint());
 		}
 		public bool IsCrossedByLine(Line line)
 		{
-			return GetLineCircleCrossPoints(position, radius, line.PointStartGet(), line.PointEndGet()).Count > 0;
+			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint()).Count > 0;
 		}
 	}
 	public struct Line
@@ -2298,19 +2853,19 @@ public static class Gear
 			this.pointEnd = pointEnd;
 		}
 
-		public Point PointStartGet() => pointStart;
-		public Point PointEndGet() => pointEnd;
-		public float LengthGet() => pointStart.DistanceToPointGet(pointEnd);
+		public Point GetStartPoint() => pointStart;
+		public Point GetEndPoint() => pointEnd;
+		public float GetLength() => pointStart.GetDistanceToPoint(pointEnd);
 
-		public List<Point> CrossPointsWithCircleGet(Circle circle)
+		public List<Point> GetCrossPointsWithCircle(Circle circle)
 		{
-			return circle.CrossPointsWithLineGet(this);
+			return circle.GetCrossPointsWithLine(this);
 		}
 		public bool IsCrossingCircle(Circle circle)
 		{
 			return circle.IsCrossedByLine(this);
 		}
-		public List<Point> CrossPointWithLine(Line line)
+		public List<Point> GetCrossPointWithLine(Line line)
 		{
 			var segmentsCross = false;
 			var linesCross = false;
@@ -2587,25 +3142,25 @@ public static class Gear
 		var clientsConnected = serverIsRunning || clientIsConnected ? $"Clients Connected ({clientUniqueNames.Count}): {ClientsOnlineGet()}\n\n" : "";
 		var connectInfo = serverIsRunning || clientIsConnected ? connectToServerInfo + "\n\n" : "";
 
-		System.Console.Title = $"Console | {Window.TitleGet()}";
+		System.Console.Title = $"Console | {Window.GetTitle()}";
 		System.Console.WriteLine($"{connectInfo}{clientsConnected}{consoleLog}");
 	}
 	private static void DrawTile(Texture2D texture, Point position, Point tileIndex, int gridSize, Size size, Point origin, Size scale, Color color, float angle, SpriteEffects spriteEffects)
 	{
 		var textureStartPosition = new Point(
-			tileIndex.XGet() * size.WidthGet() + (gridSize * tileIndex.XGet()),
-			tileIndex.YGet() * size.HeightGet() + (gridSize * tileIndex.YGet()));
+			tileIndex.GetX() * size.GetW() + (gridSize * tileIndex.GetX()),
+			tileIndex.GetY() * size.GetH() + (gridSize * tileIndex.GetY()));
 
 		spriteBatch.Draw(
 			texture,
-			new Vector2(position.XGet(), position.YGet()),
-			new Rectangle((int)textureStartPosition.XGet(),
-			(int)textureStartPosition.YGet(),
-			(int)size.WidthGet(),
-			(int)size.HeightGet()),
-			new Microsoft.Xna.Framework.Color((int)color.RedGet(), (int)color.GreenGet(), (int)color.BlueGet(), (int)color.OpacityGet()),
-			(float)Math.PI / 180 * angle, new Vector2(origin.XGet(), origin.YGet()),
-			new Vector2(scale.WidthGet(), scale.HeightGet()),
+			new Vector2(position.GetX(), position.GetY()),
+			new Rectangle((int)textureStartPosition.GetX(),
+			(int)textureStartPosition.GetY(),
+			(int)size.GetW(),
+			(int)size.GetH()),
+			new Microsoft.Xna.Framework.Color((int)color.GetR(), (int)color.GetG(), (int)color.GetB(), (int)color.GetO()),
+			(float)Math.PI / 180 * angle, new Vector2(origin.GetX(), origin.GetY()),
+			new Vector2(scale.GetW(), scale.GetH()),
 			spriteEffects,
 			0);
 	}
@@ -2630,7 +3185,7 @@ public static class Gear
 	{
 		return ccw(startA, startB, endB) != ccw(endA, startB, endB) && ccw(startA, endA, startB) != ccw(startA, endA, endB);
 		
-		static bool ccw(Point a, Point b, Point c) => (c.YGet() - a.YGet()) * (b.XGet() - a.XGet()) > (b.YGet() - a.YGet()) * (c.XGet() - a.XGet());
+		static bool ccw(Point a, Point b, Point c) => (c.GetY() - a.GetY()) * (b.GetX() - a.GetX()) > (b.GetY() - a.GetY()) * (c.GetX() - a.GetX());
 	}
 	// Find the point of intersection between
 	// the lines p1 --> p2 and p3 --> p4.
@@ -2639,19 +3194,19 @@ public static class Gear
 		 out List<Point> intersection,
 		 out Point close_p1, out Point close_p2)
 	{
-		var lineLength = startA.DistanceToPointGet(endA);
+		var lineLength = startA.GetDistanceToPoint(endA);
 		intersection = new List<Point>();
 
 		// Get the segments' parameters.
-		float dx12 = endA.XGet() - startA.XGet();
-		float dy12 = endA.YGet() - startA.YGet();
-		float dx34 = endB.XGet() - startB.XGet();
-		float dy34 = endB.YGet() - startB.YGet();
+		float dx12 = endA.GetX() - startA.GetX();
+		float dy12 = endA.GetY() - startA.GetY();
+		float dx34 = endB.GetX() - startB.GetX();
+		float dy34 = endB.GetY() - startB.GetY();
 
 		// Solve for t1 and t2
 		float denominator = (dy12 * dx34 - dx12 * dy34);
 
-		float t1 = ((startA.XGet() - startB.XGet()) * dy34 + (startB.YGet() - startA.YGet()) * dx34) / denominator;
+		float t1 = ((startA.GetX() - startB.GetX()) * dy34 + (startB.GetY() - startA.GetY()) * dx34) / denominator;
 		if (float.IsInfinity(t1))
 		{
 			// The lines are parallel (or close enough to it).
@@ -2663,11 +3218,11 @@ public static class Gear
 		}
 		lines_intersect = true;
 
-		float t2 = ((startB.XGet() - startA.XGet()) * dy12 + (startA.YGet() - startB.YGet()) * dx12) / -denominator;
+		float t2 = ((startB.GetX() - startA.GetX()) * dy12 + (startA.GetY() - startB.GetY()) * dx12) / -denominator;
 
 		// Find the point of intersection.
-		var point = new Point(startA.XGet() + dx12 * t1, startA.YGet() + dy12 * t1);
-		if (point.DistanceToPointGet(startA) <= lineLength) intersection.Add(point);
+		var point = new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1);
+		if (point.GetDistanceToPoint(startA) <= lineLength) intersection.Add(point);
 
 		// The segments intersect if t1 and t2 are between 0 and 1.
 		segments_intersect = ((t1 >= 0) && (t1 <= 1) && (t2 >= 0) && (t2 <= 1));
@@ -2679,23 +3234,23 @@ public static class Gear
 		if (t2 < 0) t2 = 0;
 		else if (t2 > 1) t2 = 1;
 
-		close_p1 = new Point(startA.XGet() + dx12 * t1, startA.YGet() + dy12 * t1);
-		close_p2 = new Point(startB.XGet() + dx34 * t2, startB.YGet() + dy34 * t2);
+		close_p1 = new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1);
+		close_p2 = new Point(startB.GetX() + dx34 * t2, startB.GetY() + dy34 * t2);
 	}
 	private static List<Point> GetLineCircleCrossPoints(Point circlePosition, float circleRadius, Point pointA, Point pointB)
 	{
 		var result = new List<Point>();
 		var t = 0f;
-		var dx = pointB.XGet() - pointA.XGet();
-		var dy = pointB.YGet() - pointA.YGet();
-		var cx = circlePosition.XGet();
-		var cy = circlePosition.YGet();
+		var dx = pointB.GetX() - pointA.GetX();
+		var dy = pointB.GetY() - pointA.GetY();
+		var cx = circlePosition.GetX();
+		var cy = circlePosition.GetY();
 		var r = circleRadius;
 		var A = dx * dx + dy * dy;
-		var B = 2 * (dx * (pointA.XGet() - cx) + dy * (pointA.YGet() - cy));
-		var C = (pointA.XGet() - cx) * (pointA.XGet() - cx) + (pointA.YGet() - cy) * (pointA.YGet() - cy) - r * r;
+		var B = 2 * (dx * (pointA.GetX() - cx) + dy * (pointA.GetY() - cy));
+		var C = (pointA.GetX() - cx) * (pointA.GetX() - cx) + (pointA.GetY() - cy) * (pointA.GetY() - cy) - r * r;
 		var det = B * B - 4 * A * C;
-		var lineLength = pointA.DistanceToPointGet(pointB);
+		var lineLength = pointA.GetDistanceToPoint(pointB);
 
 		if ((A <= 0.0000001) || (det < 0))
 		{
@@ -2706,19 +3261,19 @@ public static class Gear
 		{
 			// one solution
 			t = -B / (2 * A);
-			var point = new Point(pointA.XGet() + t * dx, pointA.YGet() + t * dy);
-			if (point.DistanceToPointGet(pointA) >= lineLength) result.Add(point);
+			var point = new Point(pointA.GetX() + t * dx, pointA.GetY() + t * dy);
+			if (point.GetDistanceToPoint(pointA) >= lineLength) result.Add(point);
 		}
 		else
 		{
 			// two solutions
 			t = (float)((-B + Math.Sqrt(det)) / (2 * A));
-			var point1 = new Point(pointA.XGet() + t * dx, pointA.YGet() + t * dy);
-			if (point1.DistanceToPointGet(pointA) <= lineLength) result.Add(point1);
+			var point1 = new Point(pointA.GetX() + t * dx, pointA.GetY() + t * dy);
+			if (point1.GetDistanceToPoint(pointA) <= lineLength) result.Add(point1);
 
 			t = (float)((-B - Math.Sqrt(det)) / (2 * A));
-			var point2 = new Point(pointA.XGet() + t * dx, pointA.YGet() + t * dy);
-			if (point2.DistanceToPointGet(pointA) <= lineLength) result.Add(point2);
+			var point2 = new Point(pointA.GetX() + t * dx, pointA.GetY() + t * dy);
+			if (point2.GetDistanceToPoint(pointA) <= lineLength) result.Add(point2);
 		}
 		return result;
 	}
