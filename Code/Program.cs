@@ -8,59 +8,26 @@
 		{
 			Gear.Canvas.SetPixelSize(5, 5);
 
-			var ball = new Gear.Body("ball");
-			ball.SetSprite("ball", width: 16, height: 16, originX: 8, originY: 8);
-			ball.SetPositionXY(x: 100, y: 100);
+			var asd = new Gear.Storage<string, string>();
+			asd.Expand(10, "key", "value");
+			asd.Expand(10, "key2", "value2");
+			asd.ReplaceAt(10, "test");
 
-			var line = new Gear.Body("paddle");
-			line.SetSprite("ball", width: 180, height: 16);
-			line.SetSizeWH(64, 1);
-
-			var line3 = new Gear.Body("hello");
-			line3.SetSprite("ball", width: 180, height: 16, r: 0);
-			line3.SetSizeWH(200, 1);
-			line3.SetPositionXY(150, 1);
-			line3.SetAngleA(90);
-
-			var line4 = line3.Duplicate("test");
-			line4.SetSizeWH(0, 0);
+			var indexes = asd.GetIndexes();
+			var keys = asd.GetUniqueKeys();
+			var values = asd.GetValues();
+			asd.Free();
+			for (int i = 0; i < asd.GetDataAmount(); i++)
+			{
+				var index = indexes[i];
+				var key = asd.GetUniqueKeyAt(index);
+				var value = asd.GetValueAt(index);
+				Gear.Text.Display("font", $"{index} {key} {value}\n", scale: 0.5f);
+			}
 		}
-
-		var mousePos = Gear.Input.MouseCursorPositionWorldGet();
-		var lineAngle = new Gear.Angle();
-		var line2 = Gear.Body.GetByUniqueName("paddle");
-		var ball2 = Gear.Body.GetByUniqueName("ball");
-		var dist = line2.GetPosition().GetDistanceToPoint(mousePos);
-
-		lineAngle.SetFromBetweenPoints(line2.GetPosition(), mousePos);
-		line2.SetAngle(lineAngle);
-		line2.SetSizeWH(dist, 1);
-
-		var ballCircle = new Gear.Circle(ball2.GetPosition(), ball2.GetSize().GetW() / 2);
-		var orangeLine = new Gear.Line(new Gear.Point(), mousePos);
-		var greenLine = new Gear.Line(new Gear.Point(150, 1), new Gear.Point(150, 200));
-		var crossPointsCircle = orangeLine.GetCrossPointsWithCircle(ballCircle);
-		var orangeXGreen = orangeLine.GetCrossPointWithLine(greenLine);
-		var lineXCircle = "";
-		var lineXLine = "";
-		foreach (var point in orangeXGreen)
+		if (Gear.Input.KeyWasJustPressed(Gear.Keys.UpArrow))
 		{
-			lineXLine = $"{lineXLine}\n{point}";
+			Gear.Text.Display("font", tickCount + "\n");
 		}
-		foreach (var point in crossPointsCircle)
-		{
-			lineXCircle = $"{lineXCircle}\n{point}";
-		}
-
-		Gear.Text.Display("font",
-			$"{lineXLine}\n" +
-			$"{lineXCircle}"
-			, scale: 0.4f, overwrite:true);
-
-		var asd = new Gear.Storage<string, string>();
-		asd.Expand(10, "key", "value");
-		asd.Expand(10, "key2", "value2");
-		asd.ReplaceAt(10, "test");
-		var index = asd.IndexExists(9);
 	}
 }

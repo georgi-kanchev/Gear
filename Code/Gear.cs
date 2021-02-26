@@ -80,9 +80,9 @@ public static class Gear
 	{
 		Lowest, Medium, Highest
 	}
-	public enum InputKeys
+	public enum Keys
 	{
-		None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, Left = 37, Up = 38, Right = 39, Down = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, MinusDash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
+		None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, LeftArrow = 37, UpArrow = 38, RightArrow = 39, DownArrow = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, MinusDash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
 	}
 	public enum NumberRoundType
 	{
@@ -111,7 +111,7 @@ public static class Gear
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
 	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalstarttimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
 
-	private static List<InputKeys> lastFrameKeysPressed = new List<InputKeys>(), keysJustPressed = new List<InputKeys>(), keysJustReleased = new List<InputKeys>();
+	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
 	private static List<Body> bodiesAll = new List<Body>();
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
@@ -229,7 +229,7 @@ public static class Gear
 			{
 				tick++;
 				AdvanceTickTime();
-				UpdateOnKeys();
+				UpdateKeys();
 
 				try
 				{
@@ -276,17 +276,21 @@ public static class Gear
 			tpsAverageIndex++;
 		}
 
-		private static void UpdateOnKeys()
+		private static void UpdateKeys()
 		{
-			var keysPressed = Input.GetKeysPressed();
-
+			keysPressed.Clear();
 			keysJustPressed.Clear();
 			keysJustReleased.Clear();
-			foreach (var key in keysPressed)
+
+			var keyPresses = Keyboard.GetState().GetPressedKeys();
+
+			foreach (var key in keyPresses)
 			{
-				if (lastFrameKeysPressed.Contains(key) == false)
+				var gearKey = (Keys)(int)key;
+				keysPressed.Add(gearKey);
+				if (lastFrameKeysPressed.Contains(gearKey) == false)
 				{
-					keysJustPressed.Add(key);
+					keysJustPressed.Add(gearKey);
 				}
 			}
 			foreach (var key in lastFrameKeysPressed)
@@ -297,7 +301,7 @@ public static class Gear
 				}
 			}
 
-			lastFrameKeysPressed = Input.GetKeysPressed();
+			lastFrameKeysPressed = new List<Keys>(keysPressed);
 		}
 
 		protected override void Draw(GameTime gameTime)
@@ -644,8 +648,8 @@ public static class Gear
 		/// </summary>
 		public static void SetPixelSize(int width, int height)
 		{
-			width = (int)Number.LimitedGet(width, 1, screenSize.GetW());
-			height = (int)Number.LimitedGet(height, 1, (int)screenSize.GetH());
+			width = (int)Number.GetLimited(width, 1, screenSize.GetW());
+			height = (int)Number.GetLimited(height, 1, (int)screenSize.GetH());
 			pixelSize = new Size(width, height);
 			canvasSize = screenSize / new Size(width, height);
 			var gd = game.GraphicsDevice;
@@ -828,15 +832,15 @@ public static class Gear
 		}
 		public void SetUniqueName(string uniqueName)
 		{
+			var funcName = $"{nameof(SetUniqueName)}({nameof(uniqueName)}: \"{uniqueName}\")";
 			if (uniqueName == this.uniqueName) return;
 			else if (uniqueName == null)
 			{
-				Console.LogError($"{nameof(Body)}'s {nameof(uniqueName)} cannot be null.");
+				Console.LogError($"{funcName}: {nameof(Body)}'s {nameof(uniqueName)} cannot be null.");
 			}
 			if (bodyUniqueNames.ContainsKey(uniqueName))
 			{
-				Console.LogError($"Another {nameof(Body)} with {nameof(uniqueName)} '{uniqueName}' already exists." +
-					$"Make sure you are not creating it multiple times or each tick.");
+				Console.LogError($"{funcName}: Another {nameof(Body)} with {nameof(uniqueName)} '{uniqueName}' already exists." + $"Make sure you are not creating it multiple times or each tick.");
 			}
 
 			this.uniqueName = uniqueName;
@@ -1034,11 +1038,17 @@ public static class Gear
 	/// </summary>
 	public static class Number
 	{
-		public static float UnsignedGet(float number) => Math.Abs(number);
-		public static float AveragedGet(float numberA, float numberB) => (numberA + numberB) / 2;
-		public static float RandomizedGet(float lowerBound, float upperBound, int precision)
+		public static float GetUnsigned(float number)
 		{
-			precision = (int)LimitedGet(precision, 0, 5);
+			return Math.Abs(number);
+		}
+		public static float GetAveraged(float numberA, float numberB)
+		{
+			return (numberA + numberB) / 2;
+		}
+		public static float GetRandomized(float lowerBound, float upperBound, int precision)
+		{
+			precision = (int)GetLimited(precision, 0, 5);
 			if (lowerBound > upperBound)
 			{
 				var swap = lowerBound;
@@ -1046,19 +1056,19 @@ public static class Gear
 				upperBound = swap;
 			}
 			var precisionValue = (float)Math.Pow(10, precision);
-			var lowerInt = Convert.ToInt32(lowerBound * Math.Pow(10, PrecisionGet(lowerBound)));
-			var upperInt = Convert.ToInt32(upperBound * Math.Pow(10, PrecisionGet(upperBound)));
+			var lowerInt = Convert.ToInt32(lowerBound * Math.Pow(10, GetPrecision(lowerBound)));
+			var upperInt = Convert.ToInt32(upperBound * Math.Pow(10, GetPrecision(upperBound)));
 			var randInt = new Random(Guid.NewGuid().GetHashCode()).Next((int)(lowerInt * precisionValue), (int)(upperInt * precisionValue) + 1);
 			var result = randInt / precisionValue;
 
 			return result;
 		}
 		//public static float RoundedGet(float number, int precision, NumberRoundType numberroundtype)
-		public static float RoundedGet(float number, NumberRoundType RoundType)
+		public static float GetRounded(float number, NumberRoundType RoundType)
 		{
 			// doesn't work with values like 0.00300007 or 0.1234567
 			var precision = 0; //(int)LimitedGet(precision, 0, 5);
-			var a = (float)Math.Pow(10, PrecisionGet(number));
+			var a = (float)Math.Pow(10, GetPrecision(number));
 			var b = (float)Math.Pow(10, precision);
 			var c = number * a;
 			switch (RoundType)
@@ -1068,7 +1078,7 @@ public static class Gear
 				default: return (float)Math.Floor(c) / b;
 			}
 		}
-		public static float LimitedGet(float number, float minimum, float maximum)
+		public static float GetLimited(float number, float minimum, float maximum)
 		{
 			if (minimum > maximum)
 			{
@@ -1086,7 +1096,7 @@ public static class Gear
 			}
 			return number;
 		}
-		public static float PercentedTowardsTargetGet(float number, float targetNumber, float percent)
+		public static float GetPercentedTowardsTarget(float number, float targetNumber, float percent)
 		{
 			var vec = new Vector2(number, 0);
 			var targetVec = new Vector2(targetNumber, 0);
@@ -1094,14 +1104,14 @@ public static class Gear
 
 			return result.X;
 		}
-		public static float ChangedGet(float number, float numbersPerSecond) => number + (numbersPerSecond * ticksDeltaTime);
-		public static float TowardsTargetGet(float number, float targetNumber, float numbersPerSecond)
+		public static float GetChanged(float number, float numbersPerSecond) => number + (numbersPerSecond * ticksDeltaTime);
+		public static float GetTowardsTarget(float number, float targetNumber, float numbersPerSecond)
 		{
 			if (number <= targetNumber && targetNumber * ticksDeltaTime < 0) return targetNumber;
 			else if (number >= targetNumber && targetNumber * ticksDeltaTime > 0) return targetNumber;
-			return ChangedGet(number, numbersPerSecond);
+			return GetChanged(number, numbersPerSecond);
 		}
-		public static float TimeConvertedGet(float time, NumberTimeConvertType convertType)
+		public static float GetTimeConverted(float time, NumberTimeConvertType convertType)
 		{
 			switch (convertType)
 			{
@@ -1125,27 +1135,27 @@ public static class Gear
 			}
 			return 0;
 		}
-		public static bool ChanceCheck(float percent)
-		{
-			percent = LimitedGet(percent, 0, 100);
-			var n = RandomizedGet(1, 100, 0);
-			return n <= percent;
-		}
-		public static float FromTextGet(string text)
+		public static float GetFromText(string text)
 		{
 			var result = 0f;
 			text = text.Replace(',', '.');
 			var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
 			if (parsed) return result;
-			else Console.LogError($"{nameof(FromTextGet)}(\"{text}\"): The provided text is not a number.");
+			else Console.LogError($"{nameof(GetFromText)}(\"{text}\"): The provided text is not a number.");
 			return result;
 		}
-		public static int PrecisionGet(float number)
+		public static int GetPrecision(float number)
 		{
 			var result = 0;
 			var numberstr = number.ToString();
 			if (numberstr.Contains('.')) result = number.ToString().Split('.')[1].Length;
 			return result;
+		}
+		public static bool HasChance(float percent)
+		{
+			percent = GetLimited(percent, 0, 100);
+			var n = GetRandomized(1, 100, 0);
+			return n <= percent;
 		}
 	}
 	/// <summary>
@@ -1154,19 +1164,19 @@ public static class Gear
 	public static class Text
 	{
 		/// <summary>
-		/// Converts a <paramref name="list"/> into a <see cref="string"/>. The elements are separated by a <paramref name="separator"/>. Then the <see cref="string"/> is returned.
+		/// Converts an <paramref name="array"/> into a <see cref="string"/>. The elements are separated by a <paramref name="separator"/>. Then the <see cref="string"/> is returned.
 		/// </summary>
-		public static string FromListGet<T>(List<T> list, string separator = ", ")
+		public static string GetFromArray<T>(T[] array, string separator = ", ")
 		{
 			var result = "";
-			if (list == null || list.Count == 0)
+			if (array == null || array.Length == 0)
 			{
 				return result;
 			}
-			for (int i = 0; i < list.Count; i++)
+			for (int i = 0; i < array.Length; i++)
 			{
-				result = result.Insert(result.Length, $"{list[i]}");
-				if (i == list.Count - 1)
+				result = result.Insert(result.Length, $"{array[i]}");
+				if (i == array.Length - 1)
 				{
 					break;
 				}
@@ -1174,25 +1184,18 @@ public static class Gear
 			}
 			return result;
 		}
-		/// <summary>
-		/// Converts an <paramref name="array"/> into a <see cref="string"/>. The elements are separated by a <paramref name="separator"/>. Then the <see cref="string"/> is returned.
-		/// </summary>
-		public static string FromArrayGet<T>(T[] array, string separator = ", ")
-		{
-			return FromListGet(array.ToList(), separator);
-		}
 
 		/// <summary>
 		/// Adds <paramref name="text"/> to the clipboard (copies it). It can be accessed later via <typeparamref name="Ctrl"/> + <typeparamref name="V"/> or <see cref="ClipboardGet"/>.
 		/// </summary>
-		public static void ClipboardCopy(string text)
+		public static void Copy(string text)
 		{
 			Clipboard.SetText(text);
 		}
 		/// <summary>
 		/// Gets the clipboard data and returns it if it is a <see cref="string"/>, otherwise returns <paramref name="null"/>.‪‪
 		/// </summary>
-		public static string ClipboardGet()
+		public static string GetClipboard()
 		{
 			var result = Clipboard.GetText();
 			return result == string.Empty ? null : result;
@@ -1201,7 +1204,7 @@ public static class Gear
 		/// <summary>
 		/// Returns a new <see cref="string"/> after a simple encryption on <paramref name="text"/> with a <paramref name="key"/> that can be <paramref name="performedtwice"/>.‪‪ The encryption can be decrypred later and the text can be retrieved back with <see cref="DecryptedGet"/>.
 		/// </summary>
-		public static string EncryptedGet(string text, char key, bool performedTwice = false)
+		public static string GetEncrypted(string text, char key, bool performedTwice = false)
 		{
 			var result = text;
 			var times = performedTwice ? 2 : 1;
@@ -1224,7 +1227,7 @@ public static class Gear
 		/// <summary>
 		/// Returns the decrypted version of an encrypted <paramref name="text"/> with a <paramref name="key"/> that could have been <paramref name="performedtwice"/> with <see cref="EncryptedGet"/>.‪‪
 		/// </summary>
-		public static string DecryptedGet(string encryptedText, char key, bool performedTwice = false)
+		public static string GetDecrypted(string encryptedText, char key, bool performedTwice = false)
 		{
 			var result = encryptedText;
 			var times = performedTwice ? 2 : 1;
@@ -1248,14 +1251,14 @@ public static class Gear
 		/// <summary>
 		/// Converts <typeparamref name="T"/> <paramref name="data"/> into a <see cref="string"/> (<paramref name="JSON"/>) and returns it. It can be converted and retrieved back to <typeparamref name="T"/> <paramref name="data"/> later with <see cref="ToDataConvert"/>.‪‪
 		/// </summary>
-		public static string FromDataConvert<T>(T data)
+		public static string GetFromData<T>(T data)
 		{
 			return JsonConvert.SerializeObject(data);
 		}
 		/// <summary>
 		/// Converts an already formatted <paramref name="text"/> (<paramref name="JSON"/>) into <typeparamref name="T"/> <paramref name="data"/> and returns it if the <paramref name="text"/> is in the correct format. Otherwise returns <paramref name="default"/>(<typeparamref name="T"/>).
 		/// </summary>
-		public static T ToDataConvert<T>(string text)
+		public static T GetData<T>(string text)
 		{
 			try
 			{
@@ -1313,7 +1316,7 @@ public static class Gear
 			if (overwrite) textDisplayMessage = "";
 			textDisplayMessage = $"{textDisplayMessage}{message}";
 			textDisplayMessage = textDisplayMessage.Replace("∞", "Infinity");
-			scale = Number.LimitedGet(scale, 0.001f, 5000);
+			scale = Number.GetLimited(scale, 0.001f, 5000);
 			textDisplayScale = scale;
 
 			var sampleSize = fonts[textDisplayFont].MeasureString("a");
@@ -1335,26 +1338,26 @@ public static class Gear
 		/// <summary>
 		/// - Clears all the text on screen that was displayed through <see cref="Display"/>.
 		/// </summary>
-		public static void DisplayClear()
+		public static void ClearDisplay()
 		{
 			textDisplayMessage = null;
 			render = true;
 		}
 
-		public static string TimeFormattedGet(float seconds, string separator = ":", bool msShow = false, string msFormat = "ms", bool secShow = true, string secFormat = "s", bool minShow = true, string minFormat = "m", bool hrShow = true, string hrFormat = "h")
+		public static string GetFormattedTime(float seconds, string separator = ":", bool msShow = false, string msFormat = "ms", bool secShow = true, string secFormat = "s", bool minShow = true, string minFormat = "m", bool hrShow = true, string hrFormat = "h")
 		{
-			seconds = Number.UnsignedGet(seconds);
+			seconds = Number.GetUnsigned(seconds);
 			var secondsStr = seconds.ToString();
 			var ms = 0;
 			if (secondsStr.Contains('.'))
 			{
 				var spl = secondsStr.Split('.');
 				ms = int.Parse(spl[1]) * 100;
-				seconds = Number.RoundedGet(seconds, NumberRoundType.Down);
+				seconds = Number.GetRounded(seconds, NumberRoundType.Down);
 			}
 			var sec = seconds % 60;
-			var min = Number.RoundedGet(seconds / 60 % 60, NumberRoundType.Down);
-			var hr = Number.RoundedGet(seconds / 3600, NumberRoundType.Down);
+			var min = Number.GetRounded(seconds / 60 % 60, NumberRoundType.Down);
+			var hr = Number.GetRounded(seconds / 3600, NumberRoundType.Down);
 			var msStr = msShow ? $"{ms}" : "";
 			var secStr = secShow ? $"{sec}" : "";
 			var minStr = minShow ? $"{min}" : "";
@@ -1376,7 +1379,7 @@ public static class Gear
 		/// - Sets the target <paramref name="tps"/> that can be between 2 and 1000 inclusively if <paramref name="limited"/>. The ticks per second may go bellow but not above the targeted speed (depending on performance), otherwise multiple ticks (but not frames) at the same time will occur in order to keep up. <br></br>- The tick rate is also capped to the user's monitor refresh rate if <paramref name="vsynced"/> (vertical synchronization removes scanlines and tearing artifacts). <br></br>- Not <paramref name="limited"/> and not <paramref name="vsynced"/> tick rate uncaps both the frame rate and tick rate, therefore running as fast as possible. <br></br><br></br>- The current tick rate can be checked with <see cref="TicksPerSecondGet"/>.<br></br>- The current target tick rate can be checked with <see cref="TicksPerSecondTargetGet"/>.<br></br>- A check wether the tick rate is <paramref name="limited"/> can be received from <see cref="TicksPerSecondAreLimitedCheck"/>.<br></br>- And check wether they are vertically synchronized from <see cref="TicksPerSecondAreVSyncedCheck"/>.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The current frame rate can be checked with <see cref="FramesTotalPerSecondGet"/>.<br></br>
 		/// </summary>
-		public static void TicksPerSecondTargetSet(float tps, bool limited, bool vSynced)
+		public static void SetTargetTicksPerSecond(float tps, bool limited, bool vSynced)
 		{
 			tps = tps < 2 ? 2 : tps;
 			tps = tps > 1000 ? 1000 : tps;
@@ -1389,7 +1392,7 @@ public static class Gear
 		/// - Gets the current tick rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it. <br></br><br></br>- The target tick speed can be changed via <see cref="TicksPerSecondTargetSet"/>.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="FramesTotalPerSecondGet"/>.
 		/// </summary>
-		public static float TicksPerSecondGet(bool average = false)
+		public static float GetTicksPerSecond(bool average = false)
 		{
 			return average ? tpsAverage : tps;
 		}
@@ -1398,31 +1401,49 @@ public static class Gear
 		/// - The target tick speed can be changed via <see cref="TicksPerSecondTargetSet"/>. Also contains information about ticks/frames.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The current frames per second can be checked with <see cref="FramesTotalPerSecondGet"/>.<br></br><br></br>
 		/// </summary>
-		public static float TicksPerSecondTargetGet() => 60 / ((float)game.TargetElapsedTime.TotalSeconds * 60);
+		public static float GetTargetTicksPerSecond()
+		{
+			return 60 / ((float)game.TargetElapsedTime.TotalSeconds * 60);
+		}
 		/// <summary>
 		/// - Checks wether the tick rate is limited to the target tick rate and returns the result.<br></br><br></br>- The limitation of the tick speed and other related changes can be set through<br></br> <see cref="TicksPerSecondTargetSet"/>. Also contains information about ticks/frames.
 		/// </summary>
-		public static bool TicksPerSecondAreLimitedCheck() => game.IsFixedTimeStep;
+		public static bool TicksPerSecondAreLimited()
+		{
+			return game.IsFixedTimeStep;
+		}
 		/// <summary>
 		/// - Checks wether the tick rate is limited by the user's monitor refresh rate and returns the result.<br></br><br></br>
 		/// - The vertical synchronization and other related changes can set through<br></br> <see cref="TicksPerSecondTargetSet"/>. Also contains information about ticks/frames.<br></br><br></br>
 		/// </summary>
-		public static bool TicksPerSecondAreVSyncedCheck() => graphics.SynchronizeWithVerticalRetrace;
+		public static bool TicksPerSecondAreVSynced()
+		{
+			return graphics.SynchronizeWithVerticalRetrace;
+		}
 		/// <summary>
 		/// - Gets the number of ticks that have passed since the start and returns them.<br></br><br></br>
 		/// - The tick count is also provided as an <see cref="int"/> parameter with <see cref="Program.EachTick(int)"/>.<br></br><br></br>
 		/// - Changing the tick speed and receiving information about ticks/frames may be done through <see cref="TicksPerSecondTargetSet"/>.
 		/// </summary>
-		public static int GetTickCount() => tick;
+		public static int GetTickCount()
+		{
+			return tick;
+		}
 
-		public static float RAMGBAvailableGet() => ramAvailable.NextValue() / 1000;
-		public static float RAMPercentUsedGet() => ramUsedPercent.NextValue();
+		public static float GetGigaBytesAvailableRAM()
+		{
+			return ramAvailable.NextValue() / 1000;
+		}
+		public static float GetPercentUsedRAM()
+		{
+			return ramUsedPercent.NextValue();
+		}
 
 		/// <summary>
 		/// - Gets the current frame rate that can be an <paramref name="average"/> of the previous 60 ticks and returns it.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. A lower frame rate will be present with slow tick rate and vice versa. The targeted tick rate can be changed or uncapped with <see cref="TicksPerSecondTargetSet"/>. Also contains information about ticks/frames.
 		/// </summary>
-		public static float FramesTotalPerSecondGet(bool average = false)
+		public static float GetTotalFramesPerSecond(bool average = false)
 		{
 			return average ? fpsAverage : fps;
 		}
@@ -1430,44 +1451,65 @@ public static class Gear
 		/// - Gets the number of frames that have passed since the start and returns them. This counter is not affected by rendering. Therefore a frame might be skipped and the counter will still increment. <br></br><br></br>- Rendered frames counter can be checked with <see cref="FramesRenderedCountGet"/>.<br></br><br></br>
 		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="TicksPerSecondTargetSet"/>. This affects the frame rate.
 		/// </summary>
-		public static int FramesTotalCountGet() => frame;
+		public static int GetTotalFrameCount()
+		{
+			return frame;
+		}
 		/// <summary>
 		/// - Gets the number of rendered frames that have passed since the start and returns them. Rendered frames happen only when the current frame is different than the last frame. Therefore frames are skipped when the screen is static.<br></br><br></br>
 		/// - A check for the total frames counter can be done through <see cref="FramesTotalCountGet"/>.<br></br><br></br>
 		/// - Changing or uncapping the tick rate and receiving information about ticks/frames can be done through <see cref="TicksPerSecondTargetSet"/>. This affects the frame rate.
 		/// </summary>
-		public static int FramesRenderedCountGet() => frameRendered;
+		public static int GetRenderedFrameCount()
+		{
+			return frameRendered;
+		}
 
 		/// <summary>
 		/// - Gets the time that has passed since the start and returns it.
 		/// </summary>
-		public static float TimeGet() => time;
+		public static float GetTime()
+		{
+			return time;
+		}
 		/// <summary>
 		/// - Gets the time that has passed since the last tick and returns it. <br></br><br></br>- The target tick rate can be changed via <see cref="TicksPerSecondTargetSet"/><br></br>- The current target tick rate can be checked with <see cref="TimeSinceLastTickTargetGet"/>.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="TimeSinceLastFrameGet"/>.
 		/// </summary>
-		public static float TimeSinceLastTickGet() => ticksDeltaTime;
+		public static float GetTimeSinceLastTick()
+		{
+			return ticksDeltaTime;
+		}
 		/// <summary>
 		/// - Gets the target time between ticks and returns it.<br></br><br></br>- The target tick rate can be changed via <see cref="TicksPerSecondTargetSet"/>.<br></br>- The current tick rate can be checked with <see cref="TimeSinceLastTickGet"/>.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="TimeSinceLastFrameGet"/>.
 		/// </summary>
-		public static float TimeSinceLastTickTargetGet() => (float)game.TargetElapsedTime.TotalSeconds;
+		public static float GetTargetTimeSinceLastTick()
+		{
+			return (float)game.TargetElapsedTime.TotalSeconds;
+		}
 		/// <summary>
 		/// - Gets the time that has passed since the last frame and returns it.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last tick can be checked with <see cref="TimeSinceLastTickGet"/>.
 		/// </summary>
-		public static float TimeSinceLastFrameGet() => framesDeltaTime;
+		public static float GetTimeSinceLastFrame()
+		{
+			return framesDeltaTime;
+		}
 	}
 	public static class Hardware
 	{
-		public static Size ScreenSizeGet() => screenSize;
+		public static Size GetScreenSize()
+		{
+			return screenSize;
+		}
 		/// <summary>
 		/// - When <paramref name="activated"/> the user's computer will stay active at all times, even when left idle.<br></br><br></br>
 		/// - A check wether sleep prevention is activated can be done via <see cref="ComputerSleepPreventionIsActivatedCheck"/>.
 		/// </summary>
-		public static void ComputerSleepPreventionActivate(bool activated)
+		public static void PreventComputerSleep(bool prevented)
 		{
-			sleepPrevented = activated;
+			sleepPrevented = prevented;
 			if (sleepPrevented)
 			{
 				SetThreadExecutionState(EXECUTION_STATE.ES_CONTINUOUS | EXECUTION_STATE.ES_DISPLAY_REQUIRED | EXECUTION_STATE.ES_SYSTEM_REQUIRED);
@@ -1481,18 +1523,34 @@ public static class Gear
 		/// - Checks wether the user's computer is prevented from sleeping and returns the result.<br></br><br></br>
 		/// - Sleep prevention can be activated or deactivated through <see cref="ComputerSleepPreventionActivate"/>.
 		/// </summary>
-		public static bool ComputerSleepPreventionIsActivatedCheck() => sleepPrevented;
+		public static bool ComputerSleepIsPrevented()
+		{
+			return sleepPrevented;
+		}
 	}
 	public static class Network
 	{
-		public static void PacketsToConsoleLog(bool log) => networkLogMessagesToConsole = log;
-
-		public static int ClientsConnectedCountGet() => clientUniqueNames.Count;
-
-		public static string ServerIPSameDeviceGet() => "127.0.0.1";
-		public static void ServerStart()
+		public static void LogMessagesToConsole(bool log)
 		{
-			var funcName = $"{nameof(ServerStart)}()";
+			networkLogMessagesToConsole = log;
+		}
+		public static bool MessagesAreLoggedToConsole()
+		{
+			return networkLogMessagesToConsole;
+		}
+
+		public static int GetClientCount()
+		{
+			return clientUniqueNames.Count;
+		}
+
+		public static string GetSameDeviceIP()
+		{
+			return "127.0.0.1";
+		}
+		public static void StartServer()
+		{
+			var funcName = $"{nameof(StartServer)}()";
 			try
 			{
 				if (serverIsRunning)
@@ -1537,9 +1595,9 @@ public static class Gear
 				return;
 			}
 		}
-		public static void ServerStop()
+		public static void StopServer()
 		{
-			var funcName = $"{nameof(ServerStop)}()";
+			var funcName = $"{nameof(StopServer)}()";
 			try
 			{
 				if (serverIsRunning == false)
@@ -1567,26 +1625,30 @@ public static class Gear
 				return;
 			}
 		}
-		public static void ServerMessageSendToAllClients(string message)
+		public static void SendServerMessageToAllClients(string message)
 		{
-			var funcName = $"{nameof(ServerMessageSendToAllClients)}(\"{message}\")";
+			var funcName = $"{nameof(SendServerMessageToAllClients)}(\"{message}\")";
 			if (ServerCannotSendMessage(funcName)) return;
 
 			ServerMessageSent(funcName);
 			server.Multicast($"~{(int)MessageType.ServerMessageToAll}|{message}");
 		}
-		public static void ServerMessageSendToClient(string receiverUniqueName, string message)
+		public static void SendServerMessageToClient(string receiverUniqueName, string message)
 		{
-			var funcName = $"{nameof(ServerMessageSendToClient)}(\"{receiverUniqueName}\", \"{message}\")";
+			var funcName = $"{nameof(SendServerMessageToClient)}(\"{receiverUniqueName}\", \"{message}\")";
 			if (ServerCannotSendMessage(funcName)) return;
 
 			ServerMessageSent(funcName);
 			server.Multicast($"~{(int)MessageType.ServerMessageToClient}|{receiverUniqueName}|{message}");
 		}
-
-		public static void ClientConnect(string uniqueName, string ip)
+		public static bool ServerIsRunning()
 		{
-			var funcName = $"{nameof(ClientConnect)}(\"{uniqueName}\", \"{ip}\")";
+			return serverIsRunning;
+		}
+
+		public static void ConnectClient(string uniqueName, string ip)
+		{
+			var funcName = $"{nameof(ConnectClient)}(\"{uniqueName}\", \"{ip}\")";
 			if (clientIsConnected)
 			{
 				consoleLog = $"{consoleLog}\n{funcName}: Already connecting/connected.";
@@ -1625,45 +1687,53 @@ public static class Gear
 			client.ConnectAsync();
 
 		}
-		public static void ClientDisconnect()
+		public static void DisconnectClient()
 		{
+			var funcName = $"{nameof(DisconnectClient)}()";
 			if (clientIsConnected == false)
 			{
-				consoleLog = $"{consoleLog}\nClientDisconnect(): Cannot disconnect when not connected.";
+				consoleLog = $"{consoleLog}\n{funcName}: Cannot disconnect when not connected.";
 				ConsoleUpdate();
 				return;
 			}
 			client.DisconnectAndStop();
 		}
-		public static string ClientUniqueNameGet() => clientIsConnected ? clientUniqueName : default;
-		public static void ClinetMessageSendToAllClients(string message)
+		public static bool ClientIsConnected()
 		{
-			var funcName = $"{nameof(ClinetMessageSendToAllClients)}(\"{message}\")";
+			return clientIsConnected;
+		}
+		public static string GetClientUniqueName()
+		{
+			return clientIsConnected? clientUniqueName : default;
+		}
+		public static void SendClinetMessageToAllClients(string message)
+		{
+			var funcName = $"{nameof(SendClinetMessageToAllClients)}(\"{message}\")";
 			if (ClientCannotSendMessage(funcName)) return;
 
 			ClientMessageSent(funcName);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToAll}|{clientUniqueName}|{message}");
 		}
-		public static void ClinetMessageSendToClient(string receiverUniqueName, string message)
+		public static void SendClinetMessageToClient(string receiverUniqueName, string message)
 		{
-			var funcName = $"{nameof(ClinetMessageSendToClient)}(\"{receiverUniqueName}\", \"{message}\")";
+			var funcName = $"{nameof(SendClinetMessageToClient)}(\"{receiverUniqueName}\", \"{message}\")";
 			if (clientUniqueName == receiverUniqueName) return;
 			if (ClientCannotSendMessage(funcName)) return;
 
 			ClientMessageSent(funcName);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToClient}|{clientUniqueName}|{receiverUniqueName}|{message}");
 		}
-		public static void ClientMessageSendToServer(string message)
+		public static void SendClientMessageToServer(string message)
 		{
-			var funcName = $"{nameof(ClientMessageSendToServer)}(\"{message}\")";
+			var funcName = $"{nameof(SendClientMessageToServer)}(\"{message}\")";
 			if (ClientCannotSendMessage(funcName)) return;
 
 			ClientMessageSent(funcName);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToServer}|{clientUniqueName}|{message}");
 		}
-		public static void ClientMessageSendToServerAndAllClients(string message)
+		public static void SendClientMessageToServerAndAllClients(string message)
 		{
-			var funcName = $"{nameof(ClientMessageSendToServerAndAllClients)}(\"{message}\")";
+			var funcName = $"{nameof(SendClientMessageToServerAndAllClients)}(\"{message}\")";
 			if (ClientCannotSendMessage(funcName)) return;
 
 			ClientMessageSent(funcName);
@@ -1749,136 +1819,202 @@ public static class Gear
 			sprites[name] = texture;
 		}
 
-		public static void PositionSet(float x, float y) => cameraPosition = new Point(x, y);
-		public static Point PositionGet() => cameraPosition;
+		private static void _SetPosition(Point position)
+		{
+			cameraPosition = position;
+			render = true;
+		}
+		public static void SetPosition(Point position)
+		{
+			_SetPosition(position);
+		}
+		public static void SetPositionXY(float x, float y)
+		{
+			_SetPosition(new Point(x, y));
+		}
+		public static void SetPositionX(float x)
+		{
+			_SetPosition(new Point(x, cameraPosition.GetY()));
+		}
+		public static void SetPositionY(float y)
+		{
+			_SetPosition(new Point(cameraPosition.GetX(), y));
+		}
+		public static Point GetPosition()
+		{
+			return cameraPosition;
+		}
+		public static float GetPositionX()
+		{
+			return cameraPosition.GetX();
+		}
+		public static float GetPositionY()
+		{
+			return cameraPosition.GetY();
+		}
 	}
 	/// <summary>
 	/// - Holds information about the current input of the user.
 	/// </summary>
 	public static class Input
 	{
-		public static string KeyToTextGet(InputKeys key)
+		public static Point GetCursorPosition(bool canvas = true)
 		{
-			var shift = KeyIsPressedCheck(InputKeys.ShiftLeft) || KeyIsPressedCheck(InputKeys.ShiftRight);
+			var result = new Point();
+			if (canvas)
+			{
+				var scale = new Point(canvasSize.GetW() / screenSize.GetW(), canvasSize.GetH() / screenSize.GetH());
+				result = new Point(Microsoft.Xna.Framework.Input.Mouse.GetState().Position.X,
+					Microsoft.Xna.Framework.Input.Mouse.GetState().Position.Y) * scale;
+				return result;
+			}
+			return result + cameraPosition;
+		}
+		public static void DisplayCursor(bool displayed)
+		{
+			game.IsMouseVisible = displayed;
+		}
+		public static bool CursorIsDisplayed()
+		{
+			return game.IsMouseVisible;
+		}
+		public static bool LeftButtonIsPressed()
+		{
+			return Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+		}
+		public static bool MiddleButtonIsPressed()
+		{
+			return Mouse.GetState().MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+		}
+		public static bool RightButtonIsPressed()
+		{
+			return Mouse.GetState().RightButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
+		}
+		public static void SetCursorFromSprite(string spritePath, int originX, int originY)
+		{
+			if (spritePath == null || sprites.ContainsKey(spritePath) == false) return;
+
+			Microsoft.Xna.Framework.Input.Mouse.SetCursor(
+				MouseCursor.FromTexture2D(sprites[spritePath], originX, originY));
+		}
+
+		public static string GetTextFromKey(Keys key)
+		{
+			var shift = KeyIsPressed(Keys.ShiftLeft) || KeyIsPressed(Keys.ShiftRight);
 			var result = "";
 			switch (key)
 			{
-				case InputKeys.Space: result = " "; break;
-				case InputKeys._0: result = shift ? ")" : "0"; break;
-				case InputKeys._1: result = shift ? "!" : "1"; break;
-				case InputKeys._2: result = shift ? "@" : "2"; break;
-				case InputKeys._3: result = shift ? "#" : "3"; break;
-				case InputKeys._4: result = shift ? "$" : "4"; break;
-				case InputKeys._5: result = shift ? "%" : "5"; break;
-				case InputKeys._6: result = shift ? "^" : "6"; break;
-				case InputKeys._7: result = shift ? "&" : "7"; break;
-				case InputKeys._8: result = shift ? "*" : "8"; break;
-				case InputKeys._9: result = shift ? "(" : "9"; break;
-				case InputKeys.A: result = "a"; break;
-				case InputKeys.B: result = "b"; break;
-				case InputKeys.C: result = "c"; break;
-				case InputKeys.D: result = "d"; break;
-				case InputKeys.E: result = "e"; break;
-				case InputKeys.F: result = "f"; break;
-				case InputKeys.G: result = "g"; break;
-				case InputKeys.H: result = "h"; break;
-				case InputKeys.I: result = "i"; break;
-				case InputKeys.J: result = "j"; break;
-				case InputKeys.K: result = "k"; break;
-				case InputKeys.L: result = "l"; break;
-				case InputKeys.M: result = "m"; break;
-				case InputKeys.N: result = "n"; break;
-				case InputKeys.O: result = "o"; break;
-				case InputKeys.P: result = "p"; break;
-				case InputKeys.Q: result = "q"; break;
-				case InputKeys.R: result = "r"; break;
-				case InputKeys.S: result = "s"; break;
-				case InputKeys.T: result = "t"; break;
-				case InputKeys.U: result = "u"; break;
-				case InputKeys.V: result = "v"; break;
-				case InputKeys.W: result = "w"; break;
-				case InputKeys.X: result = "x"; break;
-				case InputKeys.Y: result = "y"; break;
-				case InputKeys.Z: result = "z"; break;
-				case InputKeys.Num0: result = "0"; break;
-				case InputKeys.Num1: result = "1"; break;
-				case InputKeys.Num2: result = "2"; break;
-				case InputKeys.Num3: result = "3"; break;
-				case InputKeys.Num4: result = "4"; break;
-				case InputKeys.Num5: result = "5"; break;
-				case InputKeys.Num6: result = "6"; break;
-				case InputKeys.Num7: result = "7"; break;
-				case InputKeys.Num8: result = "8"; break;
-				case InputKeys.Num9: result = "9"; break;
-				case InputKeys.NumMultiply: result = "*"; break;
-				case InputKeys.NumAdd: result = "+"; break;
-				case InputKeys.NumSubtract: result = "-"; break;
-				case InputKeys.NumDecimal: result = "."; break;
-				case InputKeys.NumDivide: result = "/"; break;
-				case InputKeys.Semicolon: result = shift ? ":" : ";"; break;
-				case InputKeys.Equals: result = shift ? "+" : "="; break;
-				case InputKeys.Comma: result = shift ? "<" : ","; break;
-				case InputKeys.MinusDash: result = shift ? "" : "-"; break;
-				case InputKeys.Dot: result = shift ? ">" : "."; break;
-				case InputKeys.Slash: result = shift ? "?" : "/"; break;
-				case InputKeys.GraveAccent: result = shift ? "~" : "`"; break;
-				case InputKeys.SquareBracketOpen: result = shift ? "{" : "["; break;
-				case InputKeys.Backslash: result = shift ? "|" : "\\"; break;
-				case InputKeys.SquareBracketClose: result = shift ? "}" : "]"; break;
-				case InputKeys.Quote: result = shift ? "\"" : "'"; break;
+				case Keys.Space: result = " "; break;
+				case Keys._0: result = shift ? ")" : "0"; break;
+				case Keys._1: result = shift ? "!" : "1"; break;
+				case Keys._2: result = shift ? "@" : "2"; break;
+				case Keys._3: result = shift ? "#" : "3"; break;
+				case Keys._4: result = shift ? "$" : "4"; break;
+				case Keys._5: result = shift ? "%" : "5"; break;
+				case Keys._6: result = shift ? "^" : "6"; break;
+				case Keys._7: result = shift ? "&" : "7"; break;
+				case Keys._8: result = shift ? "*" : "8"; break;
+				case Keys._9: result = shift ? "(" : "9"; break;
+				case Keys.A: result = "a"; break;
+				case Keys.B: result = "b"; break;
+				case Keys.C: result = "c"; break;
+				case Keys.D: result = "d"; break;
+				case Keys.E: result = "e"; break;
+				case Keys.F: result = "f"; break;
+				case Keys.G: result = "g"; break;
+				case Keys.H: result = "h"; break;
+				case Keys.I: result = "i"; break;
+				case Keys.J: result = "j"; break;
+				case Keys.K: result = "k"; break;
+				case Keys.L: result = "l"; break;
+				case Keys.M: result = "m"; break;
+				case Keys.N: result = "n"; break;
+				case Keys.O: result = "o"; break;
+				case Keys.P: result = "p"; break;
+				case Keys.Q: result = "q"; break;
+				case Keys.R: result = "r"; break;
+				case Keys.S: result = "s"; break;
+				case Keys.T: result = "t"; break;
+				case Keys.U: result = "u"; break;
+				case Keys.V: result = "v"; break;
+				case Keys.W: result = "w"; break;
+				case Keys.X: result = "x"; break;
+				case Keys.Y: result = "y"; break;
+				case Keys.Z: result = "z"; break;
+				case Keys.Num0: result = "0"; break;
+				case Keys.Num1: result = "1"; break;
+				case Keys.Num2: result = "2"; break;
+				case Keys.Num3: result = "3"; break;
+				case Keys.Num4: result = "4"; break;
+				case Keys.Num5: result = "5"; break;
+				case Keys.Num6: result = "6"; break;
+				case Keys.Num7: result = "7"; break;
+				case Keys.Num8: result = "8"; break;
+				case Keys.Num9: result = "9"; break;
+				case Keys.NumMultiply: result = "*"; break;
+				case Keys.NumAdd: result = "+"; break;
+				case Keys.NumSubtract: result = "-"; break;
+				case Keys.NumDecimal: result = "."; break;
+				case Keys.NumDivide: result = "/"; break;
+				case Keys.Semicolon: result = shift ? ":" : ";"; break;
+				case Keys.Equals: result = shift ? "+" : "="; break;
+				case Keys.Comma: result = shift ? "<" : ","; break;
+				case Keys.MinusDash: result = shift ? "" : "-"; break;
+				case Keys.Dot: result = shift ? ">" : "."; break;
+				case Keys.Slash: result = shift ? "?" : "/"; break;
+				case Keys.GraveAccent: result = shift ? "~" : "`"; break;
+				case Keys.SquareBracketOpen: result = shift ? "{" : "["; break;
+				case Keys.Backslash: result = shift ? "|" : "\\"; break;
+				case Keys.SquareBracketClose: result = shift ? "}" : "]"; break;
+				case Keys.Quote: result = shift ? "\"" : "'"; break;
 				default: result = null; break;
 			}
 			result = shift && result != null ? result.ToUpper() : result;
 			return result;
 		}
-		public static List<InputKeys> GetKeysPressed()
+		public static Keys[] GetPressedKeys()
 		{
-			var result = new List<InputKeys>();
-			var keysPressed = Keyboard.GetState().GetPressedKeys();
-			for (int i = 0; i < keysPressed.Length; i++)
-			{
-				result.Add((InputKeys)(int)keysPressed[i]);
-			}
-			return result;
+			return keysPressed.ToArray();
 		}
-		public static List<InputKeys> KeysJustPressedGet() => new List<InputKeys>(keysJustPressed);
-		public static List<InputKeys> KeysJustReleasedGet() => new List<InputKeys>(keysJustReleased);
-		public static bool KeyIsPressedCheck(InputKeys key) => Keyboard.GetState().IsKeyDown((Microsoft.Xna.Framework.Input.Keys)(int)key);
-
-		public static Point MouseCursorPositionWorldGet()
+		public static Keys[] GetJustPressedKeys()
 		{
-			var scale = new Point(canvasSize.GetW() / screenSize.GetW(), canvasSize.GetH() / screenSize.GetH());
-			var pos = new Point(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
-			return pos;
+			return keysJustPressed.ToArray();
 		}
-		public static Point MouseCursorPositionWindowGet() => MouseCursorPositionWorldGet() + cameraPosition;
-		public static void MouseCursorShow(bool shown) => game.IsMouseVisible = shown;
-		public static bool MouseCursorIsShownCheck() => game.IsMouseVisible == false;
-		public static bool MouseButtonIsPressedLeftCheck() => Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
-		public static bool MouseButtonIsPressedMiddleCheck() => Mouse.GetState().MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
-		public static bool MouseButtonIsPressedRightCheck() => Mouse.GetState().RightButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
-		public static void MouseCursorFromSpriteSet(string spritePath, int originX, int originY)
+		public static Keys[] GetJustReleasedKeys()
 		{
-			if (spritePath == null || sprites.ContainsKey(spritePath) == false) return;
-
-			Mouse.SetCursor(MouseCursor.FromTexture2D(sprites[spritePath], originX, originY));
+			return keysJustReleased.ToArray();
+		}
+		public static bool KeyIsPressed(Keys key)
+		{
+			return keysPressed.Contains(key);
+		}
+		public static bool KeyWasJustPressed(Keys key)
+		{
+			return keysJustPressed.Contains(key);
+		}
+		public static bool KeyWasJustReleased(Keys key)
+		{
+			return keysJustReleased.Contains(key);
 		}
 
-		public static bool PressIntoHoldCheck(string name, bool condition, float secondsDelay = 0.5f, float updatesPerSecond = 0.1f)
+		public static bool IsPressHolding(string name, bool condition, float secondsDelay = 0.5f, float updatesPerSecond = 0.1f)
 		{
-			if (Gate.OpenedCheck($"{name}-gate", condition))
+			if (Gate.IsOpened($"{name}-gate", condition))
 			{
 				Signal.Create(name, secondsDelay);
 				return true;
 			}
-			else if (Timer.OccuranceCheck(name, updatesPerSecond)) return condition;
+			else if (Timer.IsIntervalOccuring(name, updatesPerSecond)) return condition;
 			return false;
 		}
 	}
 	public static class Gate
 	{
-		public static int EntriesCountGet(string name) => name != null && gateEntriesCount.ContainsKey(name) ? gateEntriesCount[name] : 0;
-		public static void EntriesRemove(string name)
+		public static int GetEntriesCount(string name)
+		{
+			return name != null && gateEntriesCount.ContainsKey(name) ? gateEntriesCount[name] : 0;
+		}
+		public static void RemoveEntries(string name)
 		{
 			if (name == null || gateEntriesCount.ContainsKey(name) == false) return;
 			gateEntriesCount[name] = default;
@@ -1888,7 +2024,7 @@ public static class Gear
 			if (name == null || gates.ContainsKey(name) == false) return;
 			gates.Remove(name);
 		}
-		public static bool OpenedCheck(string name, bool condition, int maxEntries = int.MaxValue)
+		public static bool IsOpened(string name, bool condition, int maxEntries = int.MaxValue)
 		{
 			if (name == null || (gates.ContainsKey(name) == false && condition == false)) return false;
 			else if (gates.ContainsKey(name) == false && condition == true)
@@ -1916,28 +2052,40 @@ public static class Gear
 		public static void Create(string name, float secondsDelay)
 		{
 			if (name == null) return;
-			secondsDelay = Number.LimitedGet(secondsDelay, 0, float.MaxValue);
+			secondsDelay = Number.GetLimited(secondsDelay, 0, float.MaxValue);
 			signalpauses[name] = false;
-			signalstarttimes[name] = Performance.TimeGet();
+			signalstarttimes[name] = Performance.GetTime();
 			signalDelays[name] = secondsDelay;
-			signalEndTimes[name] = Performance.TimeGet() + secondsDelay;
+			signalEndTimes[name] = Performance.GetTime() + secondsDelay;
 		}
-		public static bool ExistsCheck(string name) => name != null && signalstarttimes.ContainsKey(name);
-		public static float SecondsDelayGet(string name) => name != null && signalDelays.ContainsKey(name) ? signalDelays[name] : 0;
+		public static bool Exists(string name)
+		{
+			return name != null && signalstarttimes.ContainsKey(name);
+		}
+		public static float GetSecondsDelay(string name)
+		{
+			return name != null && signalDelays.ContainsKey(name) ? signalDelays[name] : 0;
+		}
 		public static void Pause(string name, bool paused)
 		{
 			if (name == null || signalpauses.ContainsKey(name) == false) return;
 			signalpauses[name] = paused;
 		}
-		public static float SecondsLeftGet(string name)
+		public static float GetSecondsLeft(string name)
 		{
 			if (name == null || signalEndTimes.ContainsKey(name) == false) return 0;
-			var result = signalEndTimes[name] - Performance.TimeGet();
+			var result = signalEndTimes[name] - Performance.GetTime();
 			return result < 0 ? 0 : result;
 		}
-		public static float TimeStartGet(string name) => name != null && signalstarttimes.ContainsKey(name) ? signalstarttimes[name] : 0;
-		public static float TimeOccurGet(string name) => name != null && signalEndTimes.ContainsKey(name) ? signalEndTimes[name] : 0;
-		public static bool OccuranceCheck(string name, bool delete)
+		public static float GetTimeStart(string name)
+		{
+			return name != null && signalstarttimes.ContainsKey(name) ? signalstarttimes[name] : 0;
+		}
+		public static float GetTimeOccur(string name)
+		{
+			return name != null && signalEndTimes.ContainsKey(name) ? signalEndTimes[name] : 0;
+		}
+		public static bool IsOccurring(string name, bool delete)
 		{
 			if (name == null) return false;
 			if (signalDelays.ContainsKey(name) == false) return false;
@@ -1966,10 +2114,10 @@ public static class Gear
 	{
 		private static Dictionary<string, int> repeats = new Dictionary<string, int>();
 
-		public static bool OccuranceCheck(string name, float intervalsInSeconds, int repeats = 1000000)
+		public static bool IsIntervalOccuring(string name, float intervalsInSeconds, int repeats = 1000000)
 		{
-			intervalsInSeconds = Number.LimitedGet(intervalsInSeconds, 0.1f, 100000);
-			if (Gate.OpenedCheck(name, Signal.OccuranceCheck(name, false), repeats))
+			intervalsInSeconds = Number.GetLimited(intervalsInSeconds, 0.1f, 100000);
+			if (Gate.IsOpened(name, Signal.IsOccurring(name, false), repeats))
 			{
 				Signal.Create(name, intervalsInSeconds);
 				Timer.repeats[name] = repeats;
@@ -1977,28 +2125,46 @@ public static class Gear
 			}
 			return false;
 		}
-		public static float SecondsGet(string name) => RepeatCountGet(name) * Signal.SecondsDelayGet(name);
-		public static float SecondsLeftGet(string name)
+		public static float GetSeconds(string name)
 		{
-			var repeats = RepeatsGet(name);
-			var delay = Signal.SecondsDelayGet(name);
-			var seconds = SecondsGet(name);
+			return GetRepeatCount(name) * Signal.GetSecondsDelay(name);
+		}
+		public static float GetSecondsLeft(string name)
+		{
+			var repeats = GetRepeats(name);
+			var delay = Signal.GetSecondsDelay(name);
+			var seconds = GetSeconds(name);
 			return repeats * delay - seconds;
 		}
-		public static int RepeatCountGet(string name) => Gate.EntriesCountGet(name);
-		public static int RepeatsGet(string name) => name != null && repeats.ContainsKey(name) ? repeats[name] : 0;
-		public static void Restart(string name) => Gate.EntriesRemove(name);
+		public static int GetRepeatCount(string name)
+		{
+			return Gate.GetEntriesCount(name);
+		}
+		public static int GetRepeats(string name)
+		{
+			return name != null && repeats.ContainsKey(name) ? repeats[name] : 0;
+		}
+		public static void Restart(string name)
+		{
+			Gate.RemoveEntries(name);
+		}
 	}
 	public static class Console
 	{
-		public static void Show()
+		public static void Display()
 		{
 			consoleShown = true;
 			AllocConsole();
 			ConsoleUpdate();
 		}
-		public static bool IsShown() => consoleShown;
-		public static string InputGet() => System.Console.ReadLine();
+		public static bool IsDisplayed()
+		{
+			return consoleShown;
+		}
+		public static string GetInput()
+		{
+			return System.Console.ReadLine();
+		}
 		public static void Log(string message)
 		{
 			consoleLog = $"{consoleLog}{message}";
@@ -2077,13 +2243,16 @@ public static class Gear
 		public void Expand(int index, UniqueKeyT uniqueKey, ValueT value,
 			bool invalidIndexError = true, bool keyExistsError = true)
 		{
+			var funcName = $"{nameof(Expand)}({nameof(index)}: {index}, " +
+				$"{nameof(uniqueKey)}: {uniqueKey}, {nameof(value)}: {value}, " +
+				$"{nameof(invalidIndexError)}: {invalidIndexError}, {nameof(keyExistsError)}: {keyExistsError})";
 			if (keys == null) keys = new List<UniqueKeyT>();
 			if (indexes == null) indexes = new List<int>();
 
 			if (values == null) values = new List<ValueT>();
 			if (invalidIndexError && index < 0)
 			{
-				Console.LogError($"The index of [{nameof(uniqueKey)}:{uniqueKey}][{nameof(value)}:{value}] cannot be < 0.");
+				Console.LogError($"{funcName}: The index of [{nameof(uniqueKey)}:{uniqueKey}][{nameof(value)}:{value}] cannot be < 0.");
 			}
 			else if (index < 0) return;
 			if (index >= values.Count)
@@ -2107,7 +2276,7 @@ public static class Gear
 			if (dict == null) dict = new Dictionary<UniqueKeyT, ValueT>();
 			if (keyExistsError && dict.ContainsKey(uniqueKey))
 			{
-				Console.LogError($"Unique key '{uniqueKey}' already exists.");
+				Console.LogError($"{funcName}: Unique key '{uniqueKey}' already exists.");
 			}
 			else if (dict.ContainsKey(uniqueKey)) return;
 
@@ -2134,79 +2303,145 @@ public static class Gear
 				}
 			}
 		}
+		public void ShrinkAt(int index, bool indexNotFoundError = true)
+		{
+			var funcName = $"{nameof(ShrinkAt)}({nameof(index)}: {index}, {nameof(indexNotFoundError)}: {indexNotFoundError})";
+			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return;
+
+			indexes.Remove(index);
+			values.RemoveAt(index);
+			dict.Remove(keys[index]);
+			keys.RemoveAt(index);
+		}
+		public void ShrinkIn(UniqueKeyT uniqueKey, bool indexNotFoundError = true)
+		{
+			var funcName = $"{nameof(ShrinkIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
+				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
+			if (KeyNotFoundError(uniqueKey, indexNotFoundError, funcName)) return;
+
+			indexes.Remove(keys.IndexOf(uniqueKey));
+			values.RemoveAt(keys.IndexOf(uniqueKey));
+			dict.Remove(uniqueKey);
+			keys.Remove(uniqueKey);
+		}
 		public void ReplaceAt(int index, ValueT value, bool indexNotFoundError = true)
 		{
-			if (indexNotFoundError && indexes.Contains(index) == false)
-			{
-				Console.LogError($"The {this}'s index '{index}' was not found.");
-			}
-			else if (indexes.Contains(index) == false) return;
+			var funcName = $"{nameof(ReplaceAt)}({nameof(index)}: {index}, " +
+				$"{nameof(value)}: {value}, {nameof(indexNotFoundError)}: {indexNotFoundError})";
+			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return;
 
 			values[index] = value;
 			dict[keys[index]] = value;
 		}
 		public void ReplaceIn(UniqueKeyT uniqueKey, ValueT value, bool keyNotFoundError = true)
 		{
-			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
-			{
-				Console.LogError($"The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
-			}
-			else if (dict.ContainsKey(uniqueKey) == false) return;
+			var funcName = $"{nameof(ReplaceIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
+				$"{nameof(value)}: {value}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
+			if (KeyNotFoundError(uniqueKey, keyNotFoundError, funcName)) return;
 
 			dict[uniqueKey] = value;
 			values[keys.IndexOf(uniqueKey)] = value;
 		}
+		public void Free()
+		{
+			if (indexes == null || keys == null || values == null || dict == null || indexes.Count == 0) return;
+			indexes.Clear();
+			keys.Clear();
+			values.Clear();
+			dict.Clear();
+		}
+
 		public int GetDataAmount()
 		{
-			return values == null ? 0 : values.Count;
+			return indexes == null ? 0 : indexes.Count;
 		}
 		public ValueT GetValueIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
 		{
-			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
-			{
-				Console.LogError($"The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
-			}
-			else if (dict.ContainsKey(uniqueKey) == false) return default;
+			var funcName = $"{nameof(GetValueIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
+				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
+			if (KeyNotFoundError(uniqueKey, keyNotFoundError, funcName)) return default;
 
 			return dict[uniqueKey];
 		}
 		public ValueT GetValueAt(int index, bool indexNotFoundError = true)
 		{
-			if (indexNotFoundError && indexes.Contains(index) == false)
-			{
-				Console.LogError($"The {this}'s index '{index}' was not found.");
-			}
-			else if (indexes.Contains(index) == false) return default;
+			var funcName = $"{nameof(GetValueAt)}({nameof(index)}: {index}, " +
+				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
+			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return default;
 
 			return values[index];
 		}
 		public UniqueKeyT GetUniqueKeyAt(int index, bool indexNotFoundError = true)
 		{
-			if (indexNotFoundError && indexes.Contains(index) == false)
-			{
-				Console.LogError($"The {this}'s index '{index}' was not found.");
-			}
-			else if (indexes.Contains(index) == false) return default;
+			var funcName = $"{nameof(GetUniqueKeyAt)}({nameof(index)}: {index}, " +
+				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
+			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return default;
 
 			return keys[index];
 		}
 		public int GetIndexIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
 		{
-			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
-			{
-				Console.LogError($"The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
-			}
-			else if (dict.ContainsKey(uniqueKey) == false) return default;
+			var funcName = $"{nameof(GetIndexIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
+				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
+			if (KeyNotFoundError(uniqueKey, keyNotFoundError, funcName)) return default;
 
 			return keys.IndexOf(uniqueKey);
 		}
-		public bool IndexExists(int index)
+		public int[] GetIndexes()
 		{
-			return indexes.Contains(index);
+			return indexes == null ? new int[0] : indexes.ToArray();
 		}
-		public bool UniqueKeyExists(UniqueKeyT uniqueKey)
+		public UniqueKeyT[] GetUniqueKeys()
 		{
-			return keys.Contains(uniqueKey);
+			var result = new List<UniqueKeyT>();
+			for (int i = 0; i < indexes.Count; i++)
+			{
+				result.Add(keys[indexes[i]]);
+			}
+			return result.ToArray();
+		}
+		public ValueT[] GetValues()
+		{
+			var result = new List<ValueT>();
+			for (int i = 0; i < indexes.Count; i++)
+			{
+				result.Add(values[indexes[i]]);
+			}
+			return result.ToArray();
+		}
+
+		public bool HasIndex(int index)
+		{
+			return indexes != null && indexes.Contains(index);
+		}
+		public bool HasUniqueKey(UniqueKeyT uniqueKey)
+		{
+			return keys != null && keys.Contains(uniqueKey);
+		}
+		public bool HasValue(ValueT value)
+		{
+			return values != null && values.Contains(value);
+		}
+
+		private bool IndexNotFoundError(int index, bool indexNotFoundError, string funcName)
+		{
+			if (indexNotFoundError && indexes.Contains(index) == false)
+			{
+				Console.LogError($"{funcName}: Index '{index}' was not found.");
+				return true;
+			}
+			else if (indexes.Contains(index) == false) return true;
+			return false;
+		}
+		private bool KeyNotFoundError(UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName)
+		{
+			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
+			{
+				Console.LogError($"{funcName}: The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
+				return true;
+			}
+			else if (dict.ContainsKey(uniqueKey) == false) return true;
+			return false;
 		}
 	}
 
@@ -2261,11 +2496,11 @@ public static class Gear
 		{
 			To360();
 			targetAngle.To360();
-			a = Number.PercentedTowardsTargetGet(a, targetAngle.GetA(), percent);
+			a = Number.GetPercentedTowardsTarget(a, targetAngle.GetA(), percent);
 		}
 		public void Rotate(float degreesPerSecond)
 		{
-			a = Number.ChangedGet(a, degreesPerSecond);
+			a = Number.GetChanged(a, degreesPerSecond);
 			To360();
 		}
 		public void RotateTowardsAngle(Angle targetAngle, float degreesPerSecond)
@@ -2792,10 +3027,10 @@ public static class Gear
 
 		private void To255()
 		{
-			r = Number.LimitedGet(r, 0, 255);
-			g = Number.LimitedGet(g, 0, 255);
-			b = Number.LimitedGet(b, 0, 255);
-			o = Number.LimitedGet(o, 0, 255);
+			r = Number.GetLimited(r, 0, 255);
+			g = Number.GetLimited(g, 0, 255);
+			b = Number.GetLimited(b, 0, 255);
+			o = Number.GetLimited(o, 0, 255);
 		}
 
 		public static Color operator +(Color a, Color b)
@@ -2814,13 +3049,13 @@ public static class Gear
 
 		public Circle(Point position, float radius)
 		{
-			radius = Number.LimitedGet(radius, 2, 1_000_000);
+			radius = Number.GetLimited(radius, 2, 1_000_000);
 			this.position = position;
 			this.radius = radius;
 		}
 		public void Set(Point position, float radius)
 		{
-			radius = Number.LimitedGet(radius, 2, 1_000_000);
+			radius = Number.GetLimited(radius, 2, 1_000_000);
 			this.position = position;
 			this.radius = radius;
 		}
@@ -2828,9 +3063,9 @@ public static class Gear
 		public Point GetPosition() => position;
 		public float GetRadius() => radius;
 
-		public List<Point> GetCrossPointsWithLine(Line line)
+		public Point[] GetCrossPointsWithLine(Line line)
 		{
-			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint());
+			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint()).ToArray();
 		}
 		public bool IsCrossedByLine(Line line)
 		{
@@ -2857,7 +3092,7 @@ public static class Gear
 		public Point GetEndPoint() => pointEnd;
 		public float GetLength() => pointStart.GetDistanceToPoint(pointEnd);
 
-		public List<Point> GetCrossPointsWithCircle(Circle circle)
+		public Point[] GetCrossPointsWithCircle(Circle circle)
 		{
 			return circle.GetCrossPointsWithLine(this);
 		}
@@ -2865,7 +3100,7 @@ public static class Gear
 		{
 			return circle.IsCrossedByLine(this);
 		}
-		public List<Point> GetCrossPointWithLine(Line line)
+		public Point[] GetCrossPointWithLine(Line line)
 		{
 			var segmentsCross = false;
 			var linesCross = false;
@@ -2874,7 +3109,7 @@ public static class Gear
 			var closestCrossPointToLine = new Point();
 
 			GetCrossPointOfTwoLines(pointStart, pointEnd, line.pointStart, line.pointEnd, out linesCross, out segmentsCross, out intersection, out closestCrossPointToMe, out closestCrossPointToLine);
-			return intersection;
+			return intersection.ToArray();
 		}
 		public bool IsCrossingLine(Line line)
 		{
