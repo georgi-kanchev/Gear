@@ -238,7 +238,7 @@ public static class Gear
 				catch (Exception ex)
 				{
 					AllocConsole();
-					System.Console.WriteLine($"{ex.Source}: {ex.Message}");
+					System.Console.WriteLine(ex.Message);
 					System.Console.ReadLine();
 					throw;
 				}
@@ -2274,11 +2274,7 @@ public static class Gear
 			}
 
 			if (dict == null) dict = new Dictionary<UniqueKeyT, ValueT>();
-			if (keyExistsError && dict.ContainsKey(uniqueKey))
-			{
-				Console.LogError($"{funcName}: Unique key '{uniqueKey}' already exists.");
-			}
-			else if (dict.ContainsKey(uniqueKey)) return;
+			if (KeyExistsError(dict, uniqueKey, keyExistsError, funcName)) return;
 
 			dict.Add(uniqueKey, value);
 			values.Insert(index, value);
@@ -2317,7 +2313,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(ShrinkIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (KeyNotFoundError(uniqueKey, indexNotFoundError, funcName)) return;
+			if (KeyNotFoundError(dict, uniqueKey, indexNotFoundError, funcName)) return;
 
 			indexes.Remove(keys.IndexOf(uniqueKey));
 			values.RemoveAt(keys.IndexOf(uniqueKey));
@@ -2337,7 +2333,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(ReplaceIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(value)}: {value}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(uniqueKey, keyNotFoundError, funcName)) return;
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return;
 
 			dict[uniqueKey] = value;
 			values[keys.IndexOf(uniqueKey)] = value;
@@ -2359,7 +2355,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(GetValueIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(uniqueKey, keyNotFoundError, funcName)) return default;
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return default;
 
 			return dict[uniqueKey];
 		}
@@ -2383,7 +2379,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(GetIndexIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(uniqueKey, keyNotFoundError, funcName)) return default;
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return default;
 
 			return keys.IndexOf(uniqueKey);
 		}
@@ -2431,16 +2427,6 @@ public static class Gear
 				return true;
 			}
 			else if (indexes.Contains(index) == false) return true;
-			return false;
-		}
-		private bool KeyNotFoundError(UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName)
-		{
-			if (keyNotFoundError && dict.ContainsKey(uniqueKey) == false)
-			{
-				Console.LogError($"{funcName}: The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
-				return true;
-			}
-			else if (dict.ContainsKey(uniqueKey) == false) return true;
 			return false;
 		}
 	}
@@ -3042,6 +3028,7 @@ public static class Gear
 			return new Color((a.r - b.r), (a.g - b.g), (a.b - b.b));
 		}
 	}
+
 	public struct Circle
 	{
 		private Point position;
@@ -3060,37 +3047,62 @@ public static class Gear
 			this.radius = radius;
 		}
 
-		public Point GetPosition() => position;
-		public float GetRadius() => radius;
+		public Point GetPosition()
+		{
+			return position;
+		}
+		public float GetRadius()
+		{
+			return radius;
+		}
 
 		public Point[] GetCrossPointsWithLine(Line line)
 		{
-			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint()).ToArray();
+			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint());
 		}
 		public bool IsCrossedByLine(Line line)
 		{
-			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint()).Count > 0;
+			return GetLineCircleCrossPoints(position, radius, line.GetStartPoint(), line.GetEndPoint()).Length > 0;
+		}
+		public bool IsOverlappingCircle(Circle circle)
+		{
+			var sum = radius + circle.radius;
+			var dist = position.GetDistanceToPoint(circle.position);
+			return sum >= dist;
+		}
+		public Point[] GetCrossPointsWithCircle(Circle circle)
+		{
+			return GetCircleCircleCrossPoints(position.GetX(), position.GetY(), radius, circle.position.GetX(), circle.position.GetY(), circle.radius);
 		}
 	}
 	public struct Line
 	{
-		private Point pointStart;
-		private Point pointEnd;
+		private Point startPoint;
+		private Point endPoint;
 
-		public Line(Point pointStart, Point pointEnd)
+		public Line(Point startPoint, Point endPoint)
 		{
-			this.pointStart = pointStart;
-			this.pointEnd = pointEnd;
+			this.startPoint = startPoint;
+			this.endPoint = endPoint;
 		}
-		public void Set(Point pointStart, Point pointEnd)
+		public void Set(Point startPoint, Point endPoint)
 		{
-			this.pointStart = pointStart;
-			this.pointEnd = pointEnd;
+			this.startPoint = startPoint;
+			this.endPoint = endPoint;
 		}
 
-		public Point GetStartPoint() => pointStart;
-		public Point GetEndPoint() => pointEnd;
-		public float GetLength() => pointStart.GetDistanceToPoint(pointEnd);
+		public Point GetStartPoint()
+		{
+			return startPoint;
+		}
+		public Point GetEndPoint()
+		{
+			return endPoint;
+		}
+		public float GetLength()
+		{
+			return startPoint.GetDistanceToPoint(endPoint);
+		}
 
 		public Point[] GetCrossPointsWithCircle(Circle circle)
 		{
@@ -3104,16 +3116,70 @@ public static class Gear
 		{
 			var segmentsCross = false;
 			var linesCross = false;
-			var intersection = new List<Point>();
+			var intersection = new Point[1];
 			var closestCrossPointToMe = new Point();
 			var closestCrossPointToLine = new Point();
 
-			GetCrossPointOfTwoLines(pointStart, pointEnd, line.pointStart, line.pointEnd, out linesCross, out segmentsCross, out intersection, out closestCrossPointToMe, out closestCrossPointToLine);
-			return intersection.ToArray();
+			GetCrossPointOfTwoLines(startPoint, endPoint, line.endPoint, line.endPoint, out linesCross, out segmentsCross, out intersection, out closestCrossPointToMe, out closestCrossPointToLine);
+			return intersection;
 		}
 		public bool IsCrossingLine(Line line)
 		{
-			return LineCrossesLine(pointStart, pointEnd, line.pointStart, line.pointEnd);
+			return LineCrossesLine(startPoint, endPoint, line.startPoint, line.endPoint);
+		}
+		public bool ContainsPoint(Point point)
+		{
+			var AB = GetLength();
+			var AP = startPoint.GetDistanceToPoint(point);
+			var PB = endPoint.GetDistanceToPoint(point);
+			return AB == AP + PB;
+		}
+	}
+	public struct Hitbox<KeyT>
+	{
+		private Dictionary<KeyT, Line> lines;
+		private Dictionary<KeyT, Circle> circles;
+
+		private Point position;
+		private Angle angle;
+
+		public void AddLine(KeyT uniqueKey, Line line, bool keyExistsError = true)
+		{
+			var func = nameof(AddLine);
+
+			if (lines == null) lines = new Dictionary<KeyT, Line>();
+			Add(func, lines, uniqueKey, line, keyExistsError);
+		}
+		public Line GetLine(KeyT uniqueKey, bool keyNotFoundError = true)
+		{
+			return Get(nameof(GetLine), lines, uniqueKey, keyNotFoundError);
+		}
+
+		public void AddCircle(KeyT uniqueKey, Circle circle, bool keyExistsError = true)
+		{
+			var func = nameof(AddCircle);
+
+			if (circles == null) circles = new Dictionary<KeyT, Circle>();
+			Add(func, circles, uniqueKey, circle, keyExistsError);
+		}
+		public Circle GetCircle(KeyT uniqueKey, bool keyNotFoundError = true)
+		{
+			return Get(nameof(GetCircle), circles, uniqueKey, keyNotFoundError);
+		}
+
+		private void Add<ValueT>(string func, Dictionary<KeyT, ValueT> dict, KeyT uniqueKey, ValueT value, bool keyExistsError = true)
+		{
+			var funcName = $"{func}({nameof(uniqueKey)}: {uniqueKey}, {nameof(keyExistsError)}: {keyExistsError})";
+			if (KeyExistsError(dict, uniqueKey, keyExistsError, funcName)) return;
+
+			dict[uniqueKey] = value;
+		}
+		private ValueT Get<ValueT>(string func, Dictionary<KeyT, ValueT> dict, KeyT uniqueKey, bool keyNotFoundError = true)
+		{
+			var funcName = $"{func}({nameof(uniqueKey)}: {uniqueKey}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return default;
+
+			return dict[uniqueKey];
 		}
 	}
 
@@ -3426,12 +3492,11 @@ public static class Gear
 	// the lines p1 --> p2 and p3 --> p4.
 	private static void GetCrossPointOfTwoLines(Point startA, Point endA, Point startB, Point endB,
 		 out bool lines_intersect, out bool segments_intersect,
-		 out List<Point> intersection,
+		 out Point[] intersection,
 		 out Point close_p1, out Point close_p2)
 	{
 		var lineLength = startA.GetDistanceToPoint(endA);
-		intersection = new List<Point>();
-
+		intersection = new Point[0];
 		// Get the segments' parameters.
 		float dx12 = endA.GetX() - startA.GetX();
 		float dy12 = endA.GetY() - startA.GetY();
@@ -3457,7 +3522,7 @@ public static class Gear
 
 		// Find the point of intersection.
 		var point = new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1);
-		if (point.GetDistanceToPoint(startA) <= lineLength) intersection.Add(point);
+		if (point.GetDistanceToPoint(startA) <= lineLength) intersection = new Point[1] { point };
 
 		// The segments intersect if t1 and t2 are between 0 and 1.
 		segments_intersect = ((t1 >= 0) && (t1 <= 1) && (t2 >= 0) && (t2 <= 1));
@@ -3472,9 +3537,8 @@ public static class Gear
 		close_p1 = new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1);
 		close_p2 = new Point(startB.GetX() + dx34 * t2, startB.GetY() + dy34 * t2);
 	}
-	private static List<Point> GetLineCircleCrossPoints(Point circlePosition, float circleRadius, Point pointA, Point pointB)
+	private static Point[] GetLineCircleCrossPoints(Point circlePosition, float circleRadius, Point pointA, Point pointB)
 	{
-		var result = new List<Point>();
 		var t = 0f;
 		var dx = pointB.GetX() - pointA.GetX();
 		var dy = pointB.GetY() - pointA.GetY();
@@ -3490,26 +3554,99 @@ public static class Gear
 		if ((A <= 0.0000001) || (det < 0))
 		{
 			// no real solutions
-			return result;
+			return new Point[0];
 		}
 		else if (det == 0)
 		{
 			// one solution
 			t = -B / (2 * A);
 			var point = new Point(pointA.GetX() + t * dx, pointA.GetY() + t * dy);
-			if (point.GetDistanceToPoint(pointA) >= lineLength) result.Add(point);
+			if (point.GetDistanceToPoint(pointA) >= lineLength) return new Point[1] { point };
 		}
 		else
 		{
+			var result = new Point[2];
 			// two solutions
 			t = (float)((-B + Math.Sqrt(det)) / (2 * A));
 			var point1 = new Point(pointA.GetX() + t * dx, pointA.GetY() + t * dy);
-			if (point1.GetDistanceToPoint(pointA) <= lineLength) result.Add(point1);
+			if (point1.GetDistanceToPoint(pointA) <= lineLength) result[0] = point1;
 
 			t = (float)((-B - Math.Sqrt(det)) / (2 * A));
 			var point2 = new Point(pointA.GetX() + t * dx, pointA.GetY() + t * dy);
-			if (point2.GetDistanceToPoint(pointA) <= lineLength) result.Add(point2);
+			if (point2.GetDistanceToPoint(pointA) <= lineLength) result[1] = point2;
+			return result;
 		}
-		return result;
+		return new Point[0];
+	}
+	private static Point[] GetCircleCircleCrossPoints(float cx0, float cy0, float radius0, float cx1, float cy1, float radius1)
+	{
+		// Find the distance between the centers.
+		float dx = cx0 - cx1;
+		float dy = cy0 - cy1;
+		double dist = Math.Sqrt(dx * dx + dy * dy);
+
+		// See how many solutions there are.
+		if (dist > radius0 + radius1)
+		{
+			// No solutions, the circles are too far apart.
+			return new Point[0];
+		}
+		else if (dist < Math.Abs(radius0 - radius1))
+		{
+			// No solutions, one circle contains the other.
+			return new Point[0];
+		}
+		else if ((dist == 0) && (radius0 == radius1))
+		{
+			// No solutions, the circles coincide.
+			return new Point[0];
+		}
+		else
+		{
+			var resultA = new Point[1];
+			var resultA2 = new Point[1];
+			var resultB = new Point[2];
+			// Find a and h.
+			double a = (radius0 * radius0 -
+				 radius1 * radius1 + dist * dist) / (2 * dist);
+			double h = Math.Sqrt(radius0 * radius0 - a * a);
+
+			// Find P2.
+			double cx2 = cx0 + a * (cx1 - cx0) / dist;
+			double cy2 = cy0 + a * (cy1 - cy0) / dist;
+
+			// Get the points P3.
+			var point1 = new Point((float)(cx2 + h * (cy1 - cy0) / dist), (float)(cy2 - h * (cx1 - cx0) / dist));
+			var point2 = new Point((float)(cx2 - h * (cy1 - cy0) / dist), (float)(cy2 + h * (cx1 - cx0) / dist));
+			resultA[0] = point1;
+			resultA2[0] = point2;
+			resultB[0] = point1;
+			resultB[1] = point2;
+
+			// See if we have 1 or 2 solutions.
+			if (dist == radius0 + radius1) return resultA[0] == default ? resultA2 : resultA;
+			return resultB;
+		}
+	}
+
+	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName)
+	{
+		if (keyNotFoundError && (dict == null || dict.ContainsKey(uniqueKey) == false))
+		{
+			Console.LogError($"{funcName}: The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
+			return true;
+		}
+		else if (dict == null || dict.ContainsKey(uniqueKey) == false) return true;
+		return false;
+	}
+	private static bool KeyExistsError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyExistsError, string funcName)
+	{
+		if (keyExistsError && (dict != null && dict.ContainsKey(uniqueKey)))
+		{
+			Console.LogError($"{funcName}: The {nameof(uniqueKey)} '{uniqueKey}' already exists.");
+			return true;
+		}
+		else if (dict == null || dict.ContainsKey(uniqueKey)) return true;
+		return false;
 	}
 }
