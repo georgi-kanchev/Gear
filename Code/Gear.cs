@@ -113,6 +113,7 @@ public static class Gear
 
 	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
 	private static List<Body> bodiesAll = new List<Body>();
+	private static List<Hitbox> hitboxes = new List<Hitbox>();
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
 
@@ -1031,6 +1032,105 @@ public static class Gear
 		public override string ToString()
 		{
 			return $"[{UID}] {uniqueName}";
+		}
+	}
+	public class Hitbox
+	{
+		private Dictionary<string, Line> lines;
+		private Dictionary<string, Circle> circles;
+
+		[JsonProperty]
+		private Point position = new Point();
+		[JsonProperty]
+		private Angle angle = new Angle();
+
+		private void _SetPosition(Point position)
+		{
+			this.position = position;
+		}
+		public void SetPosition(Point position)
+		{
+			_SetPosition(position);
+		}
+		public void SetPositionXY(float x, float y)
+		{
+			_SetPosition(new Point(x, y));
+		}
+		public void SetPositionX(float x)
+		{
+			_SetPosition(new Point(x, position.GetY()));
+		}
+		public void SetPositionY(float y)
+		{
+			_SetPosition(new Point(position.GetX(), y));
+		}
+		public Point GetPosition()
+		{
+			return position;
+		}
+		public float GetPositionX()
+		{
+			return position.GetX();
+		}
+		public float GetPositionY()
+		{
+			return position.GetY();
+		}
+
+		public void SetAngleA(float a)
+		{
+			angle = new Angle(a);
+		}
+		public void SetAngle(Angle angle)
+		{
+			this.angle = angle;
+		}
+		public Angle GetAngle()
+		{
+			return angle;
+		}
+		public float GetAngleA()
+		{
+			return angle.GetA();
+		}
+
+		public void AddLine(string uniqueName, Line line, bool keyExistsError = true)
+		{
+			var func = nameof(AddLine);
+
+			if (lines == null) lines = new Dictionary<string, Line>();
+			Add(func, lines, uniqueName, line, keyExistsError);
+		}
+		public Line GetLine(string uniqueName, bool keyNotFoundError = true)
+		{
+			return Get(nameof(GetLine), lines, uniqueName, keyNotFoundError);
+		}
+
+		public void AddCircle(string uniqueName, Circle circle, bool keyExistsError = true)
+		{
+			var func = nameof(AddCircle);
+
+			if (circles == null) circles = new Dictionary<string, Circle>();
+			Add(func, circles, uniqueName, circle, keyExistsError);
+		}
+		public Circle GetCircle(string uniqueName, bool keyNotFoundError = true)
+		{
+			return Get(nameof(GetCircle), circles, uniqueName, keyNotFoundError);
+		}
+
+		private void Add<ValueT>(string func, Dictionary<string, ValueT> dict, string uniqueName, ValueT value, bool keyExistsError = true)
+		{
+			var funcName = $"{func}({nameof(uniqueName)}: {uniqueName}, {nameof(keyExistsError)}: {keyExistsError})";
+			if (KeyExistsError(dict, uniqueName, keyExistsError, funcName)) return;
+
+			dict[uniqueName] = value;
+		}
+		private ValueT Get<ValueT>(string func, Dictionary<string, ValueT> dict, string uniqueName, bool keyNotFoundError = true)
+		{
+			var funcName = $"{func}({nameof(uniqueName)}: {uniqueName}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
+			if (KeyNotFoundError(dict, uniqueName, keyNotFoundError, funcName)) return default;
+
+			return dict[uniqueName];
 		}
 	}
 	/// <summary>
@@ -3133,53 +3233,6 @@ public static class Gear
 			var AP = startPoint.GetDistanceToPoint(point);
 			var PB = endPoint.GetDistanceToPoint(point);
 			return AB == AP + PB;
-		}
-	}
-	public struct Hitbox<KeyT>
-	{
-		private Dictionary<KeyT, Line> lines;
-		private Dictionary<KeyT, Circle> circles;
-
-		private Point position;
-		private Angle angle;
-
-		public void AddLine(KeyT uniqueKey, Line line, bool keyExistsError = true)
-		{
-			var func = nameof(AddLine);
-
-			if (lines == null) lines = new Dictionary<KeyT, Line>();
-			Add(func, lines, uniqueKey, line, keyExistsError);
-		}
-		public Line GetLine(KeyT uniqueKey, bool keyNotFoundError = true)
-		{
-			return Get(nameof(GetLine), lines, uniqueKey, keyNotFoundError);
-		}
-
-		public void AddCircle(KeyT uniqueKey, Circle circle, bool keyExistsError = true)
-		{
-			var func = nameof(AddCircle);
-
-			if (circles == null) circles = new Dictionary<KeyT, Circle>();
-			Add(func, circles, uniqueKey, circle, keyExistsError);
-		}
-		public Circle GetCircle(KeyT uniqueKey, bool keyNotFoundError = true)
-		{
-			return Get(nameof(GetCircle), circles, uniqueKey, keyNotFoundError);
-		}
-
-		private void Add<ValueT>(string func, Dictionary<KeyT, ValueT> dict, KeyT uniqueKey, ValueT value, bool keyExistsError = true)
-		{
-			var funcName = $"{func}({nameof(uniqueKey)}: {uniqueKey}, {nameof(keyExistsError)}: {keyExistsError})";
-			if (KeyExistsError(dict, uniqueKey, keyExistsError, funcName)) return;
-
-			dict[uniqueKey] = value;
-		}
-		private ValueT Get<ValueT>(string func, Dictionary<KeyT, ValueT> dict, KeyT uniqueKey, bool keyNotFoundError = true)
-		{
-			var funcName = $"{func}({nameof(uniqueKey)}: {uniqueKey}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return default;
-
-			return dict[uniqueKey];
 		}
 	}
 
