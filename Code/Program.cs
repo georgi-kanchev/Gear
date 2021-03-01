@@ -8,9 +8,13 @@
 		{
 			Gear.Canvas.SetPixelSize(5, 5);
 
-			var a = new Gear.Hitbox<int>();
+			//var a = new Gear.Body(null);
+			var b = new Gear.Body("test");
+			b.SetSprite("test");
+			//a.Tag("test-tag");
+			b.Tag("test-tag");
 
-			a.AddCircle(5, new Gear.Circle());
+			var bodies = Gear.Body.GetByTag("test-tag");
 		}
 	}
 }

@@ -109,11 +109,11 @@ public static class Gear
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signalpauses = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gateEntriesCount = new Dictionary<string, int>();
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
+	private static Dictionary<string, List<Body>> tagBodies = new Dictionary<string, List<Body>>();
 	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalstarttimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
 
 	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
 	private static List<Body> bodiesAll = new List<Body>();
-	private static List<Hitbox> hitboxes = new List<Hitbox>();
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
 
@@ -238,10 +238,7 @@ public static class Gear
 				}
 				catch (Exception ex)
 				{
-					AllocConsole();
-					System.Console.WriteLine(ex.Message);
-					System.Console.ReadLine();
-					throw;
+					Console.LogError($"{Gear.Window.GetTitle()}: {ex.Message}");
 				}
 
 			}
@@ -752,7 +749,10 @@ public static class Gear
 		/// <summary>
 		/// - Ends the runtime of the program and closes the window.
 		/// </summary>
-		public static void Close() => game.Exit();
+		public static void Close()
+		{
+			game.Exit();
+		}
 	}
 	/// <summary>
 	/// A main object for the program that can contain different data for it to be displayed on the screen and interacted with.
@@ -762,17 +762,25 @@ public static class Gear
 		private static int ID;
 		private static Dictionary<string, Body> bodyUniqueNames = new Dictionary<string, Body>();
 
-		public static List<Body> GetAllBodies()
+		public static Body[] GetAll()
 		{
-			return new List<Body>(bodiesAll);
+			return bodiesAll.ToArray();
 		}
-		public static Body GetByUniqueName(string uniquename)
+		public static Body GetByUniqueName(string uniqueName)
 		{
-			if (uniquename == null || bodyUniqueNames.ContainsKey(uniquename) == false)
+			if (uniqueName == null || bodyUniqueNames.ContainsKey(uniqueName) == false)
 			{
 				return default;
 			}
-			return bodyUniqueNames[uniquename];
+			return bodyUniqueNames[uniqueName];
+		}
+		public static Body[] GetByTag(string tag)
+		{
+			if (tag == null || tagBodies.ContainsKey(tag) == false)
+			{
+				return default;
+			}
+			return tagBodies[tag].ToArray();
 		}
 
 		[JsonProperty]
@@ -789,11 +797,17 @@ public static class Gear
 		private string uniqueName, spriteName;
 		[JsonProperty]
 		private bool boundariesShown, originShown, angleShown, spriteShown;
+		[JsonProperty]
+		private List<string> tags = new List<string>();
+		[JsonProperty]
+		private List<Body> hitboxObstacles = new List<Body>(), hitboxExceptions = new List<Body>();
+		[JsonProperty]
+		private Dictionary<string, Line> hitboxLines;
 
-		public Body(string uniqueName)
+		public Body(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
 		{
 			Instantiate();
-			SetUniqueName(uniqueName);
+			SetUniqueName(uniqueName, nameIsNullError, nameExistsError);
 		}
 		private void Instantiate()
 		{
@@ -801,6 +815,8 @@ public static class Gear
 			UID = ID;
 			ID++;
 		}
+
+		// UPDATE FREQUENTLY
 		public Body Duplicate(string uniqueName)
 		{
 			var dup = new Body(uniqueName);
@@ -831,21 +847,83 @@ public static class Gear
 		{
 			return uniqueName;
 		}
-		public void SetUniqueName(string uniqueName)
+		public void SetUniqueName(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
 		{
 			var funcName = $"{nameof(SetUniqueName)}({nameof(uniqueName)}: \"{uniqueName}\")";
-			if (uniqueName == this.uniqueName) return;
-			else if (uniqueName == null)
+			if (uniqueName == null)
 			{
-				Console.LogError($"{funcName}: {nameof(Body)}'s {nameof(uniqueName)} cannot be null.");
+				if (nameIsNullError)
+				{
+					CannotBeNullError(funcName, nameof(uniqueName));
+				}
+				return;
 			}
 			if (bodyUniqueNames.ContainsKey(uniqueName))
 			{
-				Console.LogError($"{funcName}: Another {nameof(Body)} with {nameof(uniqueName)} '{uniqueName}' already exists." + $"Make sure you are not creating it multiple times or each tick.");
+				if (nameExistsError)
+				{
+					var tip = $"Make sure you are not creating the {nameof(Body)} multiple times or each tick.";
+					AlreadyExistsError($"{funcName}", nameof(uniqueName), uniqueName, tip);
+				}
+				return;
 			}
 
 			this.uniqueName = uniqueName;
 			bodyUniqueNames.Add(uniqueName, this);
+		}
+
+		public void Tag(string tag)
+		{
+			if (tags.Contains(tag) == false)
+			{
+				tags.Add(tag);
+				if (tagBodies.ContainsKey(tag))
+				{
+					tagBodies[tag].Add(this);
+				}
+				else
+				{
+					tagBodies.Add(tag, new List<Body>() { this });
+				}
+
+			}
+		}
+		public void Untag(string tag, bool tagNotFoundError)
+		{
+			if (tags.Contains(tag) == false)
+			{
+				if (tagNotFoundError)
+				{
+					var funcName = $"{nameof(Untag)}({nameof(tag)}: \"{tag}\", {nameof(tagNotFoundError)}: {tagNotFoundError})";
+					NotFoundError(funcName, nameof(tag), $"{tag}");
+				}
+				return;
+			}
+
+			tags.Remove(tag);
+
+			tagBodies[tag].Remove(this);
+			if (tagBodies[tag].Count == 0)
+			{
+				tagBodies.Remove(tag);
+			}
+		}
+		public void UntagAll()
+		{
+			foreach (var tag in tags)
+			{
+				tagBodies[tag].Remove(this);
+
+				if (tagBodies[tag].Count == 0)
+				{
+					tagBodies.Remove(tag);
+				}
+			}
+			tags.Clear();
+		}
+		public string[] GetTags()
+		{
+			return tags.ToArray();
 		}
 
 		private void _SetPosition(Point pos)
@@ -983,11 +1061,22 @@ public static class Gear
 			return boundariesColor;
 		}
 
-		public void SetSprite(string name, bool show = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0)
+		public void SetSprite(string name, bool show = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0, bool nameNotFound = true)
 		{
 			if (sprites.ContainsKey(name) == false)
 			{
-				throw new ArgumentException($"No sprite with name '{name}' was found. In order to load a sprite:\n1. Add it to the 'Content' folder.\n2. Add it to the Solution Explorer's 'Content' folder.\n3. In its properties select Copy to Output Directory: 'Copy Always'.\n4. Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n5. Add it to the Content and build/rebuild it.");
+				var funcName = $"{nameof(SetSprite)}({nameof(name)}: \"{name}\", {nameof(show)}: {show}, {nameof(width)}: {width}, {nameof(height)}: {height}, {nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(o)}: {o}, {nameof(originX)}: {originX}, {nameof(originY)}: {originY}, {nameof(gridSize)}: {gridSize}, {nameof(indexH)}: {indexH}, {nameof(indexV)}: {indexV})";
+				if (nameNotFound)
+				{
+					NotFoundError(funcName, nameof(name), $"{name}", "In order to load a sprite:\n" +
+					"1.In File Explorer: Add it to the 'Content' folder or a folder/s inside it.\n" +
+					"2.In Visual Studio's Solution Explorer: Add it to the according folder chosen above.\n" +
+					"3.In Visual Studio's Solution Explorer: Right click file -> Properties -> Copy to Output Directory = 'Copy Always'. \n" +
+					"4.Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n" +
+					"5.In MonoGame Content Pipeline Tool: Add the file/folder and build/rebuild it.\n" +
+					"(Note that the .mgcb project has to look like the 'Content' folder)");
+				}
+				return;
 			}
 			spriteName = name;
 			size = new Size(sprites[name].Width, sprites[name].Height);
@@ -1029,108 +1118,86 @@ public static class Gear
 			return spriteColor;
 		}
 
+		public void AddHitboxLine(string uniqueName, Line line, bool keyExistsError = true)
+		{
+			if (hitboxLines == null) hitboxLines = new Dictionary<string, Line>();
+			var funcName = $"{nameof(AddHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(keyExistsError)}: {keyExistsError})";
+			if (KeyExistsError(hitboxLines, uniqueName, keyExistsError, funcName)) return;
+
+			hitboxLines[uniqueName] = line;
+		}
+		public Line GetHitboxLine(string uniqueName, bool keyNotFoundError = true)
+		{
+			var funcName = $"{nameof(GetHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
+			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName)) return default;
+
+			return hitboxLines[uniqueName];
+		}
+
+		public void AddHitboxObstacle(Body body, bool bodyAlreadyAddedError = true)
+		{
+			AddHitboxX(hitboxObstacles, body, bodyAlreadyAddedError);
+		}
+		public void SetHitboxObstacles(Body[] bodies)
+		{
+			hitboxObstacles = new List<Body>(bodies.ToList());
+		}
+		public void RemoveHitboxObstacle(Body body, bool bodyNotFoundError = true)
+		{
+			RemoveHitboxX(hitboxObstacles, body, bodyNotFoundError);
+		}
+		public void RemoveAllHitboxObstacles()
+		{
+			hitboxObstacles.Clear();
+		}
+
+		public void AddHitboxException(Body body, bool bodyAlreadyAddedError = true)
+		{
+			AddHitboxX(hitboxExceptions, body, bodyAlreadyAddedError);
+		}
+		public void SetHitboxExceptions(Body[] bodies)
+		{
+			hitboxExceptions = new List<Body>(bodies.ToList());
+		}
+		public void RemoveHitboxException(Body body, bool bodyNotFoundError = true)
+		{
+			RemoveHitboxX(hitboxExceptions, body, bodyNotFoundError);
+		}
+		public void RemoveAllHitboxExceptions()
+		{
+			hitboxExceptions.Clear();
+		}
+
 		public override string ToString()
 		{
 			return $"[{UID}] {uniqueName}";
 		}
-	}
-	public class Hitbox
-	{
-		private Dictionary<string, Line> lines;
-		private Dictionary<string, Circle> circles;
 
-		[JsonProperty]
-		private Point position = new Point();
-		[JsonProperty]
-		private Angle angle = new Angle();
-
-		private void _SetPosition(Point position)
+		private void AddHitboxX(List<Body> list, Body body, bool bodyAlreadyAddedError = true)
 		{
-			this.position = position;
+			if (list.Contains(body))
+			{
+				if (bodyAlreadyAddedError)
+				{
+					var funcName = $"{nameof(AddHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyAlreadyAddedError)} {bodyAlreadyAddedError})";
+					AlreadyExistsError(funcName, nameof(body), $"{body}");
+				}
+				return;
+			}
+			list.Add(body);
 		}
-		public void SetPosition(Point position)
+		private void RemoveHitboxX(List<Body> list, Body body, bool bodyNotFoundError = true)
 		{
-			_SetPosition(position);
-		}
-		public void SetPositionXY(float x, float y)
-		{
-			_SetPosition(new Point(x, y));
-		}
-		public void SetPositionX(float x)
-		{
-			_SetPosition(new Point(x, position.GetY()));
-		}
-		public void SetPositionY(float y)
-		{
-			_SetPosition(new Point(position.GetX(), y));
-		}
-		public Point GetPosition()
-		{
-			return position;
-		}
-		public float GetPositionX()
-		{
-			return position.GetX();
-		}
-		public float GetPositionY()
-		{
-			return position.GetY();
-		}
-
-		public void SetAngleA(float a)
-		{
-			angle = new Angle(a);
-		}
-		public void SetAngle(Angle angle)
-		{
-			this.angle = angle;
-		}
-		public Angle GetAngle()
-		{
-			return angle;
-		}
-		public float GetAngleA()
-		{
-			return angle.GetA();
-		}
-
-		public void AddLine(string uniqueName, Line line, bool keyExistsError = true)
-		{
-			var func = nameof(AddLine);
-
-			if (lines == null) lines = new Dictionary<string, Line>();
-			Add(func, lines, uniqueName, line, keyExistsError);
-		}
-		public Line GetLine(string uniqueName, bool keyNotFoundError = true)
-		{
-			return Get(nameof(GetLine), lines, uniqueName, keyNotFoundError);
-		}
-
-		public void AddCircle(string uniqueName, Circle circle, bool keyExistsError = true)
-		{
-			var func = nameof(AddCircle);
-
-			if (circles == null) circles = new Dictionary<string, Circle>();
-			Add(func, circles, uniqueName, circle, keyExistsError);
-		}
-		public Circle GetCircle(string uniqueName, bool keyNotFoundError = true)
-		{
-			return Get(nameof(GetCircle), circles, uniqueName, keyNotFoundError);
-		}
-
-		private void Add<ValueT>(string func, Dictionary<string, ValueT> dict, string uniqueName, ValueT value, bool keyExistsError = true)
-		{
-			var funcName = $"{func}({nameof(uniqueName)}: {uniqueName}, {nameof(keyExistsError)}: {keyExistsError})";
-			if (KeyExistsError(dict, uniqueName, keyExistsError, funcName)) return;
-
-			dict[uniqueName] = value;
-		}
-		private ValueT Get<ValueT>(string func, Dictionary<string, ValueT> dict, string uniqueName, bool keyNotFoundError = true)
-		{
-			var funcName = $"{func}({nameof(uniqueName)}: {uniqueName}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueName, keyNotFoundError, funcName)) return default;
-
-			return dict[uniqueName];
+			if (list.Contains(body) == false)
+			{
+				if (bodyNotFoundError)
+				{
+					var funcName = $"{nameof(RemoveHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyNotFoundError)} {bodyNotFoundError})";
+					NotFoundError(funcName, nameof(body), $"{body}");
+				}
+				return;
+			}
+			list.Remove(body);
 		}
 	}
 	/// <summary>
@@ -1235,14 +1302,23 @@ public static class Gear
 			}
 			return 0;
 		}
-		public static float GetFromText(string text)
+		public static float[] GetFromText(string text, bool invalidTextError = true)
 		{
 			var result = 0f;
 			text = text.Replace(',', '.');
 			var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
-			if (parsed) return result;
-			else Console.LogError($"{nameof(GetFromText)}(\"{text}\"): The provided text is not a number.");
-			return result;
+			if (parsed)
+			{
+				return new float[] { result };
+			}
+			else
+			{
+				if (invalidTextError)
+				{
+					InvalidValueError($"{nameof(GetFromText)}(\"{text}\")", nameof(text), text, "Make sure it's a number.");
+				}
+				return new float[0];
+			}
 		}
 		public static int GetPrecision(float number)
 		{
@@ -1778,7 +1854,7 @@ public static class Gear
 			catch (Exception)
 			{
 				clientIsConnected = false;
-				Console.LogError($"{funcName}: {ip} is an invalid IP.");
+				InvalidValueError(funcName, nameof(ip), $"{ip}");
 				return;
 			}
 			clientUniqueName = uniqueName;
@@ -2272,9 +2348,11 @@ public static class Gear
 		}
 		public static void LogError(string message)
 		{
-			AllocConsole();
+			Display();
 			System.Console.Clear();
-			throw new Exception(message);
+			System.Console.WriteLine(message);
+			System.Console.Read();
+			Window.Close();
 		}
 		public static void Clear()
 		{
@@ -2350,11 +2428,14 @@ public static class Gear
 			if (indexes == null) indexes = new List<int>();
 
 			if (values == null) values = new List<ValueT>();
-			if (invalidIndexError && index < 0)
+			if (index < 0)
 			{
-				Console.LogError($"{funcName}: The index of [{nameof(uniqueKey)}:{uniqueKey}][{nameof(value)}:{value}] cannot be < 0.");
+				if (invalidIndexError)
+				{
+					InvalidValueError(funcName, nameof(index), $"{index}", "Make sure it's not < 0.");
+				}
+				return;
 			}
-			else if (index < 0) return;
 			if (index >= values.Count)
 			{
 				var oldListK = new List<UniqueKeyT>(keys);
@@ -2521,12 +2602,14 @@ public static class Gear
 
 		private bool IndexNotFoundError(int index, bool indexNotFoundError, string funcName)
 		{
-			if (indexNotFoundError && indexes.Contains(index) == false)
+			if (indexes.Contains(index) == false)
 			{
-				Console.LogError($"{funcName}: Index '{index}' was not found.");
+				if (indexNotFoundError)
+				{
+					NotFoundError(funcName, nameof(index), $"{index}");
+				}
 				return true;
 			}
-			else if (indexes.Contains(index) == false) return true;
 			return false;
 		}
 	}
@@ -3497,7 +3580,9 @@ public static class Gear
 		var connectInfo = serverIsRunning || clientIsConnected ? connectToServerInfo + "\n\n" : "";
 
 		System.Console.Title = $"Console | {Window.GetTitle()}";
-		System.Console.WriteLine($"{connectInfo}{clientsConnected}{consoleLog}");
+		var feed = $"{connectInfo}{clientsConnected}{consoleLog}";
+		var newLine = feed.Length > 0 ? "\n" : "";
+		System.Console.Write($"{feed}{newLine}");
 	}
 	private static void DrawTile(Texture2D texture, Point position, Point tileIndex, int gridSize, Size size, Point origin, Size scale, Color color, float angle, SpriteEffects spriteEffects)
 	{
@@ -3684,22 +3769,46 @@ public static class Gear
 
 	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName)
 	{
-		if (keyNotFoundError && (dict == null || dict.ContainsKey(uniqueKey) == false))
+		if (dict == null || dict.ContainsKey(uniqueKey) == false)
 		{
-			Console.LogError($"{funcName}: The {nameof(uniqueKey)} '{uniqueKey}' was not found.");
+			if (keyNotFoundError)
+			{
+				NotFoundError(funcName, nameof(uniqueKey), $"{uniqueKey}");
+			}
 			return true;
 		}
-		else if (dict == null || dict.ContainsKey(uniqueKey) == false) return true;
 		return false;
 	}
 	private static bool KeyExistsError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyExistsError, string funcName)
 	{
-		if (keyExistsError && (dict != null && dict.ContainsKey(uniqueKey)))
+		if (dict != null && dict.ContainsKey(uniqueKey))
 		{
-			Console.LogError($"{funcName}: The {nameof(uniqueKey)} '{uniqueKey}' already exists.");
+			if (keyExistsError)
+			{
+				AlreadyExistsError(funcName, nameof(uniqueKey), $"{uniqueKey}");
+			}
 			return true;
 		}
-		else if (dict == null || dict.ContainsKey(uniqueKey)) return true;
 		return false;
 	}
+
+	private static void InvalidValueError(string funcName, string name, string value, string tip = "")
+	{
+		Console.LogError($"{funcName}:\n\nThe {name} '{value}' is invalid.\n\n{tip}");
+	}
+	private static void NotFoundError(string funcName, string name, string value, string tip = "")
+	{
+		Console.LogError($"{funcName}:\n\nThe {name} '{value}' was not found.\n\n{tip}");
+	}
+	private static void AlreadyExistsError(string funcName, string name, string value, string tip = "")
+	{
+		Console.LogError($"{funcName}:\n\nThe {name} '{value}' already exists.\n\n{tip}");
+	}
+	private static void CannotBeNullError(string funcName, string name, string tip = "")
+	{
+		Console.LogError($"{funcName}:\n\nThe {name} cannot be null.\n\n{tip}");
+	}
+	// invalidValueError
+	// notFoundError
+	// alreadyExistsError
 }
