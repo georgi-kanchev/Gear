@@ -84,9 +84,13 @@ public static class Gear
 	{
 		None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, LeftArrow = 37, UpArrow = 38, RightArrow = 39, DownArrow = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, MinusDash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
 	}
-	public enum NumberRoundType
+	public enum RoundNumberToward
 	{
 		Closest, Up, Down
+	}
+	public enum RoundNumberPrio
+	{
+		TowardEven, AwayFromZero, TowardZero, TowardNegativeInfinity, TowardPositiveInfinity
 	}
 	public enum NumberTimeConvertType
 	{
@@ -1268,6 +1272,7 @@ public static class Gear
 		{
 			var result = new List<Point>();
 
+			UpdateCollisions();
 			foreach (var kvp in hitboxCrossPoints)
 			{
 				result.AddRange(kvp.Value);
@@ -1360,7 +1365,7 @@ public static class Gear
 		{
 			return (numberA + numberB) / 2;
 		}
-		public static float GetRandomized(float lowerBound, float upperBound, int precision)
+		public static float GetRandomized(float lowerBound, float upperBound, int precision = 0)
 		{
 			precision = (int)GetLimited(precision, 0, 5);
 			if (lowerBound > upperBound)
@@ -1377,20 +1382,25 @@ public static class Gear
 
 			return result;
 		}
-		//public static float RoundedGet(float number, int precision, NumberRoundType numberroundtype)
-		public static float GetRounded(float number, NumberRoundType RoundType)
+		public static float GetRounded(float number, int precision = 0, RoundNumberToward roundToward = RoundNumberToward.Closest, RoundNumberPrio roundPrio = RoundNumberPrio.TowardEven)
 		{
-			// doesn't work with values like 0.00300007 or 0.1234567
-			var precision = 0; //(int)LimitedGet(precision, 0, 5);
-			var a = (float)Math.Pow(10, GetPrecision(number));
-			var b = (float)Math.Pow(10, precision);
-			var c = number * a;
-			switch (RoundType)
+			var midpoint = (MidpointRounding)roundPrio;
+			precision = (int)GetLimited(precision, 0, 5);
+
+			if (roundToward == RoundNumberToward.Down || roundToward == RoundNumberToward.Up)
 			{
-				case NumberRoundType.Closest: return Convert.ToInt32(c) / b;
-				case NumberRoundType.Up: return (float)Math.Ceiling(c) / b;
-				default: return (float)Math.Floor(c) / b;
+				var numStr = number.ToString();
+				var prec = GetPrecision(number);
+				if (prec > 0 && prec > precision)
+				{
+					var digit = roundToward == RoundNumberToward.Down ? "1" : "9";
+					numStr = numStr.Remove(numStr.Length - 1);
+					numStr = $"{numStr}{digit}";
+					number = float.Parse(numStr);
+				}
 			}
+
+			return MathF.Round(number, precision, midpoint);
 		}
 		public static float GetLimited(float number, float minimum, float maximum)
 		{
@@ -1410,7 +1420,7 @@ public static class Gear
 			}
 			return number;
 		}
-		public static float GetPercentedTowardsTarget(float number, float targetNumber, float percent)
+		public static float GetPercentedTowardTarget(float number, float targetNumber, float percent)
 		{
 			var vec = new Vector2(number, 0);
 			var targetVec = new Vector2(targetNumber, 0);
@@ -1419,7 +1429,7 @@ public static class Gear
 			return result.X;
 		}
 		public static float GetChanged(float number, float numbersPerSecond) => number + (numbersPerSecond * ticksDeltaTime);
-		public static float GetTowardsTarget(float number, float targetNumber, float numbersPerSecond)
+		public static float GetTowardTarget(float number, float targetNumber, float numbersPerSecond)
 		{
 			if (number <= targetNumber && targetNumber * ticksDeltaTime < 0) return targetNumber;
 			else if (number >= targetNumber && targetNumber * ticksDeltaTime > 0) return targetNumber;
@@ -1470,8 +1480,10 @@ public static class Gear
 		public static int GetPrecision(float number)
 		{
 			var result = 0;
-			var numberstr = number.ToString();
-			if (numberstr.Contains('.')) result = number.ToString().Split('.')[1].Length;
+			var numberStr = number.ToString();
+			var hasDot = numberStr.Contains('.');
+			var hasComma = numberStr.Contains(',');
+			if (hasDot || hasComma) result = number.ToString().Split(hasDot ? '.' : ',')[1].Length;
 			return result;
 		}
 		public static bool HasChance(float percent)
@@ -1479,6 +1491,18 @@ public static class Gear
 			percent = GetLimited(percent, 0, 100);
 			var n = GetRandomized(1, 100, 0);
 			return n <= percent;
+		}
+		public static bool IsBetween(float lowerBound, float number, float upperBound,
+			bool inclusiveA = true, bool inclusiveB = true)
+		{
+			var lower = false;
+			var upper = false;
+			if (inclusiveA) lower = lowerBound <= number;
+			else lower = lowerBound > number;
+			if (inclusiveB) upper = upperBound >= number;
+			else upper = upperBound > number;
+
+			return lower && upper;
 		}
 	}
 	/// <summary>
@@ -1676,11 +1700,11 @@ public static class Gear
 			{
 				var spl = secondsStr.Split('.');
 				ms = int.Parse(spl[1]) * 100;
-				seconds = Number.GetRounded(seconds, NumberRoundType.Down);
+				seconds = Number.GetRounded(seconds, roundToward: RoundNumberToward.Down);
 			}
 			var sec = seconds % 60;
-			var min = Number.GetRounded(seconds / 60 % 60, NumberRoundType.Down);
-			var hr = Number.GetRounded(seconds / 3600, NumberRoundType.Down);
+			var min = Number.GetRounded(seconds / 60 % 60, roundToward: RoundNumberToward.Down);
+			var hr = Number.GetRounded(seconds / 3600, roundToward: RoundNumberToward.Down);
 			var msStr = msShow ? $"{ms}" : "";
 			var secStr = secShow ? $"{sec}" : "";
 			var minStr = minShow ? $"{min}" : "";
@@ -2808,18 +2832,18 @@ public static class Gear
 				case RotationSamples.DownRight: this = new Angle(45); break;
 			}
 		}
-		public void SetToPercentTowardsAngle(Angle targetAngle, float percent)
+		public void SetToPercentTowardAngle(Angle targetAngle, float percent)
 		{
 			To360();
 			targetAngle.To360();
-			a = Number.GetPercentedTowardsTarget(a, targetAngle.GetA(), percent);
+			a = Number.GetPercentedTowardTarget(a, targetAngle.GetA(), percent);
 		}
 		public void Rotate(float degreesPerSecond)
 		{
 			a = Number.GetChanged(a, degreesPerSecond);
 			To360();
 		}
-		public void RotateTowardsAngle(Angle targetAngle, float degreesPerSecond)
+		public void RotateTowardAngle(Angle targetAngle, float degreesPerSecond)
 		{
 			To360();
 			targetAngle.To360();
@@ -2900,7 +2924,7 @@ public static class Gear
 			w += pixelsPerSecond;
 			h += pixelsPerSecond;
 		}
-		public void ScaleTowardsTarget(Size targetSize, float pixelsPerSecond)
+		public void ScaleTowardTarget(Size targetSize, float pixelsPerSecond)
 		{
 			Scale(pixelsPerSecond);
 			var dist = Vector2.Distance(new Vector2(GetW(), GetH()), new Vector2(targetSize.GetW(), targetSize.GetH()));
@@ -3003,7 +3027,7 @@ public static class Gear
 			dir.SetFromAngle(angle);
 			MoveInDirection(dir, pixelsPerSecond);
 		}
-		public void MoveTowardsPoint(Point targetPoint, float pixelsPerSecond)
+		public void MoveTowardPoint(Point targetPoint, float pixelsPerSecond)
 		{
 			var dir = new Direction(targetPoint - this);
 			MoveInDirection(dir, pixelsPerSecond);
@@ -3014,7 +3038,7 @@ public static class Gear
 				y = targetPoint.GetY();
 			}
 		}
-		public void SetToPercentTowardsPoint(Point targetPoint, float percent)
+		public void SetToPercentTowardPoint(Point targetPoint, float percent)
 		{
 			var vec = Vector2.Lerp(new Vector2(GetX(), GetY()), new Vector2(targetPoint.GetX(), targetPoint.GetY()), (float)percent / 100);
 			x = vec.X;
@@ -3141,7 +3165,7 @@ public static class Gear
 			}
 			Normalize();
 		}
-		public void SetToPercentTowardsDirection(Direction targetDirection, float percent)
+		public void SetToPercentTowardDirection(Direction targetDirection, float percent)
 		{
 			Normalize();
 			targetDirection.Normalize();
@@ -3149,7 +3173,7 @@ public static class Gear
 			var targetAngle = new Angle();
 			angle.SetFromDirection(this);
 			targetAngle.SetFromDirection(targetDirection);
-			angle.SetToPercentTowardsAngle(targetAngle, percent);
+			angle.SetToPercentTowardAngle(targetAngle, percent);
 			SetFromAngle(angle);
 		}
 		public void Rotate(float degreesPerSecond)
@@ -3160,7 +3184,7 @@ public static class Gear
 			angle.Rotate(degreesPerSecond);
 			SetFromAngle(angle);
 		}
-		public void RotateTowardsDirection(Direction targetDirection, float degreesPerSecond)
+		public void RotateTowardDirection(Direction targetDirection, float degreesPerSecond)
 		{
 			Normalize();
 			targetDirection.Normalize();
@@ -3168,7 +3192,7 @@ public static class Gear
 			var targetAngle = new Angle();
 			angle.SetFromDirection(this);
 			targetAngle.SetFromDirection(targetDirection);
-			angle.RotateTowardsAngle(targetAngle, degreesPerSecond);
+			angle.RotateTowardAngle(targetAngle, degreesPerSecond);
 			SetFromAngle(angle);
 		}
 
@@ -3264,31 +3288,31 @@ public static class Gear
 			o += shadesPerSecond * ticksDeltaTime;
 			To255();
 		}
-		public void TintTowardsR(float targetRed, float shadesPerSecond)
+		public void TintTowardR(float targetRed, float shadesPerSecond)
 		{
 			TintR(r < targetRed ? shadesPerSecond : -shadesPerSecond);
 			var dist = Math.Abs(r - targetRed);
 			if (dist < shadesPerSecond * ticksDeltaTime * 2) r = targetRed;
 		}
-		public void TintTowardsG(float targetGreen, float shadesPerSecond)
+		public void TintTowardG(float targetGreen, float shadesPerSecond)
 		{
 			TintG(r < targetGreen ? shadesPerSecond : -shadesPerSecond);
 			var dist = Math.Abs(g - targetGreen);
 			if (dist < shadesPerSecond * ticksDeltaTime * 2) g = targetGreen;
 		}
-		public void TintTowardsB(float targetBlue, float shadesPerSecond)
+		public void TintTowardB(float targetBlue, float shadesPerSecond)
 		{
 			TintB(b < targetBlue ? shadesPerSecond : -shadesPerSecond);
 			var dist = Math.Abs(b - targetBlue);
 			if (dist < shadesPerSecond * ticksDeltaTime * 2) b = targetBlue;
 		}
-		public void AppearTowardsO(float targeto, float shadesPerSecond)
+		public void AppearTowardO(float targeto, float shadesPerSecond)
 		{
 			Appear(o < targeto ? shadesPerSecond : -shadesPerSecond);
 			var dist = Math.Abs(o - targeto);
 			if (dist < shadesPerSecond * ticksDeltaTime * 2) o = targeto;
 		}
-		public void TintTowardsColor(Color targetColor, float shadesPerSecond)
+		public void TintTowardColor(Color targetColor, float shadesPerSecond)
 		{
 			TintR(targetColor.r > r ? shadesPerSecond : -shadesPerSecond);
 			TintG(targetColor.g > g ? shadesPerSecond : -shadesPerSecond);
@@ -3462,7 +3486,8 @@ public static class Gear
 			var AB = GetLength();
 			var AP = startPoint.GetDistanceToPoint(point);
 			var PB = endPoint.GetDistanceToPoint(point);
-			return AB == AP + PB;
+			var sum = AP + PB;
+			return Number.IsBetween(AB - 0.01f, sum, AB + 0.01f);
 		}
 	}
 
@@ -3502,7 +3527,7 @@ public static class Gear
 							if (clientUniqueNames.Contains(uniqueName)) // Is the unique name free?
 							{
 								uniqueName = ChangeUniqueName(uniqueName);
-								messageBack = $"~{(int)MessageType.UniqueNameChange}|{id}|{uniqueName}"; // Send a message back with a free one towards the same ID so the client can recognize it's for him
+								messageBack = $"~{(int)MessageType.UniqueNameChange}|{id}|{uniqueName}"; // Send a message back with a free one toward the same ID so the client can recognize it's for him
 							}
 							clientIDs[Id.ToString()] = uniqueName;
 							clientUniqueNames.Add(uniqueName);
@@ -3780,7 +3805,8 @@ public static class Gear
 		 out Point[] intersection,
 		 out Point close_p1, out Point close_p2)
 	{
-		var lineLength = startA.GetDistanceToPoint(endA);
+		var lineLengthA = startA.GetDistanceToPoint(endA);
+		var lineLengthB = startB.GetDistanceToPoint(endB);
 		intersection = new Point[0];
 		// Get the segments' parameters.
 		float dx12 = endA.GetX() - startA.GetX();
@@ -3807,8 +3833,12 @@ public static class Gear
 
 		// Find the point of intersection.
 		var point = new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1);
-		if (point.GetDistanceToPoint(startA) <= lineLength &&
-			point.GetDistanceToPoint(endB) <= lineLength) intersection = new Point[1] { point };
+		var lineA = new Line(startA, endA);
+		var lineB = new Line(startB, endB);
+		if (lineA.ContainsPoint(point) && lineB.ContainsPoint(point))
+		{
+			intersection = new Point[1] { point };
+		}
 
 		// The segments intersect if t1 and t2 are between 0 and 1.
 		segments_intersect = ((t1 >= 0) && (t1 <= 1) && (t2 >= 0) && (t2 <= 1));

@@ -9,8 +9,8 @@
 			Gear.Canvas.SetPixelSize(5, 5);
 
 			var lineA = new Gear.Line(new Gear.Point(50, 50), new Gear.Point(50, 100));
-			var lineB = new Gear.Line(new Gear.Point(50, 100), new Gear.Point(80, 60));
-			var lineC = new Gear.Line(new Gear.Point(80, 60), new Gear.Point(50, 50));
+			var lineB = new Gear.Line(new Gear.Point(50, 100), new Gear.Point(200, 200));
+			var lineC = new Gear.Line(new Gear.Point(200, 200), new Gear.Point(50, 50));
 			var line1 = new Gear.Line(new Gear.Point(25, 75), new Gear.Point(100, 75));
 			var line2 = new Gear.Line(new Gear.Point(100, 75), new Gear.Point(100, 125));
 			var line3 = new Gear.Line(new Gear.Point(100, 125), new Gear.Point(25, 75));
@@ -30,10 +30,10 @@
 			a.DisplayHitbox();
 			b.DisplayHitbox();
 
-			b.DisplayHitboxCrossPoints(g: 0, b: 0);
+			a.DisplayHitboxCrossPoints(g: 0, b: 0);
 
-			var collision = b.HitboxOverlapsObstacle(a);
-			var collisionPoint = b.GetHitboxCrossPointsWithObstacle(a);
+			var collision = a.HitboxOverlapsObstacle(b);
+			var collisionPoint = a.GetHitboxCrossPointsWithObstacle(b);
 		}
 
 		Gear.Text.Display("font", Gear.Input.GetCursorPosition(), scale: 0.5f, overwrite: true);
