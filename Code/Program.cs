@@ -13,10 +13,10 @@
 			var lineC = new Gear.Line(new Gear.Point(66, 116), new Gear.Point(50, 116));
 			var lineD = new Gear.Line(new Gear.Point(50, 116), new Gear.Point(50, 100));
 
-			var line1 = new Gear.Line(new Gear.Point(100, 50), new Gear.Point(116, 50));
-			var line2 = new Gear.Line(new Gear.Point(116, 50), new Gear.Point(116, 66));
-			var line3 = new Gear.Line(new Gear.Point(116, 66), new Gear.Point(100, 66));
-			var line4 = new Gear.Line(new Gear.Point(100, 66), new Gear.Point(100, 50));
+			var line1 = new Gear.Line(new Gear.Point(104, 50), new Gear.Point(112, 50));
+			var line2 = new Gear.Line(new Gear.Point(112, 50), new Gear.Point(112, 66));
+			var line3 = new Gear.Line(new Gear.Point(112, 66), new Gear.Point(104, 66));
+			var line4 = new Gear.Line(new Gear.Point(104, 66), new Gear.Point(104, 50));
 			var a = new Gear.Body("test");
 			var b = new Gear.Body("test2");
 
@@ -39,13 +39,16 @@
 			b.AddHitboxLine("line2", line2);
 			b.AddHitboxLine("line3", line3);
 			b.AddHitboxLine("line4", line4);
-			b.SetSizeWH(32, 64);
+			b.SetSizeWH(16, 32);
 
 			a.AddHitboxObstacle(b);
 			b.AddHitboxObstacle(a);
 
 			a.DisplayHitbox();
 			b.DisplayHitbox();
+
+			a.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
+			b.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
 
 			b.DisplayHitboxCrossPoints(g: 0, b: 0);
 		}
@@ -56,13 +59,14 @@
 		var pos = Gear.Input.GetCursorPosition();
 		var angA = a2.GetAngle();
 		var angB = b2.GetAngle();
-		angA.Rotate(50);
-		angB.Rotate(-10);
+		//angA.Rotate(50);
+		//angB.Rotate(-10);
 
 		a2.SetAngle(angA);
 		a2.SetPositionXY(200, 100);
 		b2.SetAngle(angB);
 		b2.SetPosition(pos);
+
 
 		//var lineA1 = b2.GetHitboxLine("line2");
 		//var lineB1 = b2.GetHitboxLine("line3");
@@ -71,6 +75,6 @@
 
 		//b2.GetHitboxCrossPointsWithObstacle(a2);
 
-		//Gear.Text.Display("font", b2.GetAngle(), scale: 0.5f, overwrite: true);
+		Gear.Text.Display("font", b2.HitboxOverlapsObstacle(a2), scale: 0.5f, overwrite: true);
 	}
 }

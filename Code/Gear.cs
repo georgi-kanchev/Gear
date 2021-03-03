@@ -376,12 +376,14 @@ public static class Gear
 				var angleSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var hitboxSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var hitboxCrossPointsSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
+				var hitboxMiddlePointSprite = new Texture2D(graphics.GraphicsDevice, 1, 1);
 				var data = new Microsoft.Xna.Framework.Color[1] { Microsoft.Xna.Framework.Color.White };
 				boundariesSprite.SetData(data);
 				originSprite.SetData(data);
 				angleSprite.SetData(data);
 				hitboxSprite.SetData(data);
 				hitboxCrossPointsSprite.SetData(data);
+				hitboxMiddlePointSprite.SetData(data);
 
 				if (sprite != null && spriteShown)
 				{
@@ -399,7 +401,7 @@ public static class Gear
 				var angleWidth = body.GetAngleW();
 				if (angleSprite != null && body.AngleIsDisplayed())
 				{
-					DrawTile(angleSprite, pos - new Point(0, angleWidth / 2), new Point(), 0, new Size(size.GetW() * 1.1f, angleWidth), new Point(), new Size(1, 1), angleColor, body.GetAngleA(), SpriteEffects.None);
+					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.GetW() * 1.1f, angleWidth), new Point(), new Size(1, 1), angleColor, body.GetAngleA(), SpriteEffects.None);
 				}
 
 				var originColor = body.GetOriginColor();
@@ -431,6 +433,13 @@ public static class Gear
 					{
 						DrawTile(hitboxCrossPointsSprite, point - new Point(hitboxCrossPointsSize.GetW() / 2, hitboxCrossPointsSize.GetH() / 2), new Point(), 0, hitboxCrossPointsSize, new Point(), new Size(1, 1), hitboxCrossPointsColor, 0, SpriteEffects.None);
 					}
+				}
+
+				var hitboxMiddlePointColor = body.GetHitboxMiddlePointColor();
+				var hitboxMiddlePointSize = body.GetHitboxMiddlePointSize();
+				if (hitboxMiddlePointSprite != null && body.HitboxMiddlePointIsDisplayed())
+				{
+					DrawTile(hitboxMiddlePointSprite, body.GetHitboxMiddlePoint() - new Point(hitboxMiddlePointSize.GetW() / 2, hitboxMiddlePointSize.GetH() / 2), new Point(), 0, hitboxMiddlePointSize, new Point(), new Size(1, 1), hitboxMiddlePointColor, 0, SpriteEffects.None);
 				}
 
 				boundariesSprite.Dispose();
@@ -829,9 +838,9 @@ public static class Gear
 		}
 
 		[JsonProperty]
-		private Color spriteColor, boundariesColor, originColor, angleColor, hitboxColor, hitboxCrossPointsColor;
+		private Color spriteColor, boundariesColor, originColor, angleColor, hitboxColor, hitboxCrossPointsColor, hitboxMiddlePointColor;
 		[JsonProperty]
-		private Size size, spriteSize, originSize, hitboxCrossPointsSize;
+		private Size size, spriteSize, originSize, hitboxCrossPointsSize, hitboxMiddlePointSize;
 		[JsonProperty]
 		private Point position, spriteOrigin, spriteIndex;
 		[JsonProperty]
@@ -843,7 +852,7 @@ public static class Gear
 		[JsonProperty]
 		private float hitboxWidth, angleWidth;
 		[JsonProperty]
-		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown;
+		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown, hitboxMiddlePointShown;
 		[JsonProperty]
 		private List<string> tags = new List<string>();
 		[JsonProperty]
@@ -1288,13 +1297,30 @@ public static class Gear
 		{
 			return hitboxObstacles.ToArray();
 		}
-		public bool HitboxOverlapsObstacle(Body body)
+		public bool HitboxOverlapsObstacleLine(Body body)
 		{
 			return hitboxCrossPoints.ContainsKey(body);
 		}
+		public bool HitboxOverlapsObstacle(Body body)
+		{
+			if (Input.KeyIsPressed(Keys.A))
+			{
+				var asd = 0;
+			}
+			var ray = new Line(GetHitboxMiddlePoint(), new Point(99_999, 99_999));
+			var crossSum = 0;
+			foreach (var line in body.GetAllHitboxLines())
+			{
+				if (ray.IsCrossingLine(line))
+				{
+					crossSum += ray.GetCrossPointWithLine(line).Length;
+				}
+			}
+			return crossSum % 2 != 0 || HitboxOverlapsObstacleLine(body);
+		}
 		public Point[] GetHitboxCrossPointsWithObstacle(Body body)
 		{
-			return HitboxOverlapsObstacle(body) ? hitboxCrossPoints[body].ToArray() : new Point[0];
+			return HitboxOverlapsObstacleLine(body) ? hitboxCrossPoints[body].ToArray() : new Point[0];
 		}
 		public Point[] GetAllHitboxCrossPoints()
 		{
@@ -1305,6 +1331,56 @@ public static class Gear
 				result.AddRange(kvp.Value);
 			}
 			return result.ToArray();
+		}
+		public Point GetHitboxMiddlePoint()
+		{
+			var mostLeftPoint = new Point(float.PositiveInfinity, float.PositiveInfinity);
+			var mostRightPoint = new Point(float.NegativeInfinity, float.NegativeInfinity);
+
+			foreach (var kvp in hitboxLines)
+			{
+				var key = kvp.Key;
+				var line = kvp.Value;
+
+				if (line.GetStartPoint().GetX() < mostLeftPoint.GetX())
+				{
+					mostLeftPoint = line.GetStartPoint();
+				}
+				if (line.GetEndPoint().GetX() < mostLeftPoint.GetX())
+				{
+					mostLeftPoint = line.GetStartPoint();
+				}
+				if (line.GetStartPoint().GetX() > mostRightPoint.GetX())
+				{
+					mostRightPoint = line.GetStartPoint();
+				}
+				if (line.GetEndPoint().GetX() > mostRightPoint.GetX())
+				{
+					mostRightPoint = line.GetEndPoint();
+				}
+			}
+			var result = mostLeftPoint;
+			result.SetToPercentTowardPoint(mostRightPoint, 50);
+			return result;
+		}
+		public void DisplayHitboxMiddlePoint(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 4, float h = 4)
+		{
+			hitboxMiddlePointShown = display;
+			hitboxMiddlePointColor.SetRGBO(r, g, b, o);
+			hitboxMiddlePointSize.SetWH(w, h);
+			render = true;
+		}
+		public Color GetHitboxMiddlePointColor()
+		{
+			return hitboxMiddlePointColor;
+		}
+		public Size GetHitboxMiddlePointSize()
+		{
+			return hitboxMiddlePointSize;
+		}
+		public bool HitboxMiddlePointIsDisplayed()
+		{
+			return hitboxMiddlePointShown;
 		}
 
 		public void AddHitboxException(Body body, bool bodyAlreadyAddedError = true)
@@ -1382,7 +1458,12 @@ public static class Gear
 				var end = position;
 				var dirStart = new Direction();
 				var dirEnd = new Direction();
-				var scale = new Point(size.GetW() / hitboxLineSizes[key].GetW(), size.GetH() / hitboxLineSizes[key].GetH());
+
+				var baseSize = hitboxLineSizes[key];
+				var ratio = new Size(size.GetW() < size.GetH() ? size.GetW() / size.GetH() : 1, size.GetH() < size.GetW() ? size.GetH() / size.GetW() : 1);
+				baseSize *= ratio;
+				var scale = new Point(size.GetW() / baseSize.GetW(), size.GetH() / baseSize.GetH());
+
 				dirStart.SetFromAngle((angle + new Angle(hitboxLineAngles[key][0])));
 				dirEnd.SetFromAngle((angle + new Angle(hitboxLineAngles[key][1])));
 
@@ -1418,9 +1499,9 @@ public static class Gear
 		{
 			return Math.Abs(number);
 		}
-		public static float GetAveraged(float numberA, float numberB)
+		public static float GetAveraged(float[] numbers)
 		{
-			return (numberA + numberB) / 2;
+			return numbers.Sum() / numbers.Length;
 		}
 		public static float GetRandomized(float lowerBound, float upperBound, int precision = 0)
 		{
@@ -3336,10 +3417,10 @@ public static class Gear
 		}
 		private void _Set(Color color)
 		{
-			this.r = color.r;
-			this.g = color.g;
-			this.b = color.b;
-			this.o = color.o;
+			r = color.r;
+			g = color.g;
+			b = color.b;
+			o = color.o;
 			To255();
 		}
 		public void SetRGBO(float r, float g, float b, float o = 255)
