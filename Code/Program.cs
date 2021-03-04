@@ -29,6 +29,9 @@
 			a.DisplayAngle(true, g: 0);
 			b.DisplayAngle(true, g: 0);
 
+			Gear.Console.Log("Hello World!");
+			Gear.Console.Display();
+
 			a.AddHitboxLine("line1", lineA);
 			a.AddHitboxLine("line2", lineB);
 			a.AddHitboxLine("line3", lineC);
@@ -43,6 +46,8 @@
 
 			a.AddHitboxObstacle(b);
 			b.AddHitboxObstacle(a);
+
+			b.AddHitboxException(a);
 
 			a.DisplayHitbox();
 			b.DisplayHitbox();
@@ -66,7 +71,6 @@
 		a2.SetPositionXY(200, 100);
 		b2.SetAngle(angB);
 		b2.SetPosition(pos);
-
 
 		//var lineA1 = b2.GetHitboxLine("line2");
 		//var lineB1 = b2.GetHitboxLine("line3");

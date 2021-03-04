@@ -21,6 +21,7 @@ using Mono.Nat;
 using System.Threading.Tasks;
 using System.Globalization;
 using System.Collections;
+using System.Runtime.CompilerServices;
 
 public static class Gear
 {
@@ -101,6 +102,10 @@ public static class Gear
 		DaysToMinutes, DaysToHours, DaysToWeeks,
 		WeeksToHours, WeeksToDays
 	}
+	public enum PopUpIcon
+	{
+		None, Info, Error, Warning
+	}
 
 	private static PerformanceCounter ramAvailable = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ramUsedPercent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -121,7 +126,7 @@ public static class Gear
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
 
-	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234;
+	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
 	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole;
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time;
 	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName;
@@ -237,11 +242,12 @@ public static class Gear
 				UpdateKeys();
 				try
 				{
+					eachTickLineCall = Debug.GetCodeLine() + 1;
 					program.EachTick(tick);
 				}
 				catch (Exception ex)
 				{
-					Console.LogError($"{Gear.Window.GetTitle()}: {ex.Message}");
+					Gear.Window.PopUp(Gear.Window.GetTitle(), ex.Message);
 				}
 
 			}
@@ -387,21 +393,21 @@ public static class Gear
 
 				if (sprite != null && spriteShown)
 				{
-					DrawTile(sprites[sprite], pos, tileIndex, body.GetSpriteGridSize(), size / scale, origin, scale, color, body.GetAngleA(), SpriteEffects.None);
+					DrawTile(sprites[sprite], pos, tileIndex, body.GetSpriteGridSize(), size / scale, origin, scale, color, body.GetAngle().GetA(), SpriteEffects.None);
 				}
 
 				var boundariesColor = body.GetBoundariesColor();
 				if (boundariesSprite != null && body.BoundariesAreDisplayed())
 				{
-					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.GetW(), 1), new Point(), new Size(), boundariesColor, body.GetAngleA(), SpriteEffects.None);
-					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.GetH()), new Point(), new Size(), boundariesColor, body.GetAngleA(), SpriteEffects.None);
+					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.GetW(), 1), new Point(), new Size(), boundariesColor, body.GetAngle().GetA(), SpriteEffects.None);
+					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.GetH()), new Point(), new Size(), boundariesColor, body.GetAngle().GetA(), SpriteEffects.None);
 				}
 
 				var angleColor = body.GetAngleColor();
 				var angleWidth = body.GetAngleW();
 				if (angleSprite != null && body.AngleIsDisplayed())
 				{
-					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.GetW() * 1.1f, angleWidth), new Point(), new Size(1, 1), angleColor, body.GetAngleA(), SpriteEffects.None);
+					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.GetW() * 1.1f, angleWidth), new Point(), new Size(1, 1), angleColor, body.GetAngle().GetA(), SpriteEffects.None);
 				}
 
 				var originColor = body.GetOriginColor();
@@ -800,6 +806,18 @@ public static class Gear
 			return game.Window.AllowAltF4;
 		}
 
+		public static void PopUp(string message, string title, PopUpIcon icon = PopUpIcon.None)
+		{
+			var msgIcon = MessageBoxIcon.None;
+			switch (icon)
+			{
+				case PopUpIcon.Info: msgIcon = MessageBoxIcon.Information; break;
+				case PopUpIcon.Error: msgIcon = MessageBoxIcon.Error; break;
+				case PopUpIcon.Warning: msgIcon = MessageBoxIcon.Warning; break;
+			}
+			System.Windows.Forms.MessageBox.Show(message, title, MessageBoxButtons.OK, msgIcon);
+		}
+
 		/// <summary>
 		/// - Ends the runtime of the program and closes the window.
 		/// </summary>
@@ -852,7 +870,7 @@ public static class Gear
 		[JsonProperty]
 		private float hitboxWidth, angleWidth;
 		[JsonProperty]
-		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown, hitboxMiddlePointShown;
+		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown, hitboxMiddlePointShown, positionLocked, angleLocked, sizeLocked, isSolid = true;
 		[JsonProperty]
 		private List<string> tags = new List<string>();
 		[JsonProperty]
@@ -917,7 +935,7 @@ public static class Gear
 			{
 				if (nameIsNullError)
 				{
-					CannotBeNullError(funcName, nameof(uniqueName));
+					CannotBeNullError(funcName, nameof(uniqueName), 1);
 				}
 				return;
 			}
@@ -926,7 +944,7 @@ public static class Gear
 				if (nameExistsError)
 				{
 					var tip = $"Make sure you are not creating the {nameof(Body)} multiple times or each tick.";
-					AlreadyExistsError($"{funcName}", nameof(uniqueName), uniqueName, tip);
+					AlreadyExistsError($"{funcName}", nameof(uniqueName), uniqueName, 1, tip);
 				}
 				return;
 			}
@@ -958,7 +976,7 @@ public static class Gear
 				if (tagNotFoundError)
 				{
 					var funcName = $"{nameof(Untag)}({nameof(tag)}: \"{tag}\", {nameof(tagNotFoundError)}: {tagNotFoundError})";
-					NotFoundError(funcName, nameof(tag), $"{tag}");
+					NotFoundError(funcName, nameof(tag), $"{tag}", 1);
 				}
 				return;
 			}
@@ -995,33 +1013,41 @@ public static class Gear
 			render = true;
 			UpdateCollisions();
 		}
-		public void SetPositionXY(float x, float y)
+		public void SetPositionXY(float x, float y, bool positionLockedError = true)
 		{
+			var funcName = $"{nameof(SetPositionXY)}({nameof(x)}: {x}, {nameof(y)}: {y}, {nameof(positionLockedError)}: {positionLockedError})";
+			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
 			_SetPosition(new Point(x, y));
 		}
-		public void SetPositionX(float x)
+		public void SetPositionX(float x, bool positionLockedError = true)
 		{
+			var funcName = $"{nameof(SetPositionX)}({nameof(x)}: {x}, {nameof(positionLockedError)}: {positionLockedError})";
+			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
 			_SetPosition(new Point(x, position.GetY()));
 		}
-		public void SetPositionY(float y)
+		public void SetPositionY(float y, bool positionLockedError = true)
 		{
+			var funcName = $"{nameof(SetPositionY)}({nameof(y)}: {y}, {nameof(positionLockedError)}: {positionLockedError})";
+			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
 			_SetPosition(new Point(position.GetX(), y));
 		}
-		public void SetPosition(Point position)
+		public void SetPosition(Point position, bool positionLockedError = true)
 		{
+			var funcName = $"{nameof(SetPosition)}({nameof(position)}: {position}, {nameof(positionLockedError)}: {positionLockedError})";
+			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
 			_SetPosition(position);
 		}
 		public Point GetPosition()
 		{
 			return position;
 		}
-		public float GetPositionX()
+		public void LockPosition(bool locked)
 		{
-			return position.GetX();
+			positionLocked = locked;
 		}
-		public float GetPositionY()
+		public bool PositionIsLocked()
 		{
-			return position.GetY();
+			return positionLocked;
 		}
 
 		private void _SetAngle(Angle angle)
@@ -1030,21 +1056,29 @@ public static class Gear
 			render = true;
 			UpdateCollisions();
 		}
-		public void SetAngleA(float a)
+		public void SetAngleA(float a, bool angleLockedError = true)
 		{
+			var funcName = $"{nameof(SetAngleA)}({nameof(a)}: {a}, {nameof(angleLockedError)}: {angleLockedError})";
+			if (BodyTransformLockedError(funcName, "angle", angleLocked, angleLockedError, 1)) return;
 			_SetAngle(new Angle(a));
 		}
-		public void SetAngle(Angle angle)
+		public void SetAngle(Angle angle, bool angleLockedError = true)
 		{
+			var funcName = $"{nameof(SetAngle)}({nameof(angle)}: {angle}, {nameof(angleLockedError)}: {angleLockedError})";
+			if (BodyTransformLockedError(funcName, "angle", angleLocked, angleLockedError, 1)) return;
 			_SetAngle(angle);
-		}
-		public float GetAngleA()
-		{
-			return angle.GetA();
 		}
 		public Angle GetAngle()
 		{
 			return angle;
+		}
+		public void LockAngle(bool locked)
+		{
+			angleLocked = locked;
+		}
+		public bool AngleIsLocked()
+		{
+			return angleLocked;
 		}
 
 		public void _SetSize(Size size)
@@ -1053,33 +1087,41 @@ public static class Gear
 			render = true;
 			UpdateCollisions();
 		}
-		public void SetSize(Size size)
+		public void SetSize(Size size, bool sizeLockedError = true)
 		{
+			var funcName = $"{nameof(SetSize)}({nameof(size)}: {size}, {nameof(sizeLockedError)}: {sizeLockedError})";
+			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
 			_SetSize(size);
 		}
-		public void SetSizeWH(float w, float h)
+		public void SetSizeWH(float w, float h, bool sizeLockedError = true)
 		{
+			var funcName = $"{nameof(SetSizeWH)}({nameof(w)}: {w}, {nameof(h)}: {h}, {nameof(sizeLockedError)}: {sizeLockedError})";
+			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
 			_SetSize(new Size(w, h));
 		}
-		public void SetSizeW(float w)
+		public void SetSizeW(float w, bool sizeLockedError = true)
 		{
+			var funcName = $"{nameof(SetSizeWH)}({nameof(w)}: {w}, {nameof(sizeLockedError)}: {sizeLockedError})";
+			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
 			_SetSize(new Size(w, size.GetH()));
 		}
-		public void SetSizeH(float h)
+		public void SetSizeH(float h, bool sizeLockedError = true)
 		{
+			var funcName = $"{nameof(SetSizeWH)}({nameof(h)}: {h}, {nameof(sizeLockedError)}: {sizeLockedError})";
+			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
 			_SetSize(new Size(size.GetW(), h));
 		}
 		public Size GetSize()
 		{
 			return size;
 		}
-		public float GetSizeW()
+		public void LockSize(bool locked)
 		{
-			return size.GetW();
+			sizeLocked = locked;
 		}
-		public float GetSizeH()
+		public bool SizeIsLocked()
 		{
-			return size.GetH();
+			return sizeLocked;
 		}
 
 		public void DisplayAngle(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 2)
@@ -1144,7 +1186,7 @@ public static class Gear
 				var funcName = $"{nameof(SetSprite)}({nameof(name)}: \"{name}\", {nameof(show)}: {show}, {nameof(width)}: {width}, {nameof(height)}: {height}, {nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(o)}: {o}, {nameof(originX)}: {originX}, {nameof(originY)}: {originY}, {nameof(gridSize)}: {gridSize}, {nameof(indexH)}: {indexH}, {nameof(indexV)}: {indexV})";
 				if (nameNotFound)
 				{
-					NotFoundError(funcName, nameof(name), $"{name}", "In order to load a sprite:\n" +
+					NotFoundError(funcName, nameof(name), $"{name}", 1, "In order to load a sprite:\n" +
 					"1.In File Explorer: Add it to the 'Content' folder or a folder/s inside it.\n" +
 					"2.In Visual Studio's Solution Explorer: Add it to the according folder chosen above.\n" +
 					"3.In Visual Studio's Solution Explorer: Right click file -> Properties -> Copy to Output Directory = 'Copy Always'. \n" +
@@ -1253,7 +1295,7 @@ public static class Gear
 		public void SetHitboxLine(string uniqueName, Line line, bool keyNotFoundError = true)
 		{
 			var funcName = $"{nameof(SetHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(line)}: {line}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName)) return;
+			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName, 1)) return;
 
 			_SetHitboxLine(uniqueName, line);
 		}
@@ -1261,14 +1303,14 @@ public static class Gear
 		{
 			if (hitboxLines == null) hitboxLines = new Dictionary<string, Line>();
 			var funcName = $"{nameof(AddHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(line)}: {line}, {nameof(keyExistsError)}: {keyExistsError})";
-			if (KeyExistsError(hitboxLines, uniqueName, keyExistsError, funcName)) return;
+			if (KeyExistsError(hitboxLines, uniqueName, keyExistsError, funcName, 1)) return;
 
 			_SetHitboxLine(uniqueName, line);
 		}
 		public Line GetHitboxLine(string uniqueName, bool keyNotFoundError = true)
 		{
 			var funcName = $"{nameof(GetHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName)) return default;
+			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName, 1)) return default;
 
 			return hitboxLines[uniqueName];
 		}
@@ -1303,20 +1345,7 @@ public static class Gear
 		}
 		public bool HitboxOverlapsObstacle(Body body)
 		{
-			if (Input.KeyIsPressed(Keys.A))
-			{
-				var asd = 0;
-			}
-			var ray = new Line(GetHitboxMiddlePoint(), new Point(99_999, 99_999));
-			var crossSum = 0;
-			foreach (var line in body.GetAllHitboxLines())
-			{
-				if (ray.IsCrossingLine(line))
-				{
-					crossSum += ray.GetCrossPointWithLine(line).Length;
-				}
-			}
-			return crossSum % 2 != 0 || HitboxOverlapsObstacleLine(body);
+			return HitboxMiddlePointOverlapsObstacle(body) || HitboxOverlapsObstacleLine(body);
 		}
 		public Point[] GetHitboxCrossPointsWithObstacle(Body body)
 		{
@@ -1342,22 +1371,15 @@ public static class Gear
 				var key = kvp.Key;
 				var line = kvp.Value;
 
-				if (line.GetStartPoint().GetX() < mostLeftPoint.GetX())
-				{
-					mostLeftPoint = line.GetStartPoint();
-				}
-				if (line.GetEndPoint().GetX() < mostLeftPoint.GetX())
-				{
-					mostLeftPoint = line.GetStartPoint();
-				}
-				if (line.GetStartPoint().GetX() > mostRightPoint.GetX())
-				{
-					mostRightPoint = line.GetStartPoint();
-				}
-				if (line.GetEndPoint().GetX() > mostRightPoint.GetX())
-				{
-					mostRightPoint = line.GetEndPoint();
-				}
+				if (line.GetStartPoint().GetX() < mostLeftPoint.GetX()) mostLeftPoint = line.GetStartPoint();
+				if (line.GetEndPoint().GetX() < mostLeftPoint.GetX()) mostLeftPoint = line.GetEndPoint();
+				if (line.GetStartPoint().GetX() > mostRightPoint.GetX()) mostRightPoint = line.GetStartPoint();
+				if (line.GetEndPoint().GetX() > mostRightPoint.GetX()) mostRightPoint = line.GetEndPoint();
+
+				if (line.GetStartPoint().GetY() < mostLeftPoint.GetY()) mostLeftPoint.SetY(line.GetStartPoint().GetY());
+				if (line.GetEndPoint().GetY() < mostLeftPoint.GetY()) mostLeftPoint.SetY(line.GetEndPoint().GetY());
+				if (line.GetStartPoint().GetY() > mostRightPoint.GetY()) mostRightPoint.SetY(line.GetStartPoint().GetY());
+				if (line.GetEndPoint().GetY() > mostRightPoint.GetY()) mostRightPoint.SetY(line.GetEndPoint().GetY());
 			}
 			var result = mostLeftPoint;
 			result.SetToPercentTowardPoint(mostRightPoint, 50);
@@ -1381,6 +1403,19 @@ public static class Gear
 		public bool HitboxMiddlePointIsDisplayed()
 		{
 			return hitboxMiddlePointShown;
+		}
+		public bool HitboxMiddlePointOverlapsObstacle(Body body)
+		{
+			var ray = new Line(GetHitboxMiddlePoint(), new Point(99_999, 99_999));
+			var crossSum = 0;
+			foreach (var line in body.GetAllHitboxLines())
+			{
+				if (ray.IsCrossingLine(line))
+				{
+					crossSum += ray.GetCrossPointWithLine(line).Length;
+				}
+			}
+			return crossSum % 2 != 0 && hitboxExceptions.Contains(body) == false;
 		}
 
 		public void AddHitboxException(Body body, bool bodyAlreadyAddedError = true)
@@ -1416,7 +1451,7 @@ public static class Gear
 				if (bodyAlreadyAddedError)
 				{
 					var funcName = $"{nameof(AddHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyAlreadyAddedError)} {bodyAlreadyAddedError})";
-					AlreadyExistsError(funcName, nameof(body), $"{body}");
+					AlreadyExistsError(funcName, nameof(body), $"{body}", 1);
 				}
 				return;
 			}
@@ -1429,7 +1464,7 @@ public static class Gear
 				if (bodyNotFoundError)
 				{
 					var funcName = $"{nameof(RemoveHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyNotFoundError)} {bodyNotFoundError})";
-					NotFoundError(funcName, nameof(body), $"{body}");
+					NotFoundError(funcName, nameof(body), $"{body}", 1);
 				}
 				return;
 			}
@@ -1441,10 +1476,6 @@ public static class Gear
 			hitboxCrossPoints.Clear();
 			foreach (var body in hitboxObstacles)
 			{
-				if (hitboxExceptions.Contains(body))
-				{
-					continue;
-				}
 				UpdateHitboxForObstacle(body);
 			}
 		}
@@ -1471,6 +1502,10 @@ public static class Gear
 				end = position + dirEnd.GetEndPoint() * hitboxLineDistances[key][1] * scale;
 
 				hitboxLines[key] = new Line(start, end);
+				if (hitboxExceptions.Contains(body))
+				{
+					continue;
+				}
 				foreach (var kvp2 in body.hitboxLines)
 				{
 					var line2 = kvp2.Value;
@@ -1610,7 +1645,7 @@ public static class Gear
 			{
 				if (invalidTextError)
 				{
-					InvalidValueError($"{nameof(GetFromText)}(\"{text}\")", nameof(text), text, "Make sure it's a number.");
+					InvalidValueError($"{nameof(GetFromText)}(\"{text}\")", nameof(text), text, 1, "Make sure it's a number.");
 				}
 				return new float[0];
 			}
@@ -2163,7 +2198,7 @@ public static class Gear
 			catch (Exception)
 			{
 				clientIsConnected = false;
-				InvalidValueError(funcName, nameof(ip), $"{ip}");
+				InvalidValueError(funcName, nameof(ip), $"{ip}", 1);
 				return;
 			}
 			clientUniqueName = uniqueName;
@@ -2655,18 +2690,44 @@ public static class Gear
 			consoleLog = $"{consoleLog}{message}";
 			ConsoleUpdate();
 		}
-		public static void LogError(string message)
-		{
-			Display();
-			System.Console.Clear();
-			System.Console.WriteLine(message);
-			System.Console.Read();
-			Window.Close();
-		}
 		public static void Clear()
 		{
 			consoleLog = "";
 			ConsoleUpdate();
+		}
+	}
+	public static class Debug
+	{
+		public static int GetCodeLine(int index = 0)
+		{
+			var info = new StackFrame(index + 1, true);
+			var a = info.GetFileLineNumber();
+			return a == eachTickLineCall ? 0 : a;
+		}
+		public static string GetCodeFilePath(int index = 0)
+		{
+			var info = new StackFrame(index + 1, true);
+			var a = info.GetFileName();
+			return a;
+		}
+		public static string GetCodeFileName(int index = 0)
+		{
+			var pathRaw = GetCodeFilePath(index + 1);
+			if (pathRaw == null) return null;
+			var path = pathRaw.Split('\\');
+			var name = path[path.Length - 1].Split('.');
+			return name[0] == "Gear" ? null : name[0];
+		}
+		public static string GetCodeMethodName(int index = 0)
+		{
+			var info = new StackFrame(index + 1, true);
+			var ignoredCases = new List<string>()
+			{
+				"Update", "DoUpdate", "Tick", "TickOnIdle", "Interop.Mso.IMsoComponent.FDoIdle", "Interop.Mso.IMsoComponentManager.FPushMessageLoop", "RunMessageLoopInner", "RunMessageLoop", "Run", "RunLoop", "Main"
+			};
+			var method = info.GetMethod();
+			if (method == null) return null;
+			return ignoredCases.Contains(method.Name) ? null : method.Name;
 		}
 	}
 
@@ -2741,7 +2802,7 @@ public static class Gear
 			{
 				if (invalidIndexError)
 				{
-					InvalidValueError(funcName, nameof(index), $"{index}", "Make sure it's not < 0.");
+					InvalidValueError(funcName, nameof(index), $"{index}", 1, "Make sure it's not < 0.");
 				}
 				return;
 			}
@@ -2764,7 +2825,7 @@ public static class Gear
 			}
 
 			if (dict == null) dict = new Dictionary<UniqueKeyT, ValueT>();
-			if (KeyExistsError(dict, uniqueKey, keyExistsError, funcName)) return;
+			if (KeyExistsError(dict, uniqueKey, keyExistsError, funcName, 1)) return;
 
 			dict.Add(uniqueKey, value);
 			values.Insert(index, value);
@@ -2803,7 +2864,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(ShrinkIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, indexNotFoundError, funcName)) return;
+			if (KeyNotFoundError(dict, uniqueKey, indexNotFoundError, funcName, 1)) return;
 
 			indexes.Remove(keys.IndexOf(uniqueKey));
 			values.RemoveAt(keys.IndexOf(uniqueKey));
@@ -2823,7 +2884,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(ReplaceIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(value)}: {value}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return;
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName, 1)) return;
 
 			dict[uniqueKey] = value;
 			values[keys.IndexOf(uniqueKey)] = value;
@@ -2845,7 +2906,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(GetValueIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return default;
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName, 1)) return default;
 
 			return dict[uniqueKey];
 		}
@@ -2869,7 +2930,7 @@ public static class Gear
 		{
 			var funcName = $"{nameof(GetIndexIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
 				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName)) return default;
+			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName, 1)) return default;
 
 			return keys.IndexOf(uniqueKey);
 		}
@@ -2915,7 +2976,7 @@ public static class Gear
 			{
 				if (indexNotFoundError)
 				{
-					NotFoundError(funcName, nameof(index), $"{index}");
+					NotFoundError(funcName, nameof(index), $"{index}", 1);
 				}
 				return true;
 			}
@@ -3615,6 +3676,11 @@ public static class Gear
 		{
 			return GetCircleCircleCrossPoints(position.GetX(), position.GetY(), radius, circle.position.GetX(), circle.position.GetY(), circle.radius);
 		}
+
+		public override string ToString()
+		{
+			return $"{nameof(Circle)}[{nameof(position)}:{position}][{nameof(radius)}:{radius}]";
+		}
 	}
 	public struct Line
 	{
@@ -3675,6 +3741,11 @@ public static class Gear
 			var PB = endPoint.GetDistanceToPoint(point);
 			var sum = AP + PB;
 			return Number.IsBetween(AB - 0.01f, sum, AB + 0.01f);
+		}
+
+		public override string ToString()
+		{
+			return $"{nameof(Line)}[{nameof(startPoint)}:{startPoint}][{nameof(endPoint)}:{endPoint}]";
 		}
 	}
 
@@ -4132,45 +4203,63 @@ public static class Gear
 		}
 	}
 
-	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName)
+
+	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName, int index)
 	{
 		if (dict == null || dict.ContainsKey(uniqueKey) == false)
 		{
 			if (keyNotFoundError)
 			{
-				NotFoundError(funcName, nameof(uniqueKey), $"{uniqueKey}");
+				NotFoundError(funcName, nameof(uniqueKey), $"{uniqueKey}", index + 1);
 			}
 			return true;
 		}
 		return false;
 	}
-	private static bool KeyExistsError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyExistsError, string funcName)
+	private static bool KeyExistsError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyExistsError, string funcName, int index)
 	{
 		if (dict != null && dict.ContainsKey(uniqueKey))
 		{
 			if (keyExistsError)
 			{
-				AlreadyExistsError(funcName, nameof(uniqueKey), $"{uniqueKey}");
+				AlreadyExistsError(funcName, nameof(uniqueKey), $"{uniqueKey}", index + 1);
 			}
 			return true;
 		}
 		return false;
 	}
 
-	private static void InvalidValueError(string funcName, string name, string value, string tip = "")
+	private static void InvalidValueError(string funcName, string name, string value, int index, string tip = "")
 	{
-		Console.LogError($"{funcName}:\n\nThe {name} '{value}' is invalid.\n\n{tip}");
+		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' is invalid.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
+		Window.Close();
 	}
-	private static void NotFoundError(string funcName, string name, string value, string tip = "")
+	private static void NotFoundError(string funcName, string name, string value, int index, string tip = "")
 	{
-		Console.LogError($"{funcName}:\n\nThe {name} '{value}' was not found.\n\n{tip}");
+		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' was not found.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
+		Window.Close();
 	}
-	private static void AlreadyExistsError(string funcName, string name, string value, string tip = "")
+	private static void AlreadyExistsError(string funcName, string name, string value, int index, string tip = "")
 	{
-		Console.LogError($"{funcName}:\n\nThe {name} '{value}' already exists.\n\n{tip}");
+		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' already exists.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
+		Window.Close();
 	}
-	private static void CannotBeNullError(string funcName, string name, string tip = "")
+	private static void CannotBeNullError(string funcName, string name, int index, string tip = "")
 	{
-		Console.LogError($"{funcName}:\n\nThe {name} cannot be null.\n\n{tip}");
+		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} cannot be null.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
+		Window.Close();
+	}
+	private static bool BodyTransformLockedError(string funcName, string component, bool condition, bool error, int index)
+	{
+		if (condition)
+		{
+			if (error)
+			{
+				Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThis {nameof(Body)}'s {component} is locked.", Window.GetTitle(), PopUpIcon.Error);
+				Window.Close();
+			}
+			return true;
+		}
+		return false;
 	}
 }
