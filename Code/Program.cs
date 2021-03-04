@@ -7,30 +7,26 @@
 		if (tickCount == 1)
 		{
 			Gear.Canvas.SetPixelSize(4, 4);
+			var lineA = new Gear.Line(new Gear.Point(0, 0), new Gear.Point(16, 0));
+			var lineB = new Gear.Line(new Gear.Point(16, 0), new Gear.Point(16, 16));
+			var lineC = new Gear.Line(new Gear.Point(16, 16), new Gear.Point(0, 16));
+			var lineD = new Gear.Line(new Gear.Point(0, 16), new Gear.Point(0, 0));
 
-			var lineA = new Gear.Line(new Gear.Point(50, 100), new Gear.Point(66, 100));
-			var lineB = new Gear.Line(new Gear.Point(66, 100), new Gear.Point(66, 116));
-			var lineC = new Gear.Line(new Gear.Point(66, 116), new Gear.Point(50, 116));
-			var lineD = new Gear.Line(new Gear.Point(50, 116), new Gear.Point(50, 100));
-
-			var line1 = new Gear.Line(new Gear.Point(104, 50), new Gear.Point(112, 50));
-			var line2 = new Gear.Line(new Gear.Point(112, 50), new Gear.Point(112, 66));
-			var line3 = new Gear.Line(new Gear.Point(112, 66), new Gear.Point(104, 66));
-			var line4 = new Gear.Line(new Gear.Point(104, 66), new Gear.Point(104, 50));
+			var line1 = new Gear.Line(new Gear.Point(0, 0), new Gear.Point(16, 0));
+			var line2 = new Gear.Line(new Gear.Point(16, 0), new Gear.Point(16, 16));
+			var line3 = new Gear.Line(new Gear.Point(16, 16), new Gear.Point(0, 16));
+			var line4 = new Gear.Line(new Gear.Point(0, 16), new Gear.Point(0, 0));
 			var a = new Gear.Body("test");
 			var b = new Gear.Body("test2");
 
 			a.SetPosition(new Gear.Point(50, 100));
 			b.SetPosition(new Gear.Point(100, 50));
-			a.SetSprite("ball", width: 16, height: 16);
-			b.SetSprite("ball", width: 16, height: 16, originX: 8, originY: 8);
+			a.DisplaySprite("ball", width: 16, height: 16);
+			b.DisplaySprite("ball", width: 16, height: 16, originX: 8, originY: 8);
 			a.DisplayOrigin(true, b: 0);
 			b.DisplayOrigin(true, b: 0);
 			a.DisplayAngle(true, g: 0);
 			b.DisplayAngle(true, g: 0);
-
-			Gear.Console.Log("Hello World!");
-			Gear.Console.Display();
 
 			a.AddHitboxLine("line1", lineA);
 			a.AddHitboxLine("line2", lineB);
@@ -44,15 +40,13 @@
 			b.AddHitboxLine("line4", line4);
 			b.SetSizeWH(16, 32);
 
-			a.AddHitboxObstacle(b);
+			//a.AddHitboxObstacle(b);
 			b.AddHitboxObstacle(a);
 
-			b.AddHitboxException(a);
-
-			a.DisplayHitbox();
+			//a.DisplayHitbox();
 			b.DisplayHitbox();
 
-			a.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
+			//a.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
 			b.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
 
 			b.DisplayHitboxCrossPoints(g: 0, b: 0);
@@ -61,14 +55,14 @@
 		var a2 = Gear.Body.GetByUniqueName("test");
 		var b2 = Gear.Body.GetByUniqueName("test2");
 
-		var pos = Gear.Input.GetCursorPosition();
+		var pos = Gear.Input.GetMouseCursorPosition();
 		var angA = a2.GetAngle();
 		var angB = b2.GetAngle();
 		//angA.Rotate(50);
 		//angB.Rotate(-10);
 
-		a2.SetAngle(angA);
-		a2.SetPositionXY(200, 100);
+		//a2.SetAngle(angA);
+		//a2.SetPositionXY(200, 100);
 		b2.SetAngle(angB);
 		b2.SetPosition(pos);
 

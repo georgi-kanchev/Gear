@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using System.Globalization;
 using System.Collections;
 using System.Runtime.CompilerServices;
+using System.ComponentModel;
 
 public static class Gear
 {
@@ -396,8 +397,8 @@ public static class Gear
 					DrawTile(sprites[sprite], pos, tileIndex, body.GetSpriteGridSize(), size / scale, origin, scale, color, body.GetAngle().GetA(), SpriteEffects.None);
 				}
 
-				var boundariesColor = body.GetBoundariesColor();
-				if (boundariesSprite != null && body.BoundariesAreDisplayed())
+				var boundariesColor = body.GetSizeColor();
+				if (boundariesSprite != null && body.SizeIsDisplayed())
 				{
 					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.GetW(), 1), new Point(), new Size(), boundariesColor, body.GetAngle().GetA(), SpriteEffects.None);
 					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.GetH()), new Point(), new Size(), boundariesColor, body.GetAngle().GetA(), SpriteEffects.None);
@@ -669,7 +670,6 @@ public static class Gear
 
 	public static class Canvas
 	{
-
 		/// <summary>
 		/// - Smooths out the edges of the pixels according to the <paramref name="pixelfilter"/>. Higher filters apply better image quality but cost more performance.<br></br><br></br>- Pixel art projects go best with <see cref="PixelFilter.Lowest"/>.<br></br>- High resolution projects go best with the rest. <br></br><br></br>
 		/// - The current filter can be checked with <see cref="CanvasPixelFilterGet"/>.
@@ -831,9 +831,40 @@ public static class Gear
 	/// </summary>
 	public class Body
 	{
+		#region Data
 		private static int ID;
 		private static Dictionary<string, Body> bodyUniqueNames = new Dictionary<string, Body>();
 
+		[JsonProperty]
+		private Color spriteColor, boundariesColor, originColor, angleColor, hitboxColor, hitboxCrossPointsColor, hitboxMiddlePointColor;
+		[JsonProperty]
+		private Size size, spriteSize, originSize, hitboxCrossPointsSize, hitboxMiddlePointSize;
+		[JsonProperty]
+		private Point position, spriteOrigin, spriteIndex;
+		[JsonProperty]
+		private int UID, spriteGridSize;
+		[JsonProperty]
+		private Angle angle;
+		[JsonProperty]
+		private string uniqueName, spriteName;
+		[JsonProperty]
+		private float hitboxWidth, angleWidth;
+		[JsonProperty]
+		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown, hitboxMiddlePointShown, positionLocked, angleLocked, sizeLocked, ignoreCollisions;
+		[JsonProperty]
+		private List<string> tags = new List<string>();
+		[JsonProperty]
+		private List<Body> hitboxObstacles = new List<Body>(), hitboxExceptions = new List<Body>();
+		[JsonProperty]
+		private Dictionary<Body, List<Point>> hitboxCrossPoints = new Dictionary<Body, List<Point>>();
+		[JsonProperty]
+		private Dictionary<string, float[]> hitboxLineDistances = new Dictionary<string, float[]>(), hitboxLineAngles = new Dictionary<string, float[]>();
+		[JsonProperty]
+		private Dictionary<string, Size> hitboxLineSizes = new Dictionary<string, Size>();
+		[JsonProperty]
+		private Dictionary<string, Line> hitboxLines = new Dictionary<string, Line>();
+		#endregion
+		#region Creation
 		public static Body[] GetAll()
 		{
 			return bodiesAll.ToArray();
@@ -854,35 +885,6 @@ public static class Gear
 			}
 			return tagBodies[tag].ToArray();
 		}
-
-		[JsonProperty]
-		private Color spriteColor, boundariesColor, originColor, angleColor, hitboxColor, hitboxCrossPointsColor, hitboxMiddlePointColor;
-		[JsonProperty]
-		private Size size, spriteSize, originSize, hitboxCrossPointsSize, hitboxMiddlePointSize;
-		[JsonProperty]
-		private Point position, spriteOrigin, spriteIndex;
-		[JsonProperty]
-		private int UID, spriteGridSize;
-		[JsonProperty]
-		private Angle angle;
-		[JsonProperty]
-		private string uniqueName, spriteName;
-		[JsonProperty]
-		private float hitboxWidth, angleWidth;
-		[JsonProperty]
-		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown, hitboxMiddlePointShown, positionLocked, angleLocked, sizeLocked, isSolid = true;
-		[JsonProperty]
-		private List<string> tags = new List<string>();
-		[JsonProperty]
-		private List<Body> hitboxObstacles = new List<Body>(), hitboxExceptions = new List<Body>();
-		[JsonProperty]
-		private Dictionary<Body, List<Point>> hitboxCrossPoints = new Dictionary<Body, List<Point>>();
-		[JsonProperty]
-		private Dictionary<string, float[]> hitboxLineDistances = new Dictionary<string, float[]>(), hitboxLineAngles = new Dictionary<string, float[]>();
-		[JsonProperty]
-		private Dictionary<string, Size> hitboxLineSizes = new Dictionary<string, Size>();
-		[JsonProperty]
-		private Dictionary<string, Line> hitboxLines;
 
 		public Body(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
 		{
@@ -919,7 +921,8 @@ public static class Gear
 		//	dup.spriteShown = spriteShown;
 		//	return dup;
 		//}
-
+		#endregion
+		#region Identity
 		public int GetUniqueID()
 		{
 			return UID;
@@ -1007,6 +1010,13 @@ public static class Gear
 			return tags.ToArray();
 		}
 
+		public override string ToString()
+		{
+			return $"[{UID}] {uniqueName}";
+		}
+		#endregion
+		#region Transform
+		#region Position
 		private void _SetPosition(Point pos)
 		{
 			position = pos;
@@ -1049,7 +1059,27 @@ public static class Gear
 		{
 			return positionLocked;
 		}
-
+		public void DisplayOrigin(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 4, float h = 4)
+		{
+			originShown = display;
+			originColor.SetRGBO(r, g, b, o);
+			originSize.SetWH(w, h);
+			render = true;
+		}
+		public bool OriginIsDisplayed()
+		{
+			return originShown;
+		}
+		public Color GetOriginColor()
+		{
+			return originColor;
+		}
+		public Size GetOriginSize()
+		{
+			return originSize;
+		}
+		#endregion
+		#region Angle
 		private void _SetAngle(Angle angle)
 		{
 			this.angle = angle;
@@ -1080,7 +1110,27 @@ public static class Gear
 		{
 			return angleLocked;
 		}
-
+		public void DisplayAngle(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 2)
+		{
+			angleShown = display;
+			angleColor.SetRGBO(r, g, b, o);
+			angleWidth = w;
+			render = true;
+		}
+		public bool AngleIsDisplayed()
+		{
+			return angleShown;
+		}
+		public Color GetAngleColor()
+		{
+			return angleColor;
+		}
+		public float GetAngleW()
+		{
+			return angleWidth;
+		}
+		#endregion
+		#region Size
 		public void _SetSize(Size size)
 		{
 			this.size = size;
@@ -1123,67 +1173,28 @@ public static class Gear
 		{
 			return sizeLocked;
 		}
-
-		public void DisplayAngle(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 2)
-		{
-			angleShown = display;
-			angleColor.SetRGBO(r, g, b, o);
-			angleWidth = w;
-			render = true;
-		}
-		public bool AngleIsDisplayed()
-		{
-			return angleShown;
-		}
-		public Color GetAngleColor()
-		{
-			return angleColor;
-		}
-		public float GetAngleW()
-		{
-			return angleWidth;
-		}
-
-		public void DisplayOrigin(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 4, float h = 4)
-		{
-			originShown = display;
-			originColor.SetRGBO(r, g, b, o);
-			originSize.SetWH(w, h);
-			render = true;
-		}
-		public bool OriginIsDisplayed()
-		{
-			return originShown;
-		}
-		public Color GetOriginColor()
-		{
-			return originColor;
-		}
-		public Size GetOriginSize()
-		{
-			return originSize;
-		}
-
-		public void DisplayBoundaries(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255)
+		public void DisplaySize(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255)
 		{
 			boundariesShown = display;
 			boundariesColor.SetRGBO(r, g, b, o);
 			render = true;
 		}
-		public bool BoundariesAreDisplayed()
+		public bool SizeIsDisplayed()
 		{
 			return boundariesShown;
 		}
-		public Color GetBoundariesColor()
+		public Color GetSizeColor()
 		{
 			return boundariesColor;
 		}
-
-		public void SetSprite(string name, bool show = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0, bool nameNotFound = true)
+		#endregion
+		#endregion
+		#region Sprite
+		public void DisplaySprite(string name, bool display = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0, bool nameNotFound = true)
 		{
 			if (sprites.ContainsKey(name) == false)
 			{
-				var funcName = $"{nameof(SetSprite)}({nameof(name)}: \"{name}\", {nameof(show)}: {show}, {nameof(width)}: {width}, {nameof(height)}: {height}, {nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(o)}: {o}, {nameof(originX)}: {originX}, {nameof(originY)}: {originY}, {nameof(gridSize)}: {gridSize}, {nameof(indexH)}: {indexH}, {nameof(indexV)}: {indexV})";
+				var funcName = $"{nameof(DisplaySprite)}({nameof(name)}: \"{name}\", {nameof(display)}: {display}, {nameof(width)}: {width}, {nameof(height)}: {height}, {nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(o)}: {o}, {nameof(originX)}: {originX}, {nameof(originY)}: {originY}, {nameof(gridSize)}: {gridSize}, {nameof(indexH)}: {indexH}, {nameof(indexV)}: {indexV})";
 				if (nameNotFound)
 				{
 					NotFoundError(funcName, nameof(name), $"{name}", 1, "In order to load a sprite:\n" +
@@ -1203,14 +1214,13 @@ public static class Gear
 			spriteOrigin = new Point(originX, originY);
 			spriteGridSize = gridSize;
 			spriteIndex = new Point(indexH, indexV);
-			spriteShown = show;
+			spriteShown = display;
 			render = true;
 		}
 		public string GetSpriteName()
 		{
 			return spriteName;
 		}
-
 		public bool SpriteIsDisplayed()
 		{
 			return spriteShown;
@@ -1235,7 +1245,9 @@ public static class Gear
 		{
 			return spriteColor;
 		}
-
+		#endregion
+		#region Hitbox
+		#region Display
 		public void DisplayHitbox(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 2)
 		{
 			hitboxShown = display;
@@ -1255,7 +1267,8 @@ public static class Gear
 		{
 			return hitboxWidth;
 		}
-
+		#endregion
+		#region Cross Points
 		public void DisplayHitboxCrossPoints(bool display = true, float r = 255, float g = 255, float b = 255, float o = 255, float w = 4, float h = 4)
 		{
 			hitboxCrossPointsShown = display;
@@ -1276,8 +1289,43 @@ public static class Gear
 			return hitboxCrossPointsShown;
 		}
 
+		private void UpdateCrossPoints()
+		{
+			hitboxCrossPoints.Clear();
+			foreach (var obstacle in hitboxObstacles)
+			{
+				foreach (var kvp in hitboxLines)
+				{
+					var line = kvp.Value;
+					if (hitboxExceptions.Contains(obstacle) || ignoreCollisions)
+					{
+						continue;
+					}
+					foreach (var kvp2 in obstacle.hitboxLines)
+					{
+						var line2 = kvp2.Value;
+						var crossPoints = line.GetCrossPointWithLine(line2);
+						if (crossPoints.Length > 0)
+						{
+							if (hitboxCrossPoints.ContainsKey(obstacle) == false)
+							{
+								hitboxCrossPoints[obstacle] = new List<Point>();
+							}
+							foreach (var point in crossPoints)
+							{
+								hitboxCrossPoints[obstacle].Add(point);
+							}
+						}
+					}
+				}
+			}
+		}
+		#endregion
+		#region Creation
 		private void _SetHitboxLine(string uniqueName, Line line)
 		{
+			line = new Line(this.position + line.GetStartPoint(), this.position + line.GetEndPoint());
+
 			hitboxLines[uniqueName] = line;
 
 			var startAngle = new Angle();
@@ -1318,7 +1366,16 @@ public static class Gear
 		{
 			return hitboxLines.Values.ToArray();
 		}
-
+		#endregion
+		#region Collision Cases
+		public void IgnoreAllObstacles(bool ignored)
+		{
+			ignoreCollisions = ignored;
+		}
+		public bool IsIgnoringAllObstacles()
+		{
+			return ignoreCollisions;
+		}
 		public void AddHitboxObstacle(Body body, bool bodyAlreadyAddedError = true)
 		{
 			AddHitboxX(hitboxObstacles, body, bodyAlreadyAddedError);
@@ -1341,7 +1398,7 @@ public static class Gear
 		}
 		public bool HitboxOverlapsObstacleLine(Body body)
 		{
-			return hitboxCrossPoints.ContainsKey(body);
+			return hitboxObstacles.Contains(body) && hitboxCrossPoints.ContainsKey(body) && ignoreCollisions == false;
 		}
 		public bool HitboxOverlapsObstacle(Body body)
 		{
@@ -1361,6 +1418,81 @@ public static class Gear
 			}
 			return result.ToArray();
 		}
+
+		public void AddHitboxException(Body body, bool bodyAlreadyAddedError = true)
+		{
+			AddHitboxX(hitboxExceptions, body, bodyAlreadyAddedError);
+		}
+		public void SetHitboxExceptions(Body[] bodies)
+		{
+			hitboxExceptions = new List<Body>(bodies.ToList());
+		}
+		public void RemoveHitboxException(Body body, bool bodyNotFoundError = true)
+		{
+			RemoveHitboxX(hitboxExceptions, body, bodyNotFoundError);
+		}
+		public void RemoveAllHitboxExceptions()
+		{
+			hitboxExceptions.Clear();
+		}
+		public Body[] GetExceptions()
+		{
+			return hitboxExceptions.ToArray();
+		}
+
+		private void AddHitboxX(List<Body> list, Body body, bool bodyAlreadyAddedError = true)
+		{
+			if (list.Contains(body))
+			{
+				if (bodyAlreadyAddedError)
+				{
+					var funcName = $"{nameof(AddHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyAlreadyAddedError)} {bodyAlreadyAddedError})";
+					AlreadyExistsError(funcName, nameof(body), $"{body}", 1);
+				}
+				return;
+			}
+			list.Add(body);
+		}
+		private void RemoveHitboxX(List<Body> list, Body body, bool bodyNotFoundError = true)
+		{
+			if (list.Contains(body) == false)
+			{
+				if (bodyNotFoundError)
+				{
+					var funcName = $"{nameof(RemoveHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyNotFoundError)} {bodyNotFoundError})";
+					NotFoundError(funcName, nameof(body), $"{body}", 1);
+				}
+				return;
+			}
+			list.Remove(body);
+		}
+		private void UpdateCollisions()
+		{
+			foreach (var kvp in hitboxLines)
+			{
+				var key = kvp.Key;
+				var start = position;
+				var end = position;
+				var dirStart = new Direction();
+				var dirEnd = new Direction();
+
+				var baseSize = hitboxLineSizes[key];
+				var ratio = new Size(size.GetW() < size.GetH() ? size.GetW() / size.GetH() : 1, size.GetH() < size.GetW() ? size.GetH() / size.GetW() : 1);
+				baseSize *= ratio;
+				var scale = new Point(size.GetW() / baseSize.GetW(), size.GetH() / baseSize.GetH());
+
+				dirStart.SetFromAngle((angle + new Angle(hitboxLineAngles[key][0])));
+				dirEnd.SetFromAngle((angle + new Angle(hitboxLineAngles[key][1])));
+
+				start = position + dirStart.GetEndPoint() * hitboxLineDistances[key][0] * scale;
+				end = position + dirEnd.GetEndPoint() * hitboxLineDistances[key][1] * scale;
+
+				hitboxLines[key] = new Line(start, end);
+			}
+			UpdateCrossPoints();
+		}
+		#endregion
+		#region Middle Point
 		public Point GetHitboxMiddlePoint()
 		{
 			var mostLeftPoint = new Point(float.PositiveInfinity, float.PositiveInfinity);
@@ -1406,6 +1538,7 @@ public static class Gear
 		}
 		public bool HitboxMiddlePointOverlapsObstacle(Body body)
 		{
+			if (hitboxObstacles.Contains(body) == false) return false;
 			var ray = new Line(GetHitboxMiddlePoint(), new Point(99_999, 99_999));
 			var crossSum = 0;
 			foreach (var line in body.GetAllHitboxLines())
@@ -1415,115 +1548,11 @@ public static class Gear
 					crossSum += ray.GetCrossPointWithLine(line).Length;
 				}
 			}
-			return crossSum % 2 != 0 && hitboxExceptions.Contains(body) == false;
+			return crossSum % 2 != 0 && hitboxExceptions.Contains(body) == false && ignoreCollisions == false;
 		}
+		#endregion
+		#endregion
 
-		public void AddHitboxException(Body body, bool bodyAlreadyAddedError = true)
-		{
-			AddHitboxX(hitboxExceptions, body, bodyAlreadyAddedError);
-		}
-		public void SetHitboxExceptions(Body[] bodies)
-		{
-			hitboxExceptions = new List<Body>(bodies.ToList());
-		}
-		public void RemoveHitboxException(Body body, bool bodyNotFoundError = true)
-		{
-			RemoveHitboxX(hitboxExceptions, body, bodyNotFoundError);
-		}
-		public void RemoveAllHitboxExceptions()
-		{
-			hitboxExceptions.Clear();
-		}
-		public Body[] GetExceptions()
-		{
-			return hitboxExceptions.ToArray();
-		}
-
-		public override string ToString()
-		{
-			return $"[{UID}] {uniqueName}";
-		}
-
-		private void AddHitboxX(List<Body> list, Body body, bool bodyAlreadyAddedError = true)
-		{
-			if (list.Contains(body))
-			{
-				if (bodyAlreadyAddedError)
-				{
-					var funcName = $"{nameof(AddHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyAlreadyAddedError)} {bodyAlreadyAddedError})";
-					AlreadyExistsError(funcName, nameof(body), $"{body}", 1);
-				}
-				return;
-			}
-			list.Add(body);
-		}
-		private void RemoveHitboxX(List<Body> list, Body body, bool bodyNotFoundError = true)
-		{
-			if (list.Contains(body) == false)
-			{
-				if (bodyNotFoundError)
-				{
-					var funcName = $"{nameof(RemoveHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyNotFoundError)} {bodyNotFoundError})";
-					NotFoundError(funcName, nameof(body), $"{body}", 1);
-				}
-				return;
-			}
-			list.Remove(body);
-		}
-
-		private void UpdateCollisions()
-		{
-			hitboxCrossPoints.Clear();
-			foreach (var body in hitboxObstacles)
-			{
-				UpdateHitboxForObstacle(body);
-			}
-		}
-		private void UpdateHitboxForObstacle(Body body)
-		{
-			foreach (var kvp in hitboxLines)
-			{
-				var key = kvp.Key;
-				var line = kvp.Value;
-				var start = position;
-				var end = position;
-				var dirStart = new Direction();
-				var dirEnd = new Direction();
-
-				var baseSize = hitboxLineSizes[key];
-				var ratio = new Size(size.GetW() < size.GetH() ? size.GetW() / size.GetH() : 1, size.GetH() < size.GetW() ? size.GetH() / size.GetW() : 1);
-				baseSize *= ratio;
-				var scale = new Point(size.GetW() / baseSize.GetW(), size.GetH() / baseSize.GetH());
-
-				dirStart.SetFromAngle((angle + new Angle(hitboxLineAngles[key][0])));
-				dirEnd.SetFromAngle((angle + new Angle(hitboxLineAngles[key][1])));
-
-				start = position + dirStart.GetEndPoint() * hitboxLineDistances[key][0] * scale;
-				end = position + dirEnd.GetEndPoint() * hitboxLineDistances[key][1] * scale;
-
-				hitboxLines[key] = new Line(start, end);
-				if (hitboxExceptions.Contains(body))
-				{
-					continue;
-				}
-				foreach (var kvp2 in body.hitboxLines)
-				{
-					var line2 = kvp2.Value;
-					var crossPoints = line.GetCrossPointWithLine(line2);
-					if (crossPoints.Length > 0)
-					{
-						if (hitboxCrossPoints.ContainsKey(body) == false)
-						{
-							hitboxCrossPoints[body] = new List<Point>();
-						}
-						foreach (var point in crossPoints)
-						{
-							hitboxCrossPoints[body].Add(point);
-						}
-					}
-				}
-			}
-		}
 	}
 	/// <summary>
 	/// Controls <see cref="float"/> in different ways.
@@ -2378,7 +2407,7 @@ public static class Gear
 	/// </summary>
 	public static class Input
 	{
-		public static Point GetCursorPosition(bool canvas = true)
+		public static Point GetMouseCursorPosition(bool canvas = true)
 		{
 			var result = new Point();
 			if (canvas)
@@ -2390,11 +2419,11 @@ public static class Gear
 			}
 			return result + cameraPosition;
 		}
-		public static void DisplayCursor(bool displayed)
+		public static void DisplayMouseCursor(bool displayed)
 		{
 			game.IsMouseVisible = displayed;
 		}
-		public static bool CursorIsDisplayed()
+		public static bool MouseCursorIsDisplayed()
 		{
 			return game.IsMouseVisible;
 		}
@@ -2410,7 +2439,7 @@ public static class Gear
 		{
 			return Mouse.GetState().RightButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 		}
-		public static void SetCursorFromSprite(string spritePath, int originX, int originY)
+		public static void SetMouseCursorFromSprite(string spritePath, int originX, int originY)
 		{
 			if (spritePath == null || sprites.ContainsKey(spritePath) == false) return;
 
