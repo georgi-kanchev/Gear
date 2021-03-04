@@ -42,3 +42,4 @@ D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.pdb
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.genruntimeconfig.cache
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ball.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\paddle.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\bottle.wav

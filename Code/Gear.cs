@@ -132,6 +132,14 @@ public static class Gear
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time;
 	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName;
 
+	private static string contentLoadingInfo =
+		"1.In File Explorer: Add it to the 'Content' folder/sub-folder inside it.\n" +
+		"2.In Visual Studio's Solution Explorer: Add it to the according folder chosen above.\n" +
+		"3.In Visual Studio's Solution Explorer: Right click file -> Properties -> Copy to Output Directory='CopyAlways'. \n" +
+		"4.Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n" +
+		"5.In MonoGame Content Pipeline Tool: Add the file/folder and build/rebuild it.\n" +
+		"(Note that the .mgcb project has to look like the 'Content' folder)";
+
 	private static DateTime lastTickTime, lastFrameTime;
 	private static Color backgroundColor = new Color(0, 0, 0);
 	private static Size canvasSize = new Size(1920, 1080), screenSize = new Size(GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Width, GraphicsAdapter.DefaultAdapter.CurrentDisplayMode.Height), pixelSize;
@@ -419,7 +427,7 @@ public static class Gear
 				}
 
 				var hitboxColor = body.GetHitboxColor();
-				var hitboxWidth = body.HitboxW();
+				var hitboxWidth = body.GetHitboxW();
 				if (hitboxSprite != null && body.HitboxIsDisplayed())
 				{
 					var lines = body.GetAllHitboxLines();
@@ -1131,7 +1139,7 @@ public static class Gear
 		}
 		#endregion
 		#region Size
-		public void _SetSize(Size size)
+		private void _SetSize(Size size)
 		{
 			this.size = size;
 			render = true;
@@ -1197,13 +1205,7 @@ public static class Gear
 				var funcName = $"{nameof(DisplaySprite)}({nameof(name)}: \"{name}\", {nameof(display)}: {display}, {nameof(width)}: {width}, {nameof(height)}: {height}, {nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(o)}: {o}, {nameof(originX)}: {originX}, {nameof(originY)}: {originY}, {nameof(gridSize)}: {gridSize}, {nameof(indexH)}: {indexH}, {nameof(indexV)}: {indexV})";
 				if (nameNotFound)
 				{
-					NotFoundError(funcName, nameof(name), $"{name}", 1, "In order to load a sprite:\n" +
-					"1.In File Explorer: Add it to the 'Content' folder or a folder/s inside it.\n" +
-					"2.In Visual Studio's Solution Explorer: Add it to the according folder chosen above.\n" +
-					"3.In Visual Studio's Solution Explorer: Right click file -> Properties -> Copy to Output Directory = 'Copy Always'. \n" +
-					"4.Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n" +
-					"5.In MonoGame Content Pipeline Tool: Add the file/folder and build/rebuild it.\n" +
-					"(Note that the .mgcb project has to look like the 'Content' folder)");
+					NotFoundError(funcName, nameof(name), $"{name}", 1, $"In order to load a Sprite:\n{contentLoadingInfo}");
 				}
 				return;
 			}
@@ -1263,7 +1265,7 @@ public static class Gear
 		{
 			return hitboxShown;
 		}
-		public float HitboxW()
+		public float GetHitboxW()
 		{
 			return hitboxWidth;
 		}
@@ -1552,7 +1554,6 @@ public static class Gear
 		}
 		#endregion
 		#endregion
-
 	}
 	/// <summary>
 	/// Controls <see cref="float"/> in different ways.
@@ -2759,6 +2760,81 @@ public static class Gear
 			return ignoredCases.Contains(method.Name) ? null : method.Name;
 		}
 	}
+	/// <summary>
+	/// Controls Sounds and holds information about them.
+	/// </summary>
+	public static class Sound
+	{
+		public static string[] GetAllUniqueNames()
+		{
+			return sounds.Keys.ToArray();
+		}
+
+		public static void Play(string uniqueName, float volumePercent = 50, float pitchPercent = 50, float speakerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNotLoadedError = true)
+		{
+			if (sounds.ContainsKey(uniqueName) == false)
+			{
+				if (soundNotLoadedError)
+				{
+					var funcName = $"{nameof(Play)}({nameof(uniqueName)}: \"{uniqueName}\", {nameof(volumePercent)}: {volumePercent}, {nameof(pitchPercent)}: {pitchPercent}, {nameof(speakerPercent)}: {speakerPercent}, {nameof(loop)}: {loop}, {nameof(ableToPlayOverSelf)}: {ableToPlayOverSelf}, {nameof(soundNotLoadedError)}: {soundNotLoadedError})";
+					NotFoundError(funcName, nameof(uniqueName), uniqueName, 1, $"In order to load a Sound:\n{contentLoadingInfo}");
+				}
+				return;
+			}
+			volumePercent = Number.GetLimited(volumePercent, 0, 100);
+			pitchPercent = Number.GetLimited(pitchPercent, 0, 100);
+			speakerPercent = Number.GetLimited(speakerPercent, 0, 100);
+			if (ableToPlayOverSelf)
+			{
+				sounds[uniqueName] = soundsRaw[uniqueName].CreateInstance();
+			}
+			sounds[uniqueName].Pan = ((float)speakerPercent * 2 - 100) / 100;
+			sounds[uniqueName].IsLooped = loop;
+			sounds[uniqueName].Pitch = ((float)pitchPercent * 2 - 100) / 100;
+			sounds[uniqueName].Volume = (float)volumePercent / 100;
+			sounds[uniqueName].Play();
+		}
+		public static void PauseAll(bool paused)
+		{
+			foreach (var kvp in sounds)
+			{
+				if (paused)
+				{
+					kvp.Value.Pause();
+					continue;
+				}
+				kvp.Value.Resume();
+			}
+		}
+		public static void PauseCurrent(string uniqueName, bool paused)
+		{
+			if (sounds.ContainsKey(uniqueName) == false)
+			{
+				return;
+			}
+			if (paused)
+			{
+				sounds[uniqueName].Pause();
+				return;
+			}
+			sounds[uniqueName].Resume();
+		}
+		public static void StopAll()
+		{
+			foreach (var kvp in sounds)
+			{
+				kvp.Value.Stop();
+			}
+		}
+		public static void StopCurrent(string uniqueName)
+		{
+			if (sounds.ContainsKey(uniqueName) == false)
+			{
+				return;
+			}
+			sounds[uniqueName].Stop();
+		}
+	}
 
 	public struct Pair<T>
 	{
@@ -3288,6 +3364,19 @@ public static class Gear
 			var vec = Vector2.Lerp(new Vector2(GetX(), GetY()), new Vector2(targetPoint.GetX(), targetPoint.GetY()), (float)percent / 100);
 			x = vec.X;
 			y = vec.Y;
+		}
+		public void SetToGrid(Size gridSize)
+		{
+			var grid_width = Number.GetLimited(gridSize.GetW(), 1, screenSize.GetW());
+			var grid_height = Number.GetLimited(gridSize.GetH(), 1, screenSize.GetH());
+			if (gridSize.GetW() > 0)
+			{
+				SetXY(grid_width * (float)Math.Round(x / grid_width), y);
+			}
+			if (gridSize.GetH() > 0)
+			{
+				SetXY(x, grid_height * (float)Math.Round(y / grid_height));
+			}
 		}
 
 		public override string ToString()

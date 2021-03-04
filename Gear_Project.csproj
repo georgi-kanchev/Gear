@@ -20,6 +20,9 @@
     <None Update="Content\ball.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Content\bottle.wav">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Content\empty.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

@@ -25,6 +25,12 @@
 /processorParam:TextureFormat=Color
 /build:ball.png
 
+#begin bottle.wav
+/importer:WavImporter
+/processor:SoundEffectProcessor
+/processorParam:Quality=Best
+/build:bottle.wav
+
 #begin font.spritefont
 /importer:FontDescriptionImporter
 /processor:FontDescriptionProcessor

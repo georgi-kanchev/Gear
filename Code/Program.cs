@@ -33,7 +33,7 @@
 			a.AddHitboxLine("line3", lineC);
 			a.AddHitboxLine("line4", lineD);
 			a.SetSizeWH(64, 64);
-
+			//Gear.Sound.Play("bottle");
 			b.AddHitboxLine("line1", line1);
 			b.AddHitboxLine("line2", line2);
 			b.AddHitboxLine("line3", line3);
