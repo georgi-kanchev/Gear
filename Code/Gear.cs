@@ -122,6 +122,7 @@ public static class Gear
 	private static Dictionary<string, List<Body>> tagBodies = new Dictionary<string, List<Body>>();
 	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalStartTimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
 	private static Dictionary<Body, float> bodyCameraDistances = new Dictionary<Body, float>(), bodyCameraAngle = new Dictionary<Body, float>(), bodyCameraAngleDifferences = new Dictionary<Body, float>();
+	private static Dictionary<string, List<string>> soundCollections = new Dictionary<string, List<string>>();
 
 	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
 	private static List<Body> bodiesAll = new List<Body>();
@@ -382,10 +383,10 @@ public static class Gear
 				var spriteShown = body.SpriteIsDisplayed();
 				var tileIndex = body.GetSpriteGridIndexes();
 				var cameraOffset = new Point(canvasSize.GetW() / 2, canvasSize.GetH() / 2);
-				var pos = GetCameraBodyPosition(body) + cameraOffset;
+				var pos = GetCameraBodyPosition(body) + cameraOffset - Camera.GetPosition();
 				var size = body.GetSize();
 				var spritesize = body.GetSpriteSize();
-				var angle = bodyCameraAngleDifferences[body];
+				var angle = Camera.GetAngle().GetA() + body.GetAngle().GetA();
 				var scale = size / spritesize;
 				var origin = body.GetSpriteOrigin();
 				var color = body.GetSpriteColor();
@@ -431,15 +432,28 @@ public static class Gear
 
 				var hitboxColor = body.GetHitboxColor();
 				var hitboxWidth = body.GetHitboxW();
+				var hitboxLinesCamera = new List<Line>();
 				if (hitboxSprite != null && body.HitboxIsDisplayed())
 				{
 					var lines = body.GetAllHitboxLines();
 					foreach (var line in lines)
 					{
 						var lineAngle = new Angle();
-						var linePos = line.GetStartPoint() + cameraOffset;
-						lineAngle.SetFromBetweenPoints(linePos, line.GetEndPoint() + cameraOffset);
-						DrawTile(hitboxSprite, linePos - new Point(0, hitboxWidth / 2), new Point(), 0, new Size(1, 1), new Point(), new Size(line.GetLength(), hitboxWidth), hitboxColor, lineAngle.GetA(), SpriteEffects.None);
+						var dist = body.GetPosition().GetDistanceToPoint(line.GetStartPoint());
+						var dir = new Direction();
+						var camAng = Camera.GetAngle();
+						var ang = new Angle();
+						ang.SetFromBetweenPoints(body.GetPosition(), line.GetStartPoint());
+						ang += camAng;
+						dir.SetFromAngle(ang);
+						var linePos = GetCameraBodyPosition(body) + cameraOffset + dir.GetEndPoint() * dist - Camera.GetPosition();
+						lineAngle.SetFromBetweenPoints(line.GetStartPoint(), line.GetEndPoint());
+						var lineDir = new Direction();
+						lineDir.SetFromAngle(camAng + lineAngle);
+						var endPos = linePos + lineDir.GetEndPoint() * line.GetLength() - Camera.GetPosition();
+
+						hitboxLinesCamera.Add(new Line(linePos, endPos));
+						DrawTile(hitboxSprite, linePos - new Point(0, hitboxWidth / 2), new Point(), 0, new Size(1, 1), new Point(), new Size(line.GetLength(), hitboxWidth), hitboxColor, camAng.GetA() + lineAngle.GetA(), SpriteEffects.None);
 					}
 				}
 
@@ -458,7 +472,19 @@ public static class Gear
 				var hitboxMiddlePointSize = body.GetHitboxMiddlePointSize();
 				if (hitboxMiddlePointSprite != null && body.HitboxMiddlePointIsDisplayed())
 				{
-					DrawTile(hitboxMiddlePointSprite, body.GetHitboxMiddlePoint() + cameraOffset - new Point(hitboxMiddlePointSize.GetW() / 2, hitboxMiddlePointSize.GetH() / 2), new Point(), 0, hitboxMiddlePointSize, new Point(), new Size(1, 1), hitboxMiddlePointColor, 0, SpriteEffects.None);
+					var cameraMiddlePoint = new Point();
+					var middleDir = new Direction();
+					var middleAng = new Angle();
+					var middlePoint = body.GetHitboxMiddlePoint() + cameraOffset;
+					var bodyPos = body.GetPosition() + cameraOffset;
+					var dist = bodyPos.GetDistanceToPoint(middlePoint);
+
+					middleAng.SetFromBetweenPoints(bodyPos, middlePoint);
+					middleDir.SetFromAngle(middleAng + Camera.GetAngle());
+
+					cameraMiddlePoint = GetCameraBodyPosition(body) + cameraOffset + middleDir.GetEndPoint() * dist - Camera.GetPosition();
+
+					DrawTile(hitboxMiddlePointSprite, cameraMiddlePoint - new Point(hitboxMiddlePointSize.GetW() / 2, hitboxMiddlePointSize.GetH() / 2), new Point(), 0, hitboxMiddlePointSize, new Point(), new Size(1, 1), hitboxMiddlePointColor, 0, SpriteEffects.None);
 				}
 
 				boundariesSprite.Dispose();
@@ -1512,7 +1538,6 @@ public static class Gear
 
 			foreach (var kvp in hitboxLines)
 			{
-				var key = kvp.Key;
 				var line = kvp.Value;
 
 				if (line.GetStartPoint().GetX() < mostLeftPoint.GetX()) mostLeftPoint = line.GetStartPoint();
@@ -2386,9 +2411,6 @@ public static class Gear
 
 			foreach (var body in bodiesAll)
 			{
-				var lines = body.GetAllHitboxLines();
-				var key = body.GetAllHitboxLineUniqueNames()[0];
-				body.SetHitboxLine(key, body.GetHitboxLine(key));
 				UpdateCameraBodyTransform(body);
 			}
 		}
@@ -2420,9 +2442,6 @@ public static class Gear
 
 			foreach (var body in bodiesAll)
 			{
-				var lines = body.GetAllHitboxLines();
-				var key = body.GetAllHitboxLineUniqueNames()[0];
-				body.SetHitboxLine(key, body.GetHitboxLine(key));
 				UpdateCameraBodyTransform(body);
 			}
 		}
@@ -2450,9 +2469,10 @@ public static class Gear
 			if (canvas)
 			{
 				var scale = new Point(canvasSize.GetW() / screenSize.GetW(), canvasSize.GetH() / screenSize.GetH());
-				result = new Point(Microsoft.Xna.Framework.Input.Mouse.GetState().Position.X,
-					Microsoft.Xna.Framework.Input.Mouse.GetState().Position.Y) * scale;
-				return result;
+				var cameraOffset = new Point(canvasSize.GetW() / 2, canvasSize.GetH() / 2);
+
+				result = new Point(Mouse.GetState().Position.X, Mouse.GetState().Position.Y) * scale;
+				return result - cameraOffset + Camera.GetPosition();
 			}
 			return result + Camera.GetPosition();
 		}
@@ -2806,7 +2826,8 @@ public static class Gear
 			return sounds.Keys.ToArray();
 		}
 
-		public static void Play(string uniqueName, float volumePercent = 50, float pitchPercent = 50, float speakerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNotLoadedError = true)
+		public static void Play(string uniqueName, float volumePercent = 50, float pitchPercent = 50,
+			float speakerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNotLoadedError = true)
 		{
 			if (sounds.ContainsKey(uniqueName) == false)
 			{
@@ -2829,6 +2850,48 @@ public static class Gear
 			sounds[uniqueName].Pitch = ((float)pitchPercent * 2 - 100) / 100;
 			sounds[uniqueName].Volume = (float)volumePercent / 100;
 			sounds[uniqueName].Play();
+		}
+		public static void CreateCollection(string uniqueName, bool nameExistsError = true)
+		{
+			var funcName = $"{nameof(CreateCollection)}({nameof(uniqueName)}: \"{uniqueName}\", {nameof(nameExistsError)}: {nameExistsError})";
+			if (soundCollections.ContainsKey(uniqueName))
+			{
+				if (nameExistsError)
+				{
+					AlreadyExistsError(funcName, nameof(uniqueName), uniqueName, 1);
+				}
+				return;
+			}
+
+			soundCollections[uniqueName] = new List<string>();
+		}
+		public static void AddToCollection(string soundUniqueName, string collectionUniqueName,
+			bool soundNotFoundError = true, bool collectionNotFoundError = true, bool soundAlreadyAddedError = true)
+		{
+			var funcName = $"Method: {nameof(Gear)}.{nameof(Sound)}{nameof(AddToCollection)}\n" +
+				$"Parameters:\n" +
+				$"{nameof(soundUniqueName)}: \"{soundUniqueName}\"\n" +
+				$"{nameof(collectionUniqueName)}: \"{collectionUniqueName}\"\n" +
+				$"{nameof(collectionNotFoundError)}: {collectionNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(soundNotFoundError)}: {soundNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(soundAlreadyAddedError)}: {soundAlreadyAddedError.ToString().ToLower()}";
+
+			if (soundCollections.ContainsKey(collectionUniqueName) == false)
+			{
+				if (collectionNotFoundError)
+				{
+					Error($"{funcName}:\n\nDescription: The sound collection '{collectionUniqueName}' was not found.", 1);
+				}
+				return;
+			}
+			if (soundCollections[collectionUniqueName].Contains(soundUniqueName))
+			{
+				if (collectionNotFoundError)
+				{
+					NotFoundError(funcName, nameof(collectionUniqueName), collectionUniqueName, 1);
+				}
+				return;
+			}
 		}
 		public static void PauseAll(bool paused)
 		{
@@ -4396,6 +4459,16 @@ public static class Gear
 	private static void AlreadyExistsError(string funcName, string name, string value, int index, string tip = "")
 	{
 		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' already exists.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
+		Window.Close();
+	}
+	private static void AlreadyAddedError(string funcName, string name, string value, int index, string tip = "")
+	{
+		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' was already added.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
+		Window.Close();
+	}
+	private static void Error(string message, int index)
+	{
+		Window.PopUp($"File: {Debug.GetCodeFileName(index + 1)}.cs\nLine: {Debug.GetCodeLine(index + 1)}\n{message}", Window.GetTitle(), PopUpIcon.Error);
 		Window.Close();
 	}
 	private static void CannotBeNullError(string funcName, string name, int index, string tip = "")
