@@ -19,8 +19,8 @@
 			var a = new Gear.Body("test");
 			var b = new Gear.Body("test2");
 
-			a.SetPosition(new Gear.Point(50, 100));
-			b.SetPosition(new Gear.Point(100, 50));
+			a.SetPosition(new Gear.Point(0, 0));
+			b.SetPosition(new Gear.Point(100, 0));
 			a.DisplaySprite("ball", width: 16, height: 16);
 			b.DisplaySprite("ball", width: 16, height: 16, originX: 8, originY: 8);
 			a.DisplayOrigin(true, b: 0);
@@ -33,46 +33,26 @@
 			a.AddHitboxLine("line3", lineC);
 			a.AddHitboxLine("line4", lineD);
 			a.SetSizeWH(64, 64);
-			//Gear.Sound.Play("bottle");
+
 			b.AddHitboxLine("line1", line1);
 			b.AddHitboxLine("line2", line2);
 			b.AddHitboxLine("line3", line3);
 			b.AddHitboxLine("line4", line4);
 			b.SetSizeWH(16, 32);
 
-			//a.AddHitboxObstacle(b);
 			b.AddHitboxObstacle(a);
 
-			//a.DisplayHitbox();
 			b.DisplayHitbox();
 
-			//a.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
 			b.DisplayHitboxMiddlePoint(true, r: 100, b: 0);
 
 			b.DisplayHitboxCrossPoints(g: 0, b: 0);
 		}
 
-		var a2 = Gear.Body.GetByUniqueName("test");
-		var b2 = Gear.Body.GetByUniqueName("test2");
+		var ang = Gear.Camera.GetAngle();
+		ang.Rotate(10);
+		Gear.Camera.SetAngle(ang);
 
-		var pos = Gear.Input.GetMouseCursorPosition();
-		var angA = a2.GetAngle();
-		var angB = b2.GetAngle();
-		//angA.Rotate(50);
-		//angB.Rotate(-10);
-
-		//a2.SetAngle(angA);
-		//a2.SetPositionXY(200, 100);
-		b2.SetAngle(angB);
-		b2.SetPosition(pos);
-
-		//var lineA1 = b2.GetHitboxLine("line2");
-		//var lineB1 = b2.GetHitboxLine("line3");
-		//b2.SetHitboxLine("line2", new Gear.Line(lineA1.GetStartPoint(), Gear.Input.GetCursorPosition()));
-		//b2.SetHitboxLine("line3", new Gear.Line(Gear.Input.GetCursorPosition(), lineB1.GetEndPoint()));
-
-		//b2.GetHitboxCrossPointsWithObstacle(a2);
-
-		Gear.Text.Display("font", b2.HitboxOverlapsObstacle(a2), scale: 0.5f, overwrite: true);
+		Gear.Text.Display("font", Gear.Camera.GetPosition(), scale: 0.5f, overwrite: true);
 	}
 }

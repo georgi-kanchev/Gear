@@ -120,7 +120,8 @@ public static class Gear
 	private static Dictionary<string, int> gateEntriesCount = new Dictionary<string, int>();
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
 	private static Dictionary<string, List<Body>> tagBodies = new Dictionary<string, List<Body>>();
-	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalstarttimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
+	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalStartTimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
+	private static Dictionary<Body, float> bodyCameraDistances = new Dictionary<Body, float>(), bodyCameraAngle = new Dictionary<Body, float>(), bodyCameraAngleDifferences = new Dictionary<Body, float>();
 
 	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
 	private static List<Body> bodiesAll = new List<Body>();
@@ -129,7 +130,7 @@ public static class Gear
 
 	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
 	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole;
-	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time;
+	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time, cameraAngle;
 	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName;
 
 	private static string contentLoadingInfo =
@@ -380,9 +381,11 @@ public static class Gear
 				var sprite = body.GetSpriteName();
 				var spriteShown = body.SpriteIsDisplayed();
 				var tileIndex = body.GetSpriteGridIndexes();
-				var pos = body.GetPosition() + cameraPosition;
+				var cameraOffset = new Point(canvasSize.GetW() / 2, canvasSize.GetH() / 2);
+				var pos = GetCameraBodyPosition(body) + cameraOffset;
 				var size = body.GetSize();
 				var spritesize = body.GetSpriteSize();
+				var angle = bodyCameraAngleDifferences[body];
 				var scale = size / spritesize;
 				var origin = body.GetSpriteOrigin();
 				var color = body.GetSpriteColor();
@@ -402,21 +405,21 @@ public static class Gear
 
 				if (sprite != null && spriteShown)
 				{
-					DrawTile(sprites[sprite], pos, tileIndex, body.GetSpriteGridSize(), size / scale, origin, scale, color, body.GetAngle().GetA(), SpriteEffects.None);
+					DrawTile(sprites[sprite], pos, tileIndex, body.GetSpriteGridSize(), size / scale, origin, scale, color, angle, SpriteEffects.None);
 				}
 
 				var boundariesColor = body.GetSizeColor();
 				if (boundariesSprite != null && body.SizeIsDisplayed())
 				{
-					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.GetW(), 1), new Point(), new Size(), boundariesColor, body.GetAngle().GetA(), SpriteEffects.None);
-					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.GetH()), new Point(), new Size(), boundariesColor, body.GetAngle().GetA(), SpriteEffects.None);
+					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(size.GetW(), 1), new Point(), new Size(), boundariesColor, angle, SpriteEffects.None);
+					DrawTile(boundariesSprite, pos - origin, new Point(), 0, new Size(1, size.GetH()), new Point(), new Size(), boundariesColor, angle, SpriteEffects.None);
 				}
 
 				var angleColor = body.GetAngleColor();
 				var angleWidth = body.GetAngleW();
 				if (angleSprite != null && body.AngleIsDisplayed())
 				{
-					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.GetW() * 1.1f, angleWidth), new Point(), new Size(1, 1), angleColor, body.GetAngle().GetA(), SpriteEffects.None);
+					DrawTile(angleSprite, pos, new Point(), 0, new Size(size.GetW() * 1.1f, angleWidth), new Point(), new Size(1, 1), angleColor, angle, SpriteEffects.None);
 				}
 
 				var originColor = body.GetOriginColor();
@@ -433,9 +436,10 @@ public static class Gear
 					var lines = body.GetAllHitboxLines();
 					foreach (var line in lines)
 					{
-						var angle = new Angle();
-						angle.SetFromBetweenPoints(line.GetStartPoint(), line.GetEndPoint());
-						DrawTile(hitboxSprite, line.GetStartPoint() - new Point(0, hitboxWidth / 2), new Point(), 0, new Size(1, 1), new Point(), new Size(line.GetLength(), hitboxWidth), hitboxColor, angle.GetA(), SpriteEffects.None);
+						var lineAngle = new Angle();
+						var linePos = line.GetStartPoint() + cameraOffset;
+						lineAngle.SetFromBetweenPoints(linePos, line.GetEndPoint() + cameraOffset);
+						DrawTile(hitboxSprite, linePos - new Point(0, hitboxWidth / 2), new Point(), 0, new Size(1, 1), new Point(), new Size(line.GetLength(), hitboxWidth), hitboxColor, lineAngle.GetA(), SpriteEffects.None);
 					}
 				}
 
@@ -454,7 +458,7 @@ public static class Gear
 				var hitboxMiddlePointSize = body.GetHitboxMiddlePointSize();
 				if (hitboxMiddlePointSprite != null && body.HitboxMiddlePointIsDisplayed())
 				{
-					DrawTile(hitboxMiddlePointSprite, body.GetHitboxMiddlePoint() - new Point(hitboxMiddlePointSize.GetW() / 2, hitboxMiddlePointSize.GetH() / 2), new Point(), 0, hitboxMiddlePointSize, new Point(), new Size(1, 1), hitboxMiddlePointColor, 0, SpriteEffects.None);
+					DrawTile(hitboxMiddlePointSprite, body.GetHitboxMiddlePoint() + cameraOffset - new Point(hitboxMiddlePointSize.GetW() / 2, hitboxMiddlePointSize.GetH() / 2), new Point(), 0, hitboxMiddlePointSize, new Point(), new Size(1, 1), hitboxMiddlePointColor, 0, SpriteEffects.None);
 				}
 
 				boundariesSprite.Dispose();
@@ -905,6 +909,7 @@ public static class Gear
 			UID = ID;
 			ID++;
 			size.SetWH(1, 1);
+			UpdateCameraBodyTransform(this);
 		}
 
 		// DUPLICATION - UPDATE FREQUENTLY
@@ -1030,6 +1035,7 @@ public static class Gear
 			position = pos;
 			render = true;
 			UpdateCollisions();
+			UpdateCameraBodyTransform(this);
 		}
 		public void SetPositionXY(float x, float y, bool positionLockedError = true)
 		{
@@ -1368,6 +1374,10 @@ public static class Gear
 		{
 			return hitboxLines.Values.ToArray();
 		}
+		public string[] GetAllHitboxLineUniqueNames()
+		{
+			return hitboxLines.Keys.ToArray();
+		}
 		#endregion
 		#region Collision Cases
 		public void IgnoreAllObstacles(bool ignored)
@@ -1473,8 +1483,8 @@ public static class Gear
 			foreach (var kvp in hitboxLines)
 			{
 				var key = kvp.Key;
-				var start = position;
-				var end = position;
+				var start = new Point();
+				var end = new Point();
 				var dirStart = new Direction();
 				var dirEnd = new Direction();
 
@@ -2373,6 +2383,14 @@ public static class Gear
 		{
 			cameraPosition = position;
 			render = true;
+
+			foreach (var body in bodiesAll)
+			{
+				var lines = body.GetAllHitboxLines();
+				var key = body.GetAllHitboxLineUniqueNames()[0];
+				body.SetHitboxLine(key, body.GetHitboxLine(key));
+				UpdateCameraBodyTransform(body);
+			}
 		}
 		public static void SetPosition(Point position)
 		{
@@ -2394,13 +2412,31 @@ public static class Gear
 		{
 			return cameraPosition;
 		}
-		public static float GetPositionX()
+
+		public static void _SetAngle(Angle angle)
 		{
-			return cameraPosition.GetX();
+			cameraAngle = angle.GetA();
+			render = true;
+
+			foreach (var body in bodiesAll)
+			{
+				var lines = body.GetAllHitboxLines();
+				var key = body.GetAllHitboxLineUniqueNames()[0];
+				body.SetHitboxLine(key, body.GetHitboxLine(key));
+				UpdateCameraBodyTransform(body);
+			}
 		}
-		public static float GetPositionY()
+		public static void SetAngle(Angle angle)
 		{
-			return cameraPosition.GetY();
+			_SetAngle(angle);
+		}
+		public static void SetAngleA(float a)
+		{
+			_SetAngle(new Angle(a));
+		}
+		public static Angle GetAngle()
+		{
+			return new Angle(cameraAngle);
 		}
 	}
 	/// <summary>
@@ -2418,7 +2454,7 @@ public static class Gear
 					Microsoft.Xna.Framework.Input.Mouse.GetState().Position.Y) * scale;
 				return result;
 			}
-			return result + cameraPosition;
+			return result + Camera.GetPosition();
 		}
 		public static void DisplayMouseCursor(bool displayed)
 		{
@@ -2604,13 +2640,13 @@ public static class Gear
 			if (name == null) return;
 			secondsDelay = Number.GetLimited(secondsDelay, 0, float.MaxValue);
 			signalpauses[name] = false;
-			signalstarttimes[name] = Performance.GetTime();
+			signalStartTimes[name] = Performance.GetTime();
 			signalDelays[name] = secondsDelay;
 			signalEndTimes[name] = Performance.GetTime() + secondsDelay;
 		}
 		public static bool Exists(string name)
 		{
-			return name != null && signalstarttimes.ContainsKey(name);
+			return name != null && signalStartTimes.ContainsKey(name);
 		}
 		public static float GetSecondsDelay(string name)
 		{
@@ -2629,7 +2665,7 @@ public static class Gear
 		}
 		public static float GetTimeStart(string name)
 		{
-			return name != null && signalstarttimes.ContainsKey(name) ? signalstarttimes[name] : 0;
+			return name != null && signalStartTimes.ContainsKey(name) ? signalStartTimes[name] : 0;
 		}
 		public static float GetTimeOccur(string name)
 		{
@@ -2656,7 +2692,7 @@ public static class Gear
 			if (name == null) return;
 			if (signalEndTimes.ContainsKey(name)) signalEndTimes.Remove(name);
 			if (signalpauses.ContainsKey(name)) signalpauses.Remove(name);
-			if (signalstarttimes.ContainsKey(name)) signalstarttimes.Remove(name);
+			if (signalStartTimes.ContainsKey(name)) signalStartTimes.Remove(name);
 			if (signalDelays.ContainsKey(name)) signalDelays.Remove(name);
 		}
 	}
@@ -4379,5 +4415,30 @@ public static class Gear
 			return true;
 		}
 		return false;
+	}
+
+	private static void UpdateCameraBodyTransform(Body body)
+	{
+		var angle = new Angle();
+		var camPos = Camera.GetPosition();
+		var dist = camPos.GetDistanceToPoint(body.GetPosition());
+		angle.SetFromBetweenPoints(Camera.GetPosition(), body.GetPosition());
+
+		bodyCameraAngle[body] = angle.GetA();
+		bodyCameraDistances[body] = dist;
+		bodyCameraAngleDifferences[body] = cameraAngle - body.GetAngle().GetA();
+	}
+	private static Point GetCameraBodyPosition(Body body)
+	{
+		var pos = new Point();
+		var dir = new Direction();
+		dir.SetFromAngle(Camera.GetAngle() + new Angle(bodyCameraAngle[body]));
+		pos = Camera.GetPosition() + dir.GetEndPoint() * bodyCameraDistances[body];
+
+		return pos;
+	}
+	private static void UpdateAllBodyCollisions()
+	{
+
 	}
 }
