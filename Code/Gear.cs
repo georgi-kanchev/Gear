@@ -135,12 +135,13 @@ public static class Gear
 	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName;
 
 	private static string contentLoadingInfo =
-		"1.In File Explorer: Add it to the 'Content' folder/sub-folder inside it.\n" +
-		"2.In Visual Studio's Solution Explorer: Add it to the according folder chosen above.\n" +
-		"3.In Visual Studio's Solution Explorer: Right click file -> Properties -> Copy to Output Directory='CopyAlways'. \n" +
-		"4.Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n" +
-		"5.In MonoGame Content Pipeline Tool: Add the file/folder and build/rebuild it.\n" +
-		"(Note that the .mgcb project has to look like the 'Content' folder)";
+		"1. In File Explorer: Add it to the 'Content' folder/sub-folder inside it.\n" +
+		"2. In Visual Studio's Solution Explorer: Add it to the according folder chosen above.\n" +
+		"3. In Visual Studio's Solution Explorer: Right click file -> Properties -> Copy to Output Directory='CopyAlways'.\n" +
+		"4. Open 'Content.mgcb' with the MonoGame Content Pipeline Tool.\n" +
+		"5. In MonoGame Content Pipeline Tool: Add the file/folder and build/rebuild it.\n\n" +
+		"Notes:\n" +
+		"The .mgcb project has to look like the 'Content' folder.";
 
 	private static DateTime lastTickTime, lastFrameTime;
 	private static Color backgroundColor = new Color(0, 0, 0);
@@ -251,16 +252,9 @@ public static class Gear
 				tick++;
 				AdvanceTickTime();
 				UpdateKeys();
-				try
-				{
-					eachTickLineCall = Debug.GetCodeLine() + 1;
-					program.EachTick(tick);
-				}
-				catch (Exception ex)
-				{
-					Gear.Window.PopUp(Gear.Window.GetTitle(), ex.Message);
-				}
 
+				eachTickLineCall = Debug.GetCodeLine() + 1;
+				program.EachTick(tick);
 			}
 			base.Update(gameTime);
 		}
@@ -1017,8 +1011,10 @@ public static class Gear
 			{
 				if (tagNotFoundError)
 				{
-					var funcName = $"{nameof(Untag)}({nameof(tag)}: \"{tag}\", {nameof(tagNotFoundError)}: {tagNotFoundError})";
-					NotFoundError(funcName, nameof(tag), $"{tag}", 1);
+					var funcName = $"Parameters:\n" +
+						$"{nameof(tag)} = \"{tag}\"\n" +
+						$"{nameof(tagNotFoundError)} = {tagNotFoundError}";
+					Error($"{funcName}{GetNotFoundError(nameof(tag), tag)}", 1);
 				}
 				return;
 			}
@@ -2868,19 +2864,26 @@ public static class Gear
 		public static void AddToCollection(string soundUniqueName, string collectionUniqueName,
 			bool soundNotFoundError = true, bool collectionNotFoundError = true, bool soundAlreadyAddedError = true)
 		{
-			var funcName = $"Method: {nameof(Gear)}.{nameof(Sound)}{nameof(AddToCollection)}\n" +
-				$"Parameters:\n" +
-				$"{nameof(soundUniqueName)}: \"{soundUniqueName}\"\n" +
-				$"{nameof(collectionUniqueName)}: \"{collectionUniqueName}\"\n" +
-				$"{nameof(collectionNotFoundError)}: {collectionNotFoundError.ToString().ToLower()}\n" +
-				$"{nameof(soundNotFoundError)}: {soundNotFoundError.ToString().ToLower()}\n" +
-				$"{nameof(soundAlreadyAddedError)}: {soundAlreadyAddedError.ToString().ToLower()}";
+			var funcName = $"Parameters:\n" +
+				$"{nameof(soundUniqueName)} = \"{soundUniqueName}\"\n" +
+				$"{nameof(collectionUniqueName)} = \"{collectionUniqueName}\"\n" +
+				$"{nameof(collectionNotFoundError)} = {collectionNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(soundNotFoundError)} = {soundNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(soundAlreadyAddedError)} = {soundAlreadyAddedError.ToString().ToLower()}";
 
+			if (sounds.ContainsKey(soundUniqueName) == false)
+			{
+				if (soundNotFoundError)
+				{
+					Error($"{funcName}{GetContentNotFoundError("sound", soundUniqueName)}", 1);
+				}
+				return;
+			}
 			if (soundCollections.ContainsKey(collectionUniqueName) == false)
 			{
 				if (collectionNotFoundError)
 				{
-					Error($"{funcName}:\n\nDescription: The sound collection '{collectionUniqueName}' was not found.", 1);
+					Error($"{funcName}{GetNotFoundError("sound collection", collectionUniqueName)}", 1);
 				}
 				return;
 			}
@@ -2888,7 +2891,7 @@ public static class Gear
 			{
 				if (collectionNotFoundError)
 				{
-					NotFoundError(funcName, nameof(collectionUniqueName), collectionUniqueName, 1);
+					Error($"{funcName}{GetNotFoundError("sound", soundUniqueName, " in sound collection ", collectionUniqueName)}", 1);
 				}
 				return;
 			}
@@ -4451,10 +4454,9 @@ public static class Gear
 		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' is invalid.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
 		Window.Close();
 	}
-	private static void NotFoundError(string funcName, string name, string value, int index, string tip = "")
+	private static string GetNotFoundError(string type, string name, string inType = "", string inName = "")
 	{
-		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' was not found.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
-		Window.Close();
+		return $"\n\nDescription:\nThe {type} '{name}' was not found{inType}{inName}.";
 	}
 	private static void AlreadyExistsError(string funcName, string name, string value, int index, string tip = "")
 	{
@@ -4468,7 +4470,7 @@ public static class Gear
 	}
 	private static void Error(string message, int index)
 	{
-		Window.PopUp($"File: {Debug.GetCodeFileName(index + 1)}.cs\nLine: {Debug.GetCodeLine(index + 1)}\n{message}", Window.GetTitle(), PopUpIcon.Error);
+		Window.PopUp($"File:\n{Debug.GetCodeFileName(index + 1)}\n\nLine:\n{Debug.GetCodeLine(index + 1)}\n\nMethod:\n{Debug.GetCodeMethodName(index)}\n\n{message}", Window.GetTitle(), PopUpIcon.Error);
 		Window.Close();
 	}
 	private static void CannotBeNullError(string funcName, string name, int index, string tip = "")
@@ -4488,6 +4490,17 @@ public static class Gear
 			return true;
 		}
 		return false;
+	}
+	private static string GetContentNotFoundError(string contentType, string contentName)
+	{
+		var extension = "";
+		switch (contentType)
+		{
+			case "sound": extension = "wav"; break;
+			case "melody": extension = "mp3"; break;
+			case "sprite": extension = "png"; break;
+		}
+		return $"\n\nDescription:\nThe {contentType} '{contentName}' was not found.\n\nTip:\nIn order to load a {contentType}...\n{contentLoadingInfo}\nAll {contentType} files should be of .{extension} format.";
 	}
 
 	private static void UpdateCameraBodyTransform(Body body)

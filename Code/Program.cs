@@ -6,7 +6,6 @@
 	{
 		if (tickCount == 1)
 		{
-			Gear.Sound.Play("bottle", loop: true);
 			Gear.Sound.AddToCollection("asd", "bottle");
 		}
 	}
