@@ -6,7 +6,7 @@
 	{
 		if (tickCount == 1)
 		{
-			Gear.Sound.AddToCollection("asd", "bottle");
+
 		}
 	}
 }

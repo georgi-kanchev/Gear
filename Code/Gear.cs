@@ -130,7 +130,7 @@ public static class Gear
 	private static List<string> clientUniqueNames = new List<string>();
 
 	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
-	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole;
+	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole, windowIsDisplayed = true;
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time, cameraAngle;
 	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName;
 
@@ -318,6 +318,7 @@ public static class Gear
 
 		protected override void Draw(GameTime gameTime)
 		{
+			if (Gear.Window.IsDisplayed() == false) return;
 			frame++;
 			if (render == false) return;
 			frameRendered++;
@@ -791,11 +792,16 @@ public static class Gear
 			return pauseUnfocus;
 		}
 
-		public static void Display(bool display)
+		public static void Display(bool displayed)
 		{
+			windowIsDisplayed = displayed;
 			var form = Control.FromHandle(game.Window.Handle) as Form;
-			if (display) form.Show();
+			if (displayed) form.Show();
 			else form.Hide();
+		}
+		public static bool IsDisplayed()
+		{
+			return windowIsDisplayed;
 		}
 
 		public static bool IsInReleaseMode()
@@ -921,7 +927,7 @@ public static class Gear
 		public Body(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
 		{
 			Instantiate();
-			SetUniqueName(uniqueName, nameIsNullError, nameExistsError);
+			_SetUniqueName(uniqueName, 1, nameIsNullError, nameExistsError);
 		}
 		private void Instantiate()
 		{
@@ -964,14 +970,17 @@ public static class Gear
 		{
 			return uniqueName;
 		}
-		public void SetUniqueName(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
+		private void _SetUniqueName(string uniqueName, int methodIndex, bool nameIsNullError = true, bool nameExistsError = true)
 		{
-			var funcName = $"{nameof(SetUniqueName)}({nameof(uniqueName)}: \"{uniqueName}\")";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = \"{uniqueName}\"\n" +
+				$"{nameof(nameIsNullError)} = {nameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(nameExistsError)} = {nameExistsError.ToString().ToLower()}";
 			if (uniqueName == null)
 			{
 				if (nameIsNullError)
 				{
-					CannotBeNullError(funcName, nameof(uniqueName), 1);
+					Error(GetCannotBeNullError($"{nameof(Body)}'s {nameof(uniqueName)}"), methodIndex + 1);
 				}
 				return;
 			}
@@ -979,8 +988,9 @@ public static class Gear
 			{
 				if (nameExistsError)
 				{
-					var tip = $"Make sure you are not creating the {nameof(Body)} multiple times or each tick.";
-					AlreadyExistsError($"{funcName}", nameof(uniqueName), uniqueName, 1, tip);
+					Error($"{parameters}\n\n{GetAlreadyExistsError($"{nameof(Body)}'s {nameof(uniqueName)}", uniqueName)}\n\n" +
+						$"Tip:\n" +
+						$"Make sure you are not creating the {nameof(Body)} multiple times or each tick.", methodIndex + 1);
 				}
 				return;
 			}
@@ -988,10 +998,21 @@ public static class Gear
 			this.uniqueName = uniqueName;
 			bodyUniqueNames.Add(uniqueName, this);
 		}
-
-		public void Tag(string tag)
+		public void SetUniqueName(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
 		{
-			if (tags.Contains(tag) == false)
+			_SetUniqueName(uniqueName, 1, nameIsNullError, nameExistsError);
+		}
+
+		public void AddTag(string tag, bool tagIsNullError = true, bool tagAlreadyAddedError = true)
+		{
+			var parameters = $"Parameters:\n" +
+				$"{nameof(tag)} = \"{tag}\"\n" +
+				$"{nameof(tagIsNullError)} = {tagIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(tagAlreadyAddedError)} = {tagAlreadyAddedError.ToString().ToLower()}";
+			if (IsNullError(parameters, nameof(tag), tag, tagIsNullError, 1)) return;
+
+			if (ValueAlreadyAddedError(parameters, tags, $"{nameof(Body)}'s {nameof(tag)}", tag, tagAlreadyAddedError, 1))return;
+			else
 			{
 				tags.Add(tag);
 				if (tagBodies.ContainsKey(tag))
@@ -1002,22 +1023,16 @@ public static class Gear
 				{
 					tagBodies.Add(tag, new List<Body>() { this });
 				}
-
 			}
 		}
-		public void Untag(string tag, bool tagNotFoundError)
+		public void RemoveTag(string tag, bool tagIsNullError = true, bool tagNotFoundError = true)
 		{
-			if (tags.Contains(tag) == false)
-			{
-				if (tagNotFoundError)
-				{
-					var funcName = $"Parameters:\n" +
-						$"{nameof(tag)} = \"{tag}\"\n" +
-						$"{nameof(tagNotFoundError)} = {tagNotFoundError}";
-					Error($"{funcName}{GetNotFoundError(nameof(tag), tag)}", 1);
-				}
-				return;
-			}
+			var parameters = $"Parameters:\n" +
+				$"{nameof(tag)} = \"{tag}\"\n" +
+				$"{nameof(tagIsNullError)} = {tagIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(tagNotFoundError)} = {tagNotFoundError.ToString().ToLower()}";
+			if (IsNullError(parameters, nameof(tag), tag, tagNotFoundError, 1)) return;
+			if (ValueNotFoundError(parameters, tags, nameof(tag), tag, tagNotFoundError, 1)) return;
 
 			tags.Remove(tag);
 
@@ -1027,7 +1042,7 @@ public static class Gear
 				tagBodies.Remove(tag);
 			}
 		}
-		public void UntagAll()
+		public void RemoveAllTags()
 		{
 			foreach (var tag in tags)
 			{
@@ -1061,26 +1076,38 @@ public static class Gear
 		}
 		public void SetPositionXY(float x, float y, bool positionLockedError = true)
 		{
-			var funcName = $"{nameof(SetPositionXY)}({nameof(x)}: {x}, {nameof(y)}: {y}, {nameof(positionLockedError)}: {positionLockedError})";
-			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(x)} = {x}, {nameof(y)} = {y}\n" +
+				$"{nameof(positionLockedError)} = {positionLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "position", positionLocked, positionLockedError, 1)) return;
+
 			_SetPosition(new Point(x, y));
 		}
 		public void SetPositionX(float x, bool positionLockedError = true)
 		{
-			var funcName = $"{nameof(SetPositionX)}({nameof(x)}: {x}, {nameof(positionLockedError)}: {positionLockedError})";
-			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(x)} = {x}\n" +
+				$"{nameof(positionLockedError)} = {positionLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "position", positionLocked, positionLockedError, 1)) return;
+
 			_SetPosition(new Point(x, position.GetY()));
 		}
 		public void SetPositionY(float y, bool positionLockedError = true)
 		{
-			var funcName = $"{nameof(SetPositionY)}({nameof(y)}: {y}, {nameof(positionLockedError)}: {positionLockedError})";
-			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(y)} = {y}\n" +
+				$"{nameof(positionLockedError)} = {positionLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "position", positionLocked, positionLockedError, 1)) return;
+
 			_SetPosition(new Point(position.GetX(), y));
 		}
 		public void SetPosition(Point position, bool positionLockedError = true)
 		{
-			var funcName = $"{nameof(SetPosition)}({nameof(position)}: {position}, {nameof(positionLockedError)}: {positionLockedError})";
-			if (BodyTransformLockedError(funcName, "position", positionLocked, positionLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(position)} = {position}\n" +
+				$"{nameof(positionLockedError)} = {positionLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "position", positionLocked, positionLockedError, 1)) return;
+
 			_SetPosition(position);
 		}
 		public Point GetPosition()
@@ -1124,14 +1151,19 @@ public static class Gear
 		}
 		public void SetAngleA(float a, bool angleLockedError = true)
 		{
-			var funcName = $"{nameof(SetAngleA)}({nameof(a)}: {a}, {nameof(angleLockedError)}: {angleLockedError})";
-			if (BodyTransformLockedError(funcName, "angle", angleLocked, angleLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(a)} = {a}\n" +
+				$"{nameof(angleLockedError)} = {angleLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "angle", angleLocked, angleLockedError, 1)) return;
+
 			_SetAngle(new Angle(a));
 		}
 		public void SetAngle(Angle angle, bool angleLockedError = true)
 		{
-			var funcName = $"{nameof(SetAngle)}({nameof(angle)}: {angle}, {nameof(angleLockedError)}: {angleLockedError})";
-			if (BodyTransformLockedError(funcName, "angle", angleLocked, angleLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(angle)} = {angle}\n" +
+				$"{nameof(angleLockedError)} = {angleLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "angle", angleLocked, angleLockedError, 1)) return;
 			_SetAngle(angle);
 		}
 		public Angle GetAngle()
@@ -1175,26 +1207,38 @@ public static class Gear
 		}
 		public void SetSize(Size size, bool sizeLockedError = true)
 		{
-			var funcName = $"{nameof(SetSize)}({nameof(size)}: {size}, {nameof(sizeLockedError)}: {sizeLockedError})";
-			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(size)} = {size}\n" +
+				$"{nameof(sizeLockedError)} = {sizeLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "size", sizeLocked, sizeLockedError, 1)) return;
+
 			_SetSize(size);
 		}
 		public void SetSizeWH(float w, float h, bool sizeLockedError = true)
 		{
-			var funcName = $"{nameof(SetSizeWH)}({nameof(w)}: {w}, {nameof(h)}: {h}, {nameof(sizeLockedError)}: {sizeLockedError})";
-			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(w)} = {w}, {nameof(h)} = {h}\n" +
+				$"{nameof(sizeLockedError)} = {sizeLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "size", sizeLocked, sizeLockedError, 1)) return;
+
 			_SetSize(new Size(w, h));
 		}
 		public void SetSizeW(float w, bool sizeLockedError = true)
 		{
-			var funcName = $"{nameof(SetSizeWH)}({nameof(w)}: {w}, {nameof(sizeLockedError)}: {sizeLockedError})";
-			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(w)} = {w}\n" +
+				$"{nameof(sizeLockedError)} = {sizeLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "size", sizeLocked, sizeLockedError, 1)) return;
+
 			_SetSize(new Size(w, size.GetH()));
 		}
 		public void SetSizeH(float h, bool sizeLockedError = true)
 		{
-			var funcName = $"{nameof(SetSizeWH)}({nameof(h)}: {h}, {nameof(sizeLockedError)}: {sizeLockedError})";
-			if (BodyTransformLockedError(funcName, "size", sizeLocked, sizeLockedError, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(h)} = {h}\n" +
+				$"{nameof(sizeLockedError)} = {sizeLockedError.ToString().ToLower()}";
+			if (BodyTransformLockedError(parameters, "size", sizeLocked, sizeLockedError, 1)) return;
+
 			_SetSize(new Size(size.GetW(), h));
 		}
 		public Size GetSize()
@@ -1224,16 +1268,36 @@ public static class Gear
 			return boundariesColor;
 		}
 		#endregion
+
+		private bool BodyTransformLockedError(string parameters, string component, bool condition, bool error, int index)
+		{
+			if (condition)
+			{
+				if (error)
+				{
+					Error($"{parameters}\n\nCannot change {nameof(Body)}'s {component} due to it being locked.", index + 1);
+				}
+				return true;
+			}
+			return false;
+		}
 		#endregion
 		#region Sprite
 		public void DisplaySprite(string name, bool display = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0, bool nameNotFound = true)
 		{
 			if (sprites.ContainsKey(name) == false)
 			{
-				var funcName = $"{nameof(DisplaySprite)}({nameof(name)}: \"{name}\", {nameof(display)}: {display}, {nameof(width)}: {width}, {nameof(height)}: {height}, {nameof(r)}: {r}, {nameof(g)}: {g}, {nameof(b)}: {b}, {nameof(o)}: {o}, {nameof(originX)}: {originX}, {nameof(originY)}: {originY}, {nameof(gridSize)}: {gridSize}, {nameof(indexH)}: {indexH}, {nameof(indexV)}: {indexV})";
+				var parameters = $"Parameters:\n" +
+					$"{nameof(name)} = \"{name}\"" +
+					$"{nameof(display)} = {display}" +
+					$"{nameof(width)} = {width}, {nameof(height)} = {height}" +
+					$"{nameof(r)} = {r}, {nameof(g)} = {g}, {nameof(b)} = {b}, {nameof(o)} = {o}" +
+					$"{nameof(originX)} = {originX}, {nameof(originY)} = {originY}" +
+					$"{nameof(gridSize)} = {gridSize}" +
+					$"{nameof(indexH)} = {indexH}, {nameof(indexV)} = {indexV}";
 				if (nameNotFound)
 				{
-					NotFoundError(funcName, nameof(name), $"{name}", 1, $"In order to load a Sprite:\n{contentLoadingInfo}");
+					Error($"{parameters}\n\n{GetContentNotFoundError("sprite", name)}", 1);
 				}
 				return;
 			}
@@ -1352,11 +1416,11 @@ public static class Gear
 		}
 		#endregion
 		#region Creation
-		private void _SetHitboxLine(string uniqueName, Line line)
+		private void _SetHitboxLine(string uniqueKey, Line line)
 		{
 			line = new Line(this.position + line.GetStartPoint(), this.position + line.GetEndPoint());
 
-			hitboxLines[uniqueName] = line;
+			hitboxLines[uniqueKey] = line;
 
 			var startAngle = new Angle();
 			var endAngle = new Angle();
@@ -1365,30 +1429,41 @@ public static class Gear
 			var endDist = position.GetDistanceToPoint(line.GetEndPoint());
 			startAngle.SetFromBetweenPoints(position, line.GetStartPoint());
 			endAngle.SetFromBetweenPoints(position, line.GetEndPoint());
-			hitboxLineAngles[uniqueName] = new float[] { startAngle.GetA(), endAngle.GetA() };
-			hitboxLineDistances[uniqueName] = new float[] { startDist, endDist };
-			hitboxLineSizes[uniqueName] = size;
+			hitboxLineAngles[uniqueKey] = new float[] { startAngle.GetA(), endAngle.GetA() };
+			hitboxLineDistances[uniqueKey] = new float[] { startDist, endDist };
+			hitboxLineSizes[uniqueKey] = size;
 			UpdateCollisions();
 		}
-		public void SetHitboxLine(string uniqueName, Line line, bool keyNotFoundError = true)
+		public void SetHitboxLine(string uniqueKey, Line line, bool keyNotFoundError = true, bool keyIsNullError = true)
 		{
-			var funcName = $"{nameof(SetHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(line)}: {line}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = \"{uniqueName}\"\n" +
+				$"{nameof(line)} = {line}\n" +
+				$"{nameof(keyNotFoundError)} = {keyNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(keyIsNullError)} = {keyIsNullError.ToString().ToLower()}";
+			if (KeyNotFoundError(parameters, hitboxLines, nameof(uniqueKey), uniqueName, keyNotFoundError, 1)) return;
 
 			_SetHitboxLine(uniqueName, line);
 		}
-		public void AddHitboxLine(string uniqueName, Line line, bool keyExistsError = true)
+		public void AddHitboxLine(string uniqueKey, Line line, bool keyExistsError = true, bool keyIsNullError = true)
 		{
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueKey)} = \"{uniqueKey}\"\n" +
+				$"{nameof(line)} = {line}\n" +
+				$"{nameof(keyExistsError)} = {keyExistsError.ToString().ToLower()}\n" +
+				$"{nameof(keyIsNullError)} = {keyIsNullError.ToString().ToLower()}";
 			if (hitboxLines == null) hitboxLines = new Dictionary<string, Line>();
-			var funcName = $"{nameof(AddHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(line)}: {line}, {nameof(keyExistsError)}: {keyExistsError})";
-			if (KeyExistsError(hitboxLines, uniqueName, keyExistsError, funcName, 1)) return;
+			if (IsNullError(parameters, $"{nameof(line)}'s {nameof(uniqueKey)}", uniqueKey, keyIsNullError, 1)) return;
+			if (KeyExistsError(parameters, hitboxLines, nameof(uniqueKey), uniqueKey, keyExistsError, 1)) return;
 
-			_SetHitboxLine(uniqueName, line);
+			_SetHitboxLine(uniqueKey, line);
 		}
-		public Line GetHitboxLine(string uniqueName, bool keyNotFoundError = true)
+		public Line GetHitboxLine(string uniqueKey, bool keyNotFoundError = true)
 		{
-			var funcName = $"{nameof(GetHitboxLine)}({nameof(uniqueName)}: {uniqueName}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(hitboxLines, uniqueName, keyNotFoundError, funcName, 1)) return default;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = \"{uniqueName}\"\n" +
+				$"{nameof(keyNotFoundError)} = {keyNotFoundError.ToString().ToLower()})";
+			if (KeyNotFoundError(parameters, hitboxLines, nameof(uniqueKey), uniqueName, keyNotFoundError, 1)) return default;
 
 			return hitboxLines[uniqueName];
 		}
@@ -1480,8 +1555,10 @@ public static class Gear
 			{
 				if (bodyAlreadyAddedError)
 				{
-					var funcName = $"{nameof(AddHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyAlreadyAddedError)} {bodyAlreadyAddedError})";
-					AlreadyExistsError(funcName, nameof(body), $"{body}", 1);
+					var parameters = $"Parameters:\n" +
+						$"{nameof(body)} = {body}\n" +
+						$"{nameof(bodyAlreadyAddedError)} = {bodyAlreadyAddedError.ToString().ToLower()})";
+					Error(GetAlreadyExistsError("", nameof(body), $"{body}"), 2);
 				}
 				return;
 			}
@@ -1493,8 +1570,10 @@ public static class Gear
 			{
 				if (bodyNotFoundError)
 				{
-					var funcName = $"{nameof(RemoveHitboxObstacle)}({nameof(body)}: {body}, {nameof(bodyNotFoundError)} {bodyNotFoundError})";
-					NotFoundError(funcName, nameof(body), $"{body}", 1);
+					var parameters = $"Parameters:\n" +
+						$"{nameof(body)} = {body}\n" +
+						$"{nameof(bodyNotFoundError)} = {bodyNotFoundError}";
+					Error($"{parameters}\n\n{GetNotFoundError(nameof(Body), $"{body}")}", 1);
 				}
 				return;
 			}
@@ -1704,9 +1783,12 @@ public static class Gear
 			}
 			else
 			{
+				var parameters = $"Parameters:\n" +
+					$"{nameof(text)} = {text}\n" +
+					$"{nameof(invalidTextError)} = {invalidTextError.ToString().ToLower()}";
 				if (invalidTextError)
 				{
-					InvalidValueError($"{nameof(GetFromText)}(\"{text}\")", nameof(text), text, 1, "Make sure it's a number.");
+					Error($"{parameters}\n\n{GetInvalidValueError(nameof(text), text)}\n\nTip:\nMake sure it's a number.", 1);
 				}
 				return new float[0];
 			}
@@ -2131,24 +2213,24 @@ public static class Gear
 		}
 		public static void StartServer()
 		{
-			var funcName = $"{nameof(StartServer)}()";
+			var method = Debug.GetCodeMethodName();
 			try
 			{
 				if (serverIsRunning)
 				{
-					consoleLog = $"{consoleLog}\n{funcName}: Server is already starting/started.";
+					consoleLog = $"{consoleLog}\n{method}: Server is already starting/started.";
 					ConsoleUpdate();
 					return;
 				}
 				if (clientIsConnected)
 				{
-					consoleLog = $"{consoleLog}\n{funcName}: Cannot start a server while a client.";
+					consoleLog = $"{consoleLog}\n{method}: Cannot start a server while a client.";
 					ConsoleUpdate();
 					return;
 				}
 				server = new Server(IPAddress.Any, serverPort);
 				server.Start();
-				consoleLog = $"{consoleLog}\n{funcName}: Started a LAN Server on port {serverPort}.";
+				consoleLog = $"{consoleLog}\n{method}: Started a LAN Server on port {serverPort}.";
 
 				var hostName = Dns.GetHostName();
 				var hostEntry = Dns.GetHostEntry(hostName);
@@ -2171,55 +2253,55 @@ public static class Gear
 			catch (Exception ex)
 			{
 				serverIsRunning = false;
-				consoleLog = $"{consoleLog}\n{funcName} Error: {ex.Message}";
+				consoleLog = $"{consoleLog}\n{method} Error: {ex.Message}";
 				ConsoleUpdate();
 				return;
 			}
 		}
 		public static void StopServer()
 		{
-			var funcName = $"{nameof(StopServer)}()";
+			var method = Debug.GetCodeMethodName();
 			try
 			{
 				if (serverIsRunning == false)
 				{
-					consoleLog = $"{consoleLog}\n{funcName}: Server is not running.";
+					consoleLog = $"{consoleLog}\n{method}: Server is not running.";
 					ConsoleUpdate();
 					return;
 				}
 				if (clientIsConnected)
 				{
-					consoleLog = $"{consoleLog}\n{funcName}: Cannot stop a server while a client.";
+					consoleLog = $"{consoleLog}\n{method}: Cannot stop a server while a client.";
 					ConsoleUpdate();
 					return;
 				}
 				serverIsRunning = false;
 				server.Stop();
-				consoleLog = $"{consoleLog}\n{funcName}: The LAN Server on port {serverPort} was stopped.";
+				consoleLog = $"{consoleLog}\n{method}: The LAN Server on port {serverPort} was stopped.";
 				ConsoleUpdate();
 			}
 			catch (Exception ex)
 			{
 				serverIsRunning = false;
-				consoleLog = $"{consoleLog}\n{funcName} Error: {ex.Message}";
+				consoleLog = $"{consoleLog}\n{method} Error: {ex.Message}";
 				ConsoleUpdate();
 				return;
 			}
 		}
 		public static void SendServerMessageToAllClients(string message)
 		{
-			var funcName = $"{nameof(SendServerMessageToAllClients)}(\"{message}\")";
-			if (ServerCannotSendMessage(funcName)) return;
+			var method = Debug.GetCodeMethodName();
+			if (ServerCannotSendMessage(method)) return;
 
-			ServerMessageSent(funcName);
+			ServerMessageSent(method);
 			server.Multicast($"~{(int)MessageType.ServerMessageToAll}|{message}");
 		}
 		public static void SendServerMessageToClient(string receiverUniqueName, string message)
 		{
-			var funcName = $"{nameof(SendServerMessageToClient)}(\"{receiverUniqueName}\", \"{message}\")";
-			if (ServerCannotSendMessage(funcName)) return;
+			var method = Debug.GetCodeMethodName();
+			if (ServerCannotSendMessage(method)) return;
 
-			ServerMessageSent(funcName);
+			ServerMessageSent(method);
 			server.Multicast($"~{(int)MessageType.ServerMessageToClient}|{receiverUniqueName}|{message}");
 		}
 		public static bool ServerIsRunning()
@@ -2229,22 +2311,26 @@ public static class Gear
 
 		public static void ConnectClient(string uniqueName, string ip)
 		{
-			var funcName = $"{nameof(ConnectClient)}(\"{uniqueName}\", \"{ip}\")";
+			uniqueName = uniqueName.Trim();
+			var method = Debug.GetCodeMethodName();
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = \"{uniqueName}\"\n" +
+				$"{nameof(ip)} = \"{ip}\"";
 			if (clientIsConnected)
 			{
-				consoleLog = $"{consoleLog}\n{funcName}: Already connecting/connected.";
+				consoleLog = $"{consoleLog}\n{method}: Already connecting/connected.";
 				ConsoleUpdate();
 				return;
 			}
 			if (serverIsRunning)
 			{
-				consoleLog = $"{consoleLog}\n{funcName}: Cannot connect as a client while a server.";
+				consoleLog = $"{consoleLog}\n{method}: Cannot connect as a client while a server.";
 				ConsoleUpdate();
 				return;
 			}
-			if (uniqueName == null)
+			if (uniqueName == null || uniqueName == "")
 			{
-				consoleLog = $"{consoleLog}\n{funcName}: Client's unique names cannot be null.";
+				consoleLog = $"{consoleLog}\n{method}: Clients' unique names cannot be null or empty.";
 				ConsoleUpdate();
 				return;
 			}
@@ -2259,21 +2345,21 @@ public static class Gear
 			catch (Exception)
 			{
 				clientIsConnected = false;
-				InvalidValueError(funcName, nameof(ip), $"{ip}", 1);
+				Error($"{method}\n\n{GetInvalidValueError(nameof(ip), ip)}", 1);
 				return;
 			}
 			clientUniqueName = uniqueName;
-			consoleLog = $"{consoleLog}\n{funcName}: Connecting to {ip}:{serverPort}...";
+			consoleLog = $"{consoleLog}\n{parameters}: Connecting to {ip}:{serverPort}...";
 			ConsoleUpdate();
 			client.ConnectAsync();
 
 		}
 		public static void DisconnectClient()
 		{
-			var funcName = $"{nameof(DisconnectClient)}()";
+			var method = Debug.GetCodeMethodName();
 			if (clientIsConnected == false)
 			{
-				consoleLog = $"{consoleLog}\n{funcName}: Cannot disconnect when not connected.";
+				consoleLog = $"{consoleLog}\n{method}: Cannot disconnect when not connected.";
 				ConsoleUpdate();
 				return;
 			}
@@ -2289,80 +2375,80 @@ public static class Gear
 		}
 		public static void SendClinetMessageToAllClients(string message)
 		{
-			var funcName = $"{nameof(SendClinetMessageToAllClients)}(\"{message}\")";
-			if (ClientCannotSendMessage(funcName)) return;
+			var method = Debug.GetCodeMethodName();
+			if (ClientCannotSendMessage(method)) return;
 
-			ClientMessageSent(funcName);
+			ClientMessageSent(method);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToAll}|{clientUniqueName}|{message}");
 		}
 		public static void SendClinetMessageToClient(string receiverUniqueName, string message)
 		{
-			var funcName = $"{nameof(SendClinetMessageToClient)}(\"{receiverUniqueName}\", \"{message}\")";
+			var method = Debug.GetCodeMethodName();
 			if (clientUniqueName == receiverUniqueName) return;
-			if (ClientCannotSendMessage(funcName)) return;
+			if (ClientCannotSendMessage(method)) return;
 
-			ClientMessageSent(funcName);
+			ClientMessageSent(method);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToClient}|{clientUniqueName}|{receiverUniqueName}|{message}");
 		}
 		public static void SendClientMessageToServer(string message)
 		{
-			var funcName = $"{nameof(SendClientMessageToServer)}(\"{message}\")";
-			if (ClientCannotSendMessage(funcName)) return;
+			var method = Debug.GetCodeMethodName();
+			if (ClientCannotSendMessage(method)) return;
 
-			ClientMessageSent(funcName);
+			ClientMessageSent(method);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToServer}|{clientUniqueName}|{message}");
 		}
 		public static void SendClientMessageToServerAndAllClients(string message)
 		{
-			var funcName = $"{nameof(SendClientMessageToServerAndAllClients)}(\"{message}\")";
-			if (ClientCannotSendMessage(funcName)) return;
+			var method = Debug.GetCodeMethodName();
+			if (ClientCannotSendMessage(method)) return;
 
-			ClientMessageSent(funcName);
+			ClientMessageSent(method);
 			client.SendAsync($"~{(int)MessageType.ClientMessageToAllAndServer}|{clientUniqueName}|{message}");
 		}
 
-		private static bool ClientCannotSendMessage(string funcName)
+		private static bool ClientCannotSendMessage(string method)
 		{
-			if (MessageDisconnected(funcName)) return true;
+			if (MessageDisconnected(method)) return true;
 			else if (serverIsRunning)
 			{
 				if (networkLogMessagesToConsole == false) return true;
-				consoleLog = $"{consoleLog}\n{funcName}: Cannot send a client message while a server.";
+				consoleLog = $"{consoleLog}\n{method}: Cannot send a client message while a server.";
 				ConsoleUpdate();
 				return true;
 			}
 			return false;
 		}
-		private static void ClientMessageSent(string funcName)
+		private static void ClientMessageSent(string method)
 		{
 			if (networkLogMessagesToConsole == false) return;
-			consoleLog = $"{consoleLog}\n{funcName}: Sent.";
+			consoleLog = $"{consoleLog}\n{method}: Sent.";
 			ConsoleUpdate();
 		}
-		private static bool ServerCannotSendMessage(string funcName)
+		private static bool ServerCannotSendMessage(string method)
 		{
-			if (MessageDisconnected(funcName)) return true;
+			if (MessageDisconnected(method)) return true;
 			else if (clientIsConnected)
 			{
 				if (networkLogMessagesToConsole == false) return true;
-				consoleLog = $"{consoleLog}\n{funcName}: Cannot send a server message while a client.";
+				consoleLog = $"{consoleLog}\n{method}: Cannot send a server message while a client.";
 				ConsoleUpdate();
 				return true;
 			}
 			return false;
 		}
-		private static void ServerMessageSent(string funcName)
+		private static void ServerMessageSent(string method)
 		{
 			if (networkLogMessagesToConsole == false) return;
-			consoleLog = $"{consoleLog}\n{funcName}: Sent.";
+			consoleLog = $"{consoleLog}\n{method}: Sent.";
 			ConsoleUpdate();
 		}
-		private static bool MessageDisconnected(string funcName)
+		private static bool MessageDisconnected(string method)
 		{
 			if (clientIsConnected == false && serverIsRunning == false)
 			{
 				if (networkLogMessagesToConsole == false) return true;
-				consoleLog = $"{consoleLog}\n{funcName}: Cannot send a message while disconnected.";
+				consoleLog = $"{consoleLog}\n{method}: Cannot send a message while disconnected.";
 				ConsoleUpdate();
 				return true;
 			}
@@ -2823,78 +2909,109 @@ public static class Gear
 		}
 
 		public static void Play(string uniqueName, float volumePercent = 50, float pitchPercent = 50,
-			float speakerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNotLoadedError = true)
+			float centerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNameIsNullError = true, bool soundNotFoundError = true)
 		{
+			var nameStr = uniqueName == null ? "null" : $"\"{uniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = {nameStr}\n" +
+				$"{nameof(volumePercent)} = {volumePercent}\n" +
+				$"{nameof(pitchPercent)} = {pitchPercent}\n" +
+				$"{nameof(centerPercent)} = {centerPercent}\n" +
+				$"{nameof(loop)} = {loop.ToString().ToLower()}\n" +
+				$"{nameof(ableToPlayOverSelf)} = {ableToPlayOverSelf.ToString().ToLower()}\n" +
+				$"{nameof(soundNotFoundError)} = {soundNotFoundError.ToString().ToLower()}";
+			if (IsNullError(parameters, nameof(uniqueName), uniqueName, soundNameIsNullError, 1)) return;
 			if (sounds.ContainsKey(uniqueName) == false)
 			{
-				if (soundNotLoadedError)
+				if (soundNotFoundError)
 				{
-					var funcName = $"{nameof(Play)}({nameof(uniqueName)}: \"{uniqueName}\", {nameof(volumePercent)}: {volumePercent}, {nameof(pitchPercent)}: {pitchPercent}, {nameof(speakerPercent)}: {speakerPercent}, {nameof(loop)}: {loop}, {nameof(ableToPlayOverSelf)}: {ableToPlayOverSelf}, {nameof(soundNotLoadedError)}: {soundNotLoadedError})";
-					NotFoundError(funcName, nameof(uniqueName), uniqueName, 1, $"In order to load a Sound:\n{contentLoadingInfo}");
+					Error($"{parameters}\n\n{GetContentNotFoundError("sound", uniqueName)}", 1);
 				}
 				return;
 			}
 			volumePercent = Number.GetLimited(volumePercent, 0, 100);
 			pitchPercent = Number.GetLimited(pitchPercent, 0, 100);
-			speakerPercent = Number.GetLimited(speakerPercent, 0, 100);
+			centerPercent = Number.GetLimited(centerPercent, 0, 100);
 			if (ableToPlayOverSelf)
 			{
 				sounds[uniqueName] = soundsRaw[uniqueName].CreateInstance();
 			}
-			sounds[uniqueName].Pan = ((float)speakerPercent * 2 - 100) / 100;
+			sounds[uniqueName].Pan = ((float)centerPercent * 2 - 100) / 100;
 			sounds[uniqueName].IsLooped = loop;
 			sounds[uniqueName].Pitch = ((float)pitchPercent * 2 - 100) / 100;
 			sounds[uniqueName].Volume = (float)volumePercent / 100;
 			sounds[uniqueName].Play();
 		}
-		public static void CreateCollection(string uniqueName, bool nameExistsError = true)
+		public static void PlayFromCollection(string collectionUniqueName, float volumePercent = 50, float pitchPercent = 50, float centerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNameIsNullError = true, bool collectionNotFoundError = true, bool collectionIsEmptyError = true)
 		{
-			var funcName = $"{nameof(CreateCollection)}({nameof(uniqueName)}: \"{uniqueName}\", {nameof(nameExistsError)}: {nameExistsError})";
-			if (soundCollections.ContainsKey(uniqueName))
+			var collectionNameStr = collectionUniqueName == null ? "null" : $"\"{collectionUniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(collectionUniqueName)} = {collectionNameStr}\n" +
+				$"{nameof(volumePercent)} = {volumePercent}\n" +
+				$"{nameof(pitchPercent)} = {pitchPercent}\n" +
+				$"{nameof(centerPercent)} = {centerPercent}\n" +
+				$"{nameof(loop)} = {loop.ToString().ToLower()}\n" +
+				$"{nameof(ableToPlayOverSelf)} = {ableToPlayOverSelf.ToString().ToLower()}\n" +
+				$"{nameof(collectionNotFoundError)} = {collectionNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(collectionIsEmptyError)} = {collectionIsEmptyError.ToString().ToLower()}";
+			if (IsNullError(parameters, nameof(collectionUniqueName), collectionUniqueName, soundNameIsNullError, 1)) return;
+			if (KeyNotFoundError(parameters, soundCollections, nameof(collectionUniqueName), collectionUniqueName, collectionNotFoundError, 1)) return;
+			var collection = soundCollections[collectionUniqueName];
+			if (collection.Count == 0)
 			{
-				if (nameExistsError)
+				if (collectionIsEmptyError)
 				{
-					AlreadyExistsError(funcName, nameof(uniqueName), uniqueName, 1);
+					Error($"{parameters}\n\nThe '{collectionUniqueName}' sound collection is empty.", 1);
 				}
 				return;
 			}
+			var randomSound = collection[(int)Number.GetRandomized(0, collection.Count - 1)];
+			Play(randomSound, volumePercent, pitchPercent, centerPercent, loop, ableToPlayOverSelf);
+		}
+		public static void CreateCollection(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
+		{
+			var uniqueNameStr = uniqueName == null ? "null" : $"\"{uniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = {uniqueNameStr}\n" +
+				$"{nameof(nameExistsError)} = {nameExistsError.ToString().ToLower()}";
+			if (IsNullError(parameters, $"sound collection's {nameof(uniqueName)}", uniqueName, nameIsNullError, 1)) return;
+			if (KeyExistsError(parameters, soundCollections, $"sound collection's {nameof(uniqueName)}", uniqueName, nameExistsError, 1)) return;
 
 			soundCollections[uniqueName] = new List<string>();
 		}
-		public static void AddToCollection(string soundUniqueName, string collectionUniqueName,
-			bool soundNotFoundError = true, bool collectionNotFoundError = true, bool soundAlreadyAddedError = true)
+		public static void AddToCollection(string soundUniqueName, string collectionUniqueName, bool soundNameIsNullError = true, bool collectionNameIsNullError = true, bool soundNotFoundError = true, bool collectionNotFoundError = true, bool soundAlreadyAddedError = true)
 		{
-			var funcName = $"Parameters:\n" +
-				$"{nameof(soundUniqueName)} = \"{soundUniqueName}\"\n" +
-				$"{nameof(collectionUniqueName)} = \"{collectionUniqueName}\"\n" +
+			var nameStr = soundUniqueName == null ? "null" : $"\"{soundUniqueName}\"";
+			var collNameStr = collectionUniqueName == null ? "null" : $"\"{collectionUniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(soundUniqueName)} = {nameStr}\n" +
+				$"{nameof(collectionUniqueName)} = {collNameStr}\n" +
+				$"{nameof(soundNameIsNullError)} = {soundNameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(collectionNameIsNullError)} = {collectionNameIsNullError.ToString().ToLower()}\n" +
 				$"{nameof(collectionNotFoundError)} = {collectionNotFoundError.ToString().ToLower()}\n" +
 				$"{nameof(soundNotFoundError)} = {soundNotFoundError.ToString().ToLower()}\n" +
 				$"{nameof(soundAlreadyAddedError)} = {soundAlreadyAddedError.ToString().ToLower()}";
 
-			if (sounds.ContainsKey(soundUniqueName) == false)
-			{
-				if (soundNotFoundError)
-				{
-					Error($"{funcName}{GetContentNotFoundError("sound", soundUniqueName)}", 1);
-				}
-				return;
-			}
-			if (soundCollections.ContainsKey(collectionUniqueName) == false)
-			{
-				if (collectionNotFoundError)
-				{
-					Error($"{funcName}{GetNotFoundError("sound collection", collectionUniqueName)}", 1);
-				}
-				return;
-			}
-			if (soundCollections[collectionUniqueName].Contains(soundUniqueName))
-			{
-				if (collectionNotFoundError)
-				{
-					Error($"{funcName}{GetNotFoundError("sound", soundUniqueName, " in sound collection ", collectionUniqueName)}", 1);
-				}
-				return;
-			}
+			if (XCollectionErrorChecking(parameters, soundUniqueName, collectionUniqueName, soundNameIsNullError, collectionNameIsNullError, soundNotFoundError, collectionNotFoundError)) return;
+			if (ValueAlreadyAddedError(parameters, soundCollections[collectionUniqueName], "sound", soundUniqueName, soundNotFoundError, 1, $" in the '{collectionUniqueName}' sound collection")) return;
+
+			soundCollections[collectionUniqueName].Add(soundUniqueName);
+		}
+		public static void RemoveFromCollection(string soundUniqueName, string collectionUniqueName, bool soundNameIsNullError = true, bool collectionNameIsNullError = true, bool soundNotFoundError = true, bool collectionNotFoundError = true)
+		{
+			var nameStr = soundUniqueName == null ? "null" : $"\"{soundUniqueName}\"";
+			var collNameStr = collectionUniqueName == null ? "null" : $"\"{collectionUniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(soundUniqueName)} = {nameStr}\n" +
+				$"{nameof(collectionUniqueName)} = {collNameStr}\n" +
+				$"{nameof(soundNameIsNullError)} = {soundNameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(collectionNameIsNullError)} = {collectionNameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(collectionNotFoundError)} = {collectionNotFoundError.ToString().ToLower()}\n" +
+				$"{nameof(soundNotFoundError)} = {soundNotFoundError.ToString().ToLower()}";
+			if (XCollectionErrorChecking(parameters, soundUniqueName, collectionUniqueName, soundNameIsNullError, collectionNameIsNullError, soundNotFoundError, collectionNotFoundError)) return;
+			if (ValueNotFoundError(parameters, soundCollections[collectionUniqueName], "sound", soundUniqueName, soundNotFoundError, 1, $" in the '{collectionUniqueName}' sound collection")) return;
+
+			soundCollections[collectionUniqueName].Remove(soundUniqueName);
 		}
 		public static void PauseAll(bool paused)
 		{
@@ -2935,6 +3052,23 @@ public static class Gear
 				return;
 			}
 			sounds[uniqueName].Stop();
+		}
+
+		private static bool XCollectionErrorChecking(string parameters, string soundUniqueName, string collectionUniqueName, bool soundNameIsNullError = true, bool collectionNameIsNullError = true, bool soundNotFoundError = true, bool collectionNotFoundError = true)
+		{
+			if (IsNullError(parameters, nameof(soundUniqueName), soundUniqueName, soundNameIsNullError, 2)) return true;
+			if (IsNullError(parameters, nameof(collectionUniqueName), collectionUniqueName, collectionNameIsNullError, 2)) return true;
+			if (sounds.ContainsKey(soundUniqueName) == false)
+			{
+				if (soundNotFoundError)
+				{
+					Error($"{parameters}\n\n{GetContentNotFoundError("sound", soundUniqueName)}", 2);
+				}
+				return true;
+			}
+			if (KeyNotFoundError(parameters, soundCollections, nameof(collectionUniqueName), collectionUniqueName, soundNotFoundError, 2)) return true;
+
+			return false;
 		}
 	}
 
@@ -2998,7 +3132,7 @@ public static class Gear
 		public void Expand(int index, UniqueKeyT uniqueKey, ValueT value,
 			bool invalidIndexError = true, bool keyExistsError = true)
 		{
-			var funcName = $"{nameof(Expand)}({nameof(index)}: {index}, " +
+			var parameters = $"{nameof(Expand)}({nameof(index)}: {index}, " +
 				$"{nameof(uniqueKey)}: {uniqueKey}, {nameof(value)}: {value}, " +
 				$"{nameof(invalidIndexError)}: {invalidIndexError}, {nameof(keyExistsError)}: {keyExistsError})";
 			if (keys == null) keys = new List<UniqueKeyT>();
@@ -3009,7 +3143,7 @@ public static class Gear
 			{
 				if (invalidIndexError)
 				{
-					InvalidValueError(funcName, nameof(index), $"{index}", 1, "Make sure it's not < 0.");
+					Error($"{parameters}\n\n{GetInvalidValueError(nameof(index), $"{index}")}\n\nTip:\nMake sure it's not < 0.", 1);
 				}
 				return;
 			}
@@ -3032,7 +3166,7 @@ public static class Gear
 			}
 
 			if (dict == null) dict = new Dictionary<UniqueKeyT, ValueT>();
-			if (KeyExistsError(dict, uniqueKey, keyExistsError, funcName, 1)) return;
+			if (KeyExistsError(parameters, dict, nameof(uniqueKey), uniqueKey, keyExistsError, 1)) return;
 
 			dict.Add(uniqueKey, value);
 			values.Insert(index, value);
@@ -3059,19 +3193,22 @@ public static class Gear
 		}
 		public void ShrinkAt(int index, bool indexNotFoundError = true)
 		{
-			var funcName = $"{nameof(ShrinkAt)}({nameof(index)}: {index}, {nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(index)} = {index}\n" +
+				$"{nameof(indexNotFoundError)} = {indexNotFoundError.ToString().ToLower()}";
+			if (IndexNotFoundError(parameters, index, indexNotFoundError)) return;
 
 			indexes.Remove(index);
 			values.RemoveAt(index);
 			dict.Remove(keys[index]);
 			keys.RemoveAt(index);
 		}
-		public void ShrinkIn(UniqueKeyT uniqueKey, bool indexNotFoundError = true)
+		public void ShrinkIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
 		{
-			var funcName = $"{nameof(ShrinkIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
-				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, indexNotFoundError, funcName, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueKey)} = {uniqueKey}\n" +
+				$"{nameof(keyNotFoundError)} = {keyNotFoundError}";
+			if (KeyNotFoundError(parameters, dict, nameof(uniqueKey), uniqueKey, keyNotFoundError, 1)) return;
 
 			indexes.Remove(keys.IndexOf(uniqueKey));
 			values.RemoveAt(keys.IndexOf(uniqueKey));
@@ -3080,18 +3217,22 @@ public static class Gear
 		}
 		public void ReplaceAt(int index, ValueT value, bool indexNotFoundError = true)
 		{
-			var funcName = $"{nameof(ReplaceAt)}({nameof(index)}: {index}, " +
-				$"{nameof(value)}: {value}, {nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(index)} = {index}\n" +
+				$"{nameof(value)} = {value}\n" +
+				$"{nameof(indexNotFoundError)} = {indexNotFoundError.ToString().ToLower()}";
+			if (IndexNotFoundError(parameters, index, indexNotFoundError)) return;
 
 			values[index] = value;
 			dict[keys[index]] = value;
 		}
 		public void ReplaceIn(UniqueKeyT uniqueKey, ValueT value, bool keyNotFoundError = true)
 		{
-			var funcName = $"{nameof(ReplaceIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
-				$"{nameof(value)}: {value}, {nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName, 1)) return;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueKey)} = {uniqueKey}\n" +
+				$"{nameof(value)} = {value}\n" +
+				$"{nameof(keyNotFoundError)} = {keyNotFoundError.ToString().ToLower()}";
+			if (KeyNotFoundError(parameters, dict, nameof(uniqueKey), uniqueKey, keyNotFoundError, 1)) return;
 
 			dict[uniqueKey] = value;
 			values[keys.IndexOf(uniqueKey)] = value;
@@ -3111,33 +3252,37 @@ public static class Gear
 		}
 		public ValueT GetValueIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
 		{
-			var funcName = $"{nameof(GetValueIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
-				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName, 1)) return default;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueKey)} = {uniqueKey}\n" +
+				$"{nameof(keyNotFoundError)} = {keyNotFoundError.ToString().ToLower()}";
+			if (KeyNotFoundError(parameters, dict, nameof(uniqueKey), uniqueKey, keyNotFoundError, 1)) return default;
 
 			return dict[uniqueKey];
 		}
 		public ValueT GetValueAt(int index, bool indexNotFoundError = true)
 		{
-			var funcName = $"{nameof(GetValueAt)}({nameof(index)}: {index}, " +
-				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return default;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(index)} = {index}\n" +
+				$"{nameof(indexNotFoundError)} = {indexNotFoundError.ToString().ToLower()}";
+			if (IndexNotFoundError(parameters, index, indexNotFoundError)) return default;
 
 			return values[index];
 		}
 		public UniqueKeyT GetUniqueKeyAt(int index, bool indexNotFoundError = true)
 		{
-			var funcName = $"{nameof(GetUniqueKeyAt)}({nameof(index)}: {index}, " +
-				$"{nameof(indexNotFoundError)}: {indexNotFoundError})";
-			if (IndexNotFoundError(index, indexNotFoundError, funcName)) return default;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(index)} = {index}\n" +
+				$"{nameof(indexNotFoundError)} = {indexNotFoundError.ToString().ToLower()}";
+			if (IndexNotFoundError(parameters, index, indexNotFoundError)) return default;
 
 			return keys[index];
 		}
 		public int GetIndexIn(UniqueKeyT uniqueKey, bool keyNotFoundError = true)
 		{
-			var funcName = $"{nameof(GetIndexIn)}({nameof(uniqueKey)}: {uniqueKey}, " +
-				$"{nameof(keyNotFoundError)}: {keyNotFoundError})";
-			if (KeyNotFoundError(dict, uniqueKey, keyNotFoundError, funcName, 1)) return default;
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueKey)} = {uniqueKey}\n" +
+				$"{nameof(keyNotFoundError)} = {keyNotFoundError.ToString().ToLower()}";
+			if (KeyNotFoundError(parameters, dict, nameof(uniqueKey), uniqueKey, keyNotFoundError, 1)) return default;
 
 			return keys.IndexOf(uniqueKey);
 		}
@@ -3177,13 +3322,13 @@ public static class Gear
 			return values != null && values.Contains(value);
 		}
 
-		private bool IndexNotFoundError(int index, bool indexNotFoundError, string funcName)
+		private bool IndexNotFoundError(string parameters, int index, bool indexNotFoundError)
 		{
 			if (indexes.Contains(index) == false)
 			{
 				if (indexNotFoundError)
 				{
-					NotFoundError(funcName, nameof(index), $"{index}", 1);
+					Error($"{parameters}\n\n{GetNotFoundError(nameof(index), $"{index}")}", index + 1);
 				}
 				return true;
 			}
@@ -4423,84 +4568,106 @@ public static class Gear
 		}
 	}
 
-
-	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyNotFoundError, string funcName, int index)
-	{
-		if (dict == null || dict.ContainsKey(uniqueKey) == false)
-		{
-			if (keyNotFoundError)
-			{
-				NotFoundError(funcName, nameof(uniqueKey), $"{uniqueKey}", index + 1);
-			}
-			return true;
-		}
-		return false;
-	}
-	private static bool KeyExistsError<UniqueKeyT, ValueT>(Dictionary<UniqueKeyT, ValueT> dict, UniqueKeyT uniqueKey, bool keyExistsError, string funcName, int index)
-	{
-		if (dict != null && dict.ContainsKey(uniqueKey))
-		{
-			if (keyExistsError)
-			{
-				AlreadyExistsError(funcName, nameof(uniqueKey), $"{uniqueKey}", index + 1);
-			}
-			return true;
-		}
-		return false;
-	}
-
-	private static void InvalidValueError(string funcName, string name, string value, int index, string tip = "")
-	{
-		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' is invalid.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
-		Window.Close();
-	}
-	private static string GetNotFoundError(string type, string name, string inType = "", string inName = "")
-	{
-		return $"\n\nDescription:\nThe {type} '{name}' was not found{inType}{inName}.";
-	}
-	private static void AlreadyExistsError(string funcName, string name, string value, int index, string tip = "")
-	{
-		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' already exists.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
-		Window.Close();
-	}
-	private static void AlreadyAddedError(string funcName, string name, string value, int index, string tip = "")
-	{
-		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} '{value}' was already added.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
-		Window.Close();
-	}
 	private static void Error(string message, int index)
 	{
 		Window.PopUp($"File:\n{Debug.GetCodeFileName(index + 1)}\n\nLine:\n{Debug.GetCodeLine(index + 1)}\n\nMethod:\n{Debug.GetCodeMethodName(index)}\n\n{message}", Window.GetTitle(), PopUpIcon.Error);
 		Window.Close();
 	}
-	private static void CannotBeNullError(string funcName, string name, int index, string tip = "")
+	private static string GetNotFoundError(string type, string name, string inside = "")
 	{
-		Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThe {name} cannot be null.\n\n{tip}", Window.GetTitle(), PopUpIcon.Error);
-		Window.Close();
+		return $"Description:\nThe {type} '{name}' was not found{inside}.";
 	}
-	private static bool BodyTransformLockedError(string funcName, string component, bool condition, bool error, int index)
+	private static string GetAlreadyExistsError(string type, string name, string inside = "")
 	{
-		if (condition)
-		{
-			if (error)
-			{
-				Window.PopUp($"{Debug.GetCodeFileName(index + 1)}.cs at line {Debug.GetCodeLine(index + 1)}:\n{funcName}:\n\nThis {nameof(Body)}'s {component} is locked.", Window.GetTitle(), PopUpIcon.Error);
-				Window.Close();
-			}
-			return true;
-		}
-		return false;
+		return $"Description:\nThe {type} '{name}' already exists{inside}.";
 	}
-	private static string GetContentNotFoundError(string contentType, string contentName)
+	private static string GetAlreadyAddedError(string type, string name, string inside = "")
+	{
+		return $"Description:\nThe {type} '{name}' is already added{inside}.";
+	}
+	private static string GetContentNotFoundError(string type, string name)
 	{
 		var extension = "";
-		switch (contentType)
+		switch (type)
 		{
 			case "sound": extension = "wav"; break;
 			case "melody": extension = "mp3"; break;
 			case "sprite": extension = "png"; break;
 		}
-		return $"\n\nDescription:\nThe {contentType} '{contentName}' was not found.\n\nTip:\nIn order to load a {contentType}...\n{contentLoadingInfo}\nAll {contentType} files should be of .{extension} format.";
+		return $"Description:\nThe {type} '{name}' was not found.\n\nTip:\nIn order to load a {type}...\n{contentLoadingInfo}\nAll {type} files should be of .{extension} format.";
+	}
+	private static string GetCannotBeNullError(string type)
+	{
+		return $"Description:\nThe {type} cannot be 'null'.";
+	}
+	private static string GetBodyTransformLockError(Body body, string component)
+	{
+		return $"Description:\nThe component of {nameof(Body)} '{body}' cannot be affected due to it being locked.";
+	}
+	private static string GetInvalidValueError(string type, string name)
+	{
+		return $"Description:\nThe {type} '{name}' is invalid.";
+	}
+
+	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(string parameters, Dictionary<UniqueKeyT, ValueT> dict, string type, UniqueKeyT uniqueKey, bool keyNotFoundError, int index, string inside = "")
+	{
+		if (dict == null || dict.ContainsKey(uniqueKey) == false)
+		{
+			if (keyNotFoundError)
+			{
+				Error($"{parameters}\n\n{GetNotFoundError(type, $"{uniqueKey}", inside)}", index + 1);
+			}
+			return true;
+		}
+		return false;
+	}
+	private static bool KeyExistsError<UniqueKeyT, ValueT>(string parameters, Dictionary<UniqueKeyT, ValueT> dict, string type, UniqueKeyT uniqueKey, bool keyExistsError, int index, string inside = "")
+	{
+		if (dict != null && dict.ContainsKey(uniqueKey))
+		{
+			if (keyExistsError)
+			{
+				Error($"{parameters}\n\n{GetAlreadyExistsError(type, $"{uniqueKey}", inside)}", index + 1);
+			}
+			return true;
+		}
+		return false;
+	}
+	private static bool IsNullError<T>(string parameters, string type, T value, bool valueIsNullError, int index)
+	{
+		if (value == null)
+		{
+			if (valueIsNullError)
+			{
+				Error($"{parameters}\n\n{GetCannotBeNullError(type)}", index + 1);
+			}
+			return true;
+		}
+		return false;
+	}
+	private static bool ValueAlreadyAddedError<T>(string parameters, List<T> list, string type, T value, bool valueExistsError, int index, string inside = "")
+	{
+		if (list != null && list.Contains(value))
+		{
+			if (valueExistsError)
+			{
+				Error($"{parameters}\n\n{GetAlreadyAddedError(type, $"{value}", inside)}", index + 1);
+			}
+			return true;
+		}
+		return false;
+	}
+	private static bool ValueNotFoundError<T>(string parameters, List<T> list, string type, T value, bool valueNotFoundError, int index, string inside = "")
+	{
+		if (list != null && list.Contains(value) == false)
+		{
+			if (valueNotFoundError)
+			{
+				Error($"{parameters}\n\n{GetNotFoundError(type, $"{value}", inside)}", index + 1);
+			}
+			return true;
+		}
+		return false;
 	}
 
 	private static void UpdateCameraBodyTransform(Body body)
@@ -4522,9 +4689,5 @@ public static class Gear
 		pos = Camera.GetPosition() + dir.GetEndPoint() * bodyCameraDistances[body];
 
 		return pos;
-	}
-	private static void UpdateAllBodyCollisions()
-	{
-
 	}
 }
