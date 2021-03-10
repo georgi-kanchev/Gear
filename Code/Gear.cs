@@ -1674,8 +1674,16 @@ public static class Gear
 		{
 			return Math.Abs(number);
 		}
-		public static float GetAveraged(float[] numbers)
+		public static float GetAveraged(float[] numbers, bool arrayIsNullError = true, bool arrayIsEmptyError = true)
 		{
+			var numbersStr = numbers == null ? "null" : $"float[{numbers.Length}]";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(numbers)} = {numbersStr}\n" +
+				$"{nameof(arrayIsNullError)} = {arrayIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(arrayIsEmptyError)} = {arrayIsEmptyError.ToString().ToLower()}";
+			if (IsNullError(parameters, $"{nameof(numbers)} array", numbers, arrayIsNullError, 1)) return default;
+			if (ArrayIsEmptyError(parameters, numbers, "float array", $"{nameof(numbers)}", arrayIsEmptyError, 1)) return default;
+
 			return numbers.Sum() / numbers.Length;
 		}
 		public static float GetRandomized(float lowerBound, float upperBound, int precision = 0)
@@ -1695,9 +1703,9 @@ public static class Gear
 
 			return result;
 		}
-		public static float GetRounded(float number, int precision = 0, RoundNumberToward roundToward = RoundNumberToward.Closest, RoundNumberPrio roundPrio = RoundNumberPrio.TowardEven)
+		public static float GetRounded(float number, int precision = 0, RoundNumberToward roundToward = RoundNumberToward.Closest, RoundNumberPrio roundPriority = RoundNumberPrio.TowardEven)
 		{
-			var midpoint = (MidpointRounding)roundPrio;
+			var midpoint = (MidpointRounding)roundPriority;
 			precision = (int)GetLimited(precision, 0, 5);
 
 			if (roundToward == RoundNumberToward.Down || roundToward == RoundNumberToward.Up)
@@ -1741,7 +1749,10 @@ public static class Gear
 
 			return result.X;
 		}
-		public static float GetChanged(float number, float numbersPerSecond) => number + (numbersPerSecond * ticksDeltaTime);
+		public static float GetChanged(float number, float numbersPerSecond)
+		{
+			return number + (numbersPerSecond * ticksDeltaTime);
+		}
 		public static float GetTowardTarget(float number, float targetNumber, float numbersPerSecond)
 		{
 			if (number <= targetNumber && targetNumber * ticksDeltaTime < 0) return targetNumber;
@@ -1774,6 +1785,9 @@ public static class Gear
 		}
 		public static float[] GetFromText(string text, bool invalidTextError = true)
 		{
+			var parameters = $"Parameters:\n" +
+				$"{nameof(text)} = {text}\n" +
+				$"{nameof(invalidTextError)} = {invalidTextError.ToString().ToLower()}";
 			var result = 0f;
 			text = text.Replace(',', '.');
 			var parsed = float.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out result);
@@ -1781,17 +1795,11 @@ public static class Gear
 			{
 				return new float[] { result };
 			}
-			else
+			if (invalidTextError)
 			{
-				var parameters = $"Parameters:\n" +
-					$"{nameof(text)} = {text}\n" +
-					$"{nameof(invalidTextError)} = {invalidTextError.ToString().ToLower()}";
-				if (invalidTextError)
-				{
-					Error($"{parameters}\n\n{GetInvalidValueError(nameof(text), text)}\n\nTip:\nMake sure it's a number.", 1);
-				}
-				return new float[0];
+				Error($"{parameters}\n\n{GetInvalidValueError(nameof(text), text)}\n\nTip:\nMake sure it's a number.", 1);
 			}
+			return new float[0];
 		}
 		public static int GetPrecision(float number)
 		{
@@ -1809,13 +1817,13 @@ public static class Gear
 			return n <= percent;
 		}
 		public static bool IsBetween(float lowerBound, float number, float upperBound,
-			bool inclusiveA = true, bool inclusiveB = true)
+			bool inclusiveLower = true, bool inclusiveUpper = true)
 		{
 			var lower = false;
 			var upper = false;
-			if (inclusiveA) lower = lowerBound <= number;
-			else lower = lowerBound > number;
-			if (inclusiveB) upper = upperBound >= number;
+			if (inclusiveLower) lower = lowerBound <= number;
+			else lower = lowerBound < number;
+			if (inclusiveUpper) upper = upperBound >= number;
 			else upper = upperBound > number;
 
 			return lower && upper;
@@ -1829,20 +1837,22 @@ public static class Gear
 		/// <summary>
 		/// Converts an <paramref name="array"/> into a <see cref="string"/>. The elements are separated by a <paramref name="separator"/>. Then the <see cref="string"/> is returned.
 		/// </summary>
-		public static string GetFromArray<T>(T[] array, string separator = ", ")
+		public static string GetFromArray<T>(T[] array, string separator = ", ", bool arrayIsNullError = true, bool arrayIsEmptyError = true)
 		{
+			var parameters = $"Parameters:\n" +
+				$"{nameof(array)} = {array}\n" +
+				$"{nameof(separator)} = \"{separator}\"\n" +
+				$"{nameof(arrayIsNullError)} = {arrayIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(arrayIsEmptyError)} = {arrayIsEmptyError.ToString().ToLower()}";
 			var result = "";
-			if (array == null || array.Length == 0)
-			{
-				return result;
-			}
+
+			if (IsNullError(parameters, "array", $"{array}", arrayIsNullError, 1)) return default;
+			if (ArrayIsEmptyError(parameters, array, "array", $"{array}", arrayIsEmptyError, 1)) return default;
+
 			for (int i = 0; i < array.Length; i++)
 			{
 				result = result.Insert(result.Length, $"{array[i]}");
-				if (i == array.Length - 1)
-				{
-					break;
-				}
+				if (i == array.Length - 1) break;
 				result = result.Insert(result.Length, $"{separator}");
 			}
 			return result;
@@ -2942,6 +2952,47 @@ public static class Gear
 			sounds[uniqueName].Volume = (float)volumePercent / 100;
 			sounds[uniqueName].Play();
 		}
+		public static void PauseAll(bool paused)
+		{
+			foreach (var kvp in sounds)
+			{
+				if (paused)
+				{
+					kvp.Value.Pause();
+					continue;
+				}
+				kvp.Value.Resume();
+			}
+		}
+		public static void PauseCurrent(string uniqueName, bool paused)
+		{
+			if (sounds.ContainsKey(uniqueName) == false)
+			{
+				return;
+			}
+			if (paused)
+			{
+				sounds[uniqueName].Pause();
+				return;
+			}
+			sounds[uniqueName].Resume();
+		}
+		public static void StopAll()
+		{
+			foreach (var kvp in sounds)
+			{
+				kvp.Value.Stop();
+			}
+		}
+		public static void StopCurrent(string uniqueName)
+		{
+			if (sounds.ContainsKey(uniqueName) == false)
+			{
+				return;
+			}
+			sounds[uniqueName].Stop();
+		}
+
 		public static void PlayFromCollection(string collectionUniqueName, float volumePercent = 50, float pitchPercent = 50, float centerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNameIsNullError = true, bool collectionNotFoundError = true, bool collectionIsEmptyError = true)
 		{
 			var collectionNameStr = collectionUniqueName == null ? "null" : $"\"{collectionUniqueName}\"";
@@ -2957,14 +3008,8 @@ public static class Gear
 			if (IsNullError(parameters, nameof(collectionUniqueName), collectionUniqueName, soundNameIsNullError, 1)) return;
 			if (KeyNotFoundError(parameters, soundCollections, nameof(collectionUniqueName), collectionUniqueName, collectionNotFoundError, 1)) return;
 			var collection = soundCollections[collectionUniqueName];
-			if (collection.Count == 0)
-			{
-				if (collectionIsEmptyError)
-				{
-					Error($"{parameters}\n\nThe '{collectionUniqueName}' sound collection is empty.", 1);
-				}
-				return;
-			}
+			if (ArrayIsEmptyError(parameters, collection.ToArray(), "sound collection", collectionUniqueName, collectionIsEmptyError, 1)) return;
+
 			var randomSound = collection[(int)Number.GetRandomized(0, collection.Count - 1)];
 			Play(randomSound, volumePercent, pitchPercent, centerPercent, loop, ableToPlayOverSelf);
 		}
@@ -3013,45 +3058,49 @@ public static class Gear
 
 			soundCollections[collectionUniqueName].Remove(soundUniqueName);
 		}
-		public static void PauseAll(bool paused)
+		public static void RemoveCollection(string uniqueName, bool nameIsNullError = true, bool nameNotFoundError = true)
 		{
-			foreach (var kvp in sounds)
-			{
-				if (paused)
-				{
-					kvp.Value.Pause();
-					continue;
-				}
-				kvp.Value.Resume();
-			}
+			var collNameStr = uniqueName == null ? "null" : $"\"{uniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = {collNameStr}\n" +
+				$"{nameof(nameIsNullError)} = {nameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(nameNotFoundError)} = {nameNotFoundError.ToString().ToLower()}";
+			if (IsNullError(parameters, $"sound collection's {nameof(uniqueName)}", uniqueName, nameIsNullError, 1)) return;
+			if (KeyNotFoundError(parameters, soundCollections, $"sound collection's {nameof(uniqueName)}", uniqueName, nameNotFoundError, 1)) return;
+
+			soundCollections.Remove(uniqueName);
 		}
-		public static void PauseCurrent(string uniqueName, bool paused)
+		public static void RemoveAllFromCollection(string uniqueName, bool nameIsNullError = true, bool nameNotFoundError = true)
 		{
-			if (sounds.ContainsKey(uniqueName) == false)
-			{
-				return;
-			}
-			if (paused)
-			{
-				sounds[uniqueName].Pause();
-				return;
-			}
-			sounds[uniqueName].Resume();
+			var collNameStr = uniqueName == null ? "null" : $"\"{uniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = {collNameStr}\n" +
+				$"{nameof(nameIsNullError)} = {nameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(nameNotFoundError)} = {nameNotFoundError.ToString().ToLower()}";
+			if (IsNullError(parameters, $"sound collection's {nameof(uniqueName)}", uniqueName, nameIsNullError, 1)) return;
+			if (KeyNotFoundError(parameters, soundCollections, $"sound collection's {nameof(uniqueName)}", uniqueName, nameNotFoundError, 1)) return;
+
+			soundCollections.Clear();
 		}
-		public static void StopAll()
+		public static void RemoveAllCollections()
 		{
-			foreach (var kvp in sounds)
-			{
-				kvp.Value.Stop();
-			}
+			soundCollections.Clear();
 		}
-		public static void StopCurrent(string uniqueName)
+		public static string[] GetAllFromCollection(string uniqueName, bool nameIsNullError = true, bool nameNotFoundError = true)
 		{
-			if (sounds.ContainsKey(uniqueName) == false)
-			{
-				return;
-			}
-			sounds[uniqueName].Stop();
+			var collNameStr = uniqueName == null ? "null" : $"\"{uniqueName}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(uniqueName)} = {collNameStr}\n" +
+				$"{nameof(nameIsNullError)} = {nameIsNullError.ToString().ToLower()}\n" +
+				$"{nameof(nameNotFoundError)} = {nameNotFoundError.ToString().ToLower()}";
+			if (IsNullError(parameters, $"sound collection's {nameof(uniqueName)}", uniqueName, nameIsNullError, 1)) return new string[0];
+			if (KeyNotFoundError(parameters, soundCollections, $"sound collection's {nameof(uniqueName)}", uniqueName, nameNotFoundError, 1)) return new string[0];
+
+			return soundCollections[uniqueName].ToArray();
+		}
+		public static string[] GetAllCollectionUniqueNames()
+		{
+			return soundCollections.Keys.ToArray();
 		}
 
 		private static bool XCollectionErrorChecking(string parameters, string soundUniqueName, string collectionUniqueName, bool soundNameIsNullError = true, bool collectionNameIsNullError = true, bool soundNotFoundError = true, bool collectionNotFoundError = true)
@@ -4608,6 +4657,10 @@ public static class Gear
 	{
 		return $"Description:\nThe {type} '{name}' is invalid.";
 	}
+	private static string GetIsEmptyError(string type, string name)
+	{
+		return $"The {type} '{name}' is empty.";
+	}
 
 	private static bool KeyNotFoundError<UniqueKeyT, ValueT>(string parameters, Dictionary<UniqueKeyT, ValueT> dict, string type, UniqueKeyT uniqueKey, bool keyNotFoundError, int index, string inside = "")
 	{
@@ -4664,6 +4717,18 @@ public static class Gear
 			if (valueNotFoundError)
 			{
 				Error($"{parameters}\n\n{GetNotFoundError(type, $"{value}", inside)}", index + 1);
+			}
+			return true;
+		}
+		return false;
+	}
+	private static bool ArrayIsEmptyError<T>(string parameters, T[] array, string type, string name, bool arrayIsEmptyError, int index)
+	{
+		if (array != null && array.Length == 0)
+		{
+			if (arrayIsEmptyError)
+			{
+				Error($"{parameters}\n\n{GetIsEmptyError(type, name)}", index + 1);
 			}
 			return true;
 		}
