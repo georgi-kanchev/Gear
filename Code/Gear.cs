@@ -107,6 +107,10 @@ public static class Gear
 	{
 		None, Info, Error, Warning
 	}
+	public enum Motion
+	{
+		PerSecond, PerTick
+	}
 
 	private static PerformanceCounter ramAvailable = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ramUsedPercent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -1483,13 +1487,13 @@ public static class Gear
 		#region Creation
 		private void _SetHitboxLine(string uniqueKey, Line line)
 		{
-			line = new Line(this.position + line.GetStartPoint(), this.position + line.GetEndPoint());
+			var position = this.position - spriteOrigin;
+			line = new Line(position + line.GetStartPoint(), position + line.GetEndPoint());
 
 			hitboxLines[uniqueKey] = line;
 
 			var startAngle = new Angle();
 			var endAngle = new Angle();
-			var position = this.position + spriteOrigin;
 			var startDist = position.GetDistanceToPoint(line.GetStartPoint());
 			var endDist = position.GetDistanceToPoint(line.GetEndPoint());
 			startAngle.SetFromBetweenPoints(position, line.GetStartPoint());
@@ -1569,6 +1573,20 @@ public static class Gear
 		public Body[] GetObstacles()
 		{
 			return hitboxObstacles.ToArray();
+		}
+		public bool HitboxOverlapsPoint(Point point)
+		{
+			var ray = new Line(point, new Point(99_999, 99_999));
+			var crossSum = 0;
+			foreach (var kvp in hitboxLines)
+			{
+				var line = kvp.Value;
+				if (ray.IsCrossingLine(line))
+				{
+					crossSum += ray.GetCrossPointWithLine(line).Length;
+				}
+			}
+			return crossSum % 2 != 0 && ignoreCollisions == false;
 		}
 		public bool HitboxOverlapsObstacleLine(Body body)
 		{
@@ -1814,9 +1832,13 @@ public static class Gear
 
 			return result.X;
 		}
-		public static float GetChanged(float number, float numbersPerSecond)
+		public static float GetChanged(float number, float speed, Motion motion = Motion.PerSecond)
 		{
-			return number + (numbersPerSecond * ticksDeltaTime);
+			if (motion == Motion.PerSecond)
+			{
+				speed *= ticksDeltaTime;
+			}
+			return number + speed;
 		}
 		public static float GetTowardTarget(float number, float targetNumber, float numbersPerSecond)
 		{
@@ -2051,7 +2073,7 @@ public static class Gear
 		/// - Displays a <paramref name="message"/> on the screen with a <paramref name="font"/> that has a <paramref name="scale"/>. The <paramref name="message"/> may <paramref name="overwrite"/> what is already displayed instead of appending it.<br></br><br></br>
 		/// - The displayed text can be cleared with <see cref="DisplayClear"/>.
 		/// </summary>
-		public static void Display(string font, object message, float scale = 1, bool overwrite = false)
+		public static void Display(string font, object message, float scale = 1, bool overwrite = true)
 		{
 			if (fonts.ContainsKey(font) == false)
 			{
@@ -2649,15 +2671,15 @@ public static class Gear
 		{
 			return game.IsMouseVisible;
 		}
-		public static bool LeftButtonIsPressed()
+		public static bool LeftMouseButtonIsPressed()
 		{
 			return Mouse.GetState().LeftButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 		}
-		public static bool MiddleButtonIsPressed()
+		public static bool MiddleMouseButtonIsPressed()
 		{
 			return Mouse.GetState().MiddleButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 		}
-		public static bool RightButtonIsPressed()
+		public static bool RightMouseButtonIsPressed()
 		{
 			return Mouse.GetState().RightButton == Microsoft.Xna.Framework.Input.ButtonState.Pressed;
 		}
@@ -3553,29 +3575,34 @@ public static class Gear
 			targetAngle.To360();
 			a = Number.GetPercentedTowardTarget(a, targetAngle.GetA(), percent);
 		}
-		public void Rotate(float degreesPerSecond)
+		public void Rotate(float speed, Motion motion = Motion.PerSecond)
 		{
-			a = Number.GetChanged(a, degreesPerSecond);
+			a = Number.GetChanged(a, speed, motion);
 			To360();
 		}
-		public void RotateTowardAngle(Angle targetAngle, float degreesPerSecond)
+		public void RotateTowardAngle(Angle targetAngle, float speed, Motion motion = Motion.PerSecond)
 		{
 			To360();
 			targetAngle.To360();
-			degreesPerSecond = Math.Abs(degreesPerSecond);
+			speed = Math.Abs(speed);
 			var difference = a - targetAngle.GetA();
 
 			// stops the rotation with an else when close enough
 			// prevents the rotation from staying behind after the stop
-			if (Math.Abs(difference) < degreesPerSecond * ticksDeltaTime) a = targetAngle.GetA();
-			else if (difference > 0 && difference < 180) Rotate(-degreesPerSecond);
-			else if (difference > -180 && difference < 0) Rotate(degreesPerSecond);
-			else if (difference > -360 && difference < -180) Rotate(-degreesPerSecond);
-			else if (difference > 180 && difference < 360) Rotate(degreesPerSecond);
+			var checkedSpeed = speed;
+			if (motion == Motion.PerSecond)
+			{
+				checkedSpeed *= ticksDeltaTime;
+			}
+			if (Math.Abs(difference) < checkedSpeed) a = targetAngle.GetA();
+			else if (difference > 0 && difference < 180) Rotate(-speed);
+			else if (difference > -180 && difference < 0) Rotate(speed);
+			else if (difference > -360 && difference < -180) Rotate(-speed);
+			else if (difference > 180 && difference < 360) Rotate(speed);
 
 			// detects speed greater than possible
 			// prevents jiggle when passing 0-360 & 360-0 | simple to fix yet took me half a day
-			if (Math.Abs(difference) > 360 - degreesPerSecond * ticksDeltaTime) a = targetAngle.GetA();
+			if (Math.Abs(difference) > 360 - checkedSpeed) a = targetAngle.GetA();
 		}
 
 		public override string ToString()
@@ -3650,17 +3677,24 @@ public static class Gear
 		{
 			return h;
 		}
-		public void Scale(float pixelsPerSecond)
+		public void Scale(float speed, Motion motion = Motion.PerSecond)
 		{
-			pixelsPerSecond *= ticksDeltaTime;
-			w += pixelsPerSecond;
-			h += pixelsPerSecond;
+			if (motion == Motion.PerSecond)
+			{
+				speed *= ticksDeltaTime;
+			}
+			w += speed;
+			h += speed;
 		}
-		public void ScaleTowardTarget(Size targetSize, float pixelsPerSecond)
+		public void ScaleTowardTarget(Size targetSize, float speed, Motion motion = Motion.PerSecond)
 		{
-			Scale(pixelsPerSecond);
+			Scale(speed, motion);
+			if (motion == Motion.PerSecond)
+			{
+				speed *= ticksDeltaTime;
+			}
 			var dist = Vector2.Distance(new Vector2(GetW(), GetH()), new Vector2(targetSize.GetW(), targetSize.GetH()));
-			if (dist < pixelsPerSecond * ticksDeltaTime * 2)
+			if (dist < speed * 2)
 			{
 				w = targetSize.GetW();
 				h = targetSize.GetH();
@@ -3746,25 +3780,33 @@ public static class Gear
 		{
 			return Vector2.Distance(new Vector2(x, y), new Vector2(point.GetX(), point.GetY()));
 		}
-		public void MoveInDirection(Direction direction, float pixelsPerSecond)
+		public void MoveInDirection(Direction direction, float speed, Motion motion = Motion.PerSecond)
 		{
-			pixelsPerSecond *= ticksDeltaTime;
+			if (motion == Motion.PerSecond)
+			{
+				speed *= ticksDeltaTime;
+			}
 			direction.Normalize();
-			x += direction.GetEndPoint().GetX() * pixelsPerSecond;
-			y += direction.GetEndPoint().GetY() * pixelsPerSecond;
+			x += direction.GetEndPoint().GetX() * speed;
+			y += direction.GetEndPoint().GetY() * speed;
 		}
-		public void MoveAtAngle(Angle angle, float pixelsPerSecond)
+		public void MoveAtAngle(Angle angle, float speed, Motion motion = Motion.PerSecond)
 		{
 			var dir = new Direction();
 			dir.SetFromAngle(angle);
-			MoveInDirection(dir, pixelsPerSecond);
+			MoveInDirection(dir, speed, motion);
 		}
-		public void MoveTowardPoint(Point targetPoint, float pixelsPerSecond)
+		public void MoveTowardPoint(Point targetPoint, float speed, Motion motion = Motion.PerSecond)
 		{
 			var dir = new Direction(targetPoint - this);
-			MoveInDirection(dir, pixelsPerSecond);
+			MoveInDirection(dir, speed, motion);
+
+			if (motion == Motion.PerSecond)
+			{
+				speed *= ticksDeltaTime;
+			}
 			var dist = Vector2.Distance(new Vector2(x, y), new Vector2(targetPoint.GetX(), targetPoint.GetY()));
-			if (dist < pixelsPerSecond * ticksDeltaTime * 2)
+			if (dist < speed * 2)
 			{
 				x = targetPoint.GetX();
 				y = targetPoint.GetY();

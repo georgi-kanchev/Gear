@@ -30,6 +30,22 @@
 			CreateBackground();
 			StartMenu();
 		}
+		else if (tickCount > 40)
+		{
+			var play = Gear.Body.GetByUniqueName("play");
+			if (play.HitboxOverlapsPoint(Gear.Input.GetMouseCursorPosition()))
+			{
+				play.SetSizeWH(85, 95);
+				if (Gear.Input.LeftMouseButtonIsPressed())
+				{
+					play.SetSizeWH(75, 85);
+				}
+			}
+			else
+			{
+				play.SetSizeWH(80, 90);
+			}
+		}
 	}
 
 	public void RemoveLoadingPercents()
@@ -55,6 +71,12 @@
 		var play = new Gear.Body("play");
 		var playBorder = new Gear.Body("play-border");
 		play.DisplaySprite("play", width: 71, height: 78, originX: 36, originY: 39);
+
+		play.AddHitboxLine("up", new Gear.Line(new Gear.Point(-25, -30), new Gear.Point(25, -30)));
+		play.AddHitboxLine("down", new Gear.Line(new Gear.Point(-25, 25), new Gear.Point(25, 25)));
+		play.AddHitboxLine("left", new Gear.Line(new Gear.Point(-25, -30), new Gear.Point(-25, 25)));
+		play.AddHitboxLine("right", new Gear.Line(new Gear.Point(25, -30), new Gear.Point(25, 25)));
+
 		playBorder.DisplaySprite("play-border", width: 71, height: 78, originX: 36, originY: 39);
 	}
 	public void DisplayNumber(string uniqueName, int number)
