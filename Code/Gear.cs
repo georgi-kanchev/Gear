@@ -132,7 +132,7 @@ public static class Gear
 	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
 	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole, windowIsDisplayed = true;
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time, cameraAngle;
-	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName;
+	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName, userErrorMessage;
 
 	private static string contentLoadingInfo =
 		"1. In File Explorer: Add it to the 'Content' folder/sub-folder inside it.\n" +
@@ -213,11 +213,13 @@ public static class Gear
 			renderSamplerState = SamplerState.PointWrap;
 
 			renderTarget = new RenderTarget2D(game.GraphicsDevice, (int)screenSize.GetW(), (int)screenSize.GetH(), false, game.GraphicsDevice.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
-			Canvas.SetPixelSize(1, 1);
+			Canvas.SetPixelSizeWH(1, 1);
 
 			graphics.ApplyChanges();
 			game.Window.Title = "Gear";
 			game.IsMouseVisible = true;
+
+			Debug.SetUserErrorMessage($"{Gear.Window.GetTitle()} encountered an error and will now exit. Please contact the developer to get the issue fixed.");
 
 			// start maximized
 			//var form = (Form)Control.FromHandle(Window.Handle);
@@ -506,22 +508,48 @@ public static class Gear
 			{
 				CountFolder(directories[i]);
 			}
-			CountFolder($"{mainDir}\\Content");
+			if (CountFolder($"{mainDir}\\Content")) return;
+				
 			loadingScreenUpdatePerFiles = (int)Math.Ceiling(contentFileCount / 10d);
 		}
-		private static void CountFolder(string folder)
+		private static bool CountFolder(string folder)
 		{
 			if (Directory.Exists(folder) == false)
 			{
-				return;
+				return true;
 			}
 
 			var files = Directory.GetFiles(folder);
 			var datafiles = new List<string>();
+			var names = new List<string>();
 
 			for (int i = 0; i < files.Length; i++)
 			{
-				if (files[i].Contains(".png") || files[i].Contains(".spritefont"))
+				var path = files[i].Split('\\');
+				var name = path[path.Length - 1];
+				var pathIndex = path.Length - 1;
+				var directory = "";
+				while (true)
+				{
+					pathIndex--;
+					directory = $"{directory}{path[pathIndex]}";
+					if (path[pathIndex] == "Content") break;
+					directory = $"{directory}/";
+				}
+				name = name.Replace(".png", "");
+				name = name.Replace(".spritefont", "");
+				name = name.Replace(".wav", "");
+				name = name.Replace(".mp3", "");
+
+				if (names.Contains(name))
+				{
+					Error($"Description:\nAnother content file with the name '{name}' already exists in the '{directory}' directory.\n\n" +
+						$"Tip:\nMake sure that each file in the same directory has a unique name.", 5);
+					return true;
+				}
+				names.Add(name);
+
+				if (files[i].Contains(".png") || files[i].Contains(".spritefont") || files[i].Contains(".wav") || files[i].Contains(".mp3"))
 				{
 					datafiles.Add(files[i]);
 				}
@@ -535,6 +563,7 @@ public static class Gear
 				CountFolder(currentDirectories[0]);
 				currentDirectories.RemoveAt(0);
 			}
+			return false;
 		}
 
 		private static void LoadAllContent()
@@ -729,15 +758,45 @@ public static class Gear
 		/// <summary>
 		/// - Sets the size of the displayed pixel relative to the user's monitor resolution. Each displayed pixel is equal to <paramref name="width"/> and <paramref name="height"/> of screen pixels.<br></br><br></br> - The canvas size can be checked with <see cref="SizeGetW"/> and <see cref="SizeGetH"/>.<br></br> - The user's screen size can be checked with <see cref="User.ScreenSizeGetW"/> and <see cref="User.ScreenSizeGetW"/>.
 		/// </summary>
-		public static void SetPixelSize(int width, int height)
+		private static void _SetPixelSize(Size size, int index, bool invalidSizeError = true)
 		{
-			width = (int)Number.GetLimited(width, 1, screenSize.GetW());
-			height = (int)Number.GetLimited(height, 1, (int)screenSize.GetH());
-			pixelSize = new Size(width, height);
-			canvasSize = screenSize / new Size(width, height);
+			var parameters = $"Parameters:\n" +
+				$"{nameof(size)} = {size}\n" +
+				$"{nameof(invalidSizeError)} = {invalidSizeError.ToString().ToLower()}";
+
+			if (size.GetW() < 1 || size.GetW() > screenSize.GetW() ||
+				size.GetH() < 1 || size.GetH() > screenSize.GetH())
+			{
+				if (invalidSizeError)
+				{
+					Error($"{parameters}\n\n{GetInvalidValueError("pixel size", $"{size}")}\n\nTip: Make sure the pixel size is between '{new Size(1, 1)}' and '{screenSize}'.", index + 1);
+				}
+				return;
+			}
+
+			size.SetWH(Number.GetLimited(size.GetW(), 1, screenSize.GetW()),
+				Number.GetLimited(size.GetH(), 1, (int)screenSize.GetH()));
+			pixelSize = size;
+			canvasSize = screenSize / size;
 			var gd = game.GraphicsDevice;
 			renderTarget = new RenderTarget2D(gd, graphics.PreferredBackBufferWidth, graphics.PreferredBackBufferHeight, false, gd.PresentationParameters.BackBufferFormat, DepthFormat.Depth24);
 			graphics.ApplyChanges();
+		}
+		public static void SetPixelSize(Size size, bool invalidSizeError = true)
+		{
+			_SetPixelSize(size, 1, invalidSizeError);
+		}
+		public static void SetPixelSizeWH(float w, float h, bool invalidSizeError = true)
+		{
+			_SetPixelSize(new Size(w, h), 1, invalidSizeError);
+		}
+		public static void SetPixelSizeW(float w, bool invalidSizeError = true)
+		{
+			_SetPixelSize(new Size(w, pixelSize.GetH()), 1, invalidSizeError);
+		}
+		public static void SetPixelSizeH(float h, bool invalidSizeError = true)
+		{
+			_SetPixelSize(new Size(pixelSize.GetW(), h), 1, invalidSizeError);
 		}
 		public static Size GetPixelSize()
 		{
@@ -804,17 +863,19 @@ public static class Gear
 			return windowIsDisplayed;
 		}
 
-		public static bool IsInReleaseMode()
-		{
-			return Debugger.IsAttached == false;
-		}
-
 		/// <summary>
 		/// - Sets the <paramref name="title"/> of the window.<br></br><br></br>
 		/// - The title can be received with <see cref="WindowTitleGet"/>.
 		/// </summary>
-		public static void SetTitle(string title)
+		public static void SetTitle(string title, bool titleIsNullError = true)
 		{
+			var titleStr = title == null ? "null" : $"\"{title}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(title)} = {titleStr}\n" +
+				$"{nameof(titleIsNullError)} = {titleIsNullError.ToString().ToLower()}";
+
+			if (IsNullError(parameters, nameof(title), title, titleIsNullError, 1)) return;
+
 			game.Window.Title = title;
 		}
 		/// <summary>
@@ -937,6 +998,16 @@ public static class Gear
 			size.SetWH(1, 1);
 			UpdateCameraBodyTransform(this);
 		}
+		public void Delete()
+		{
+			bodyCameraAngle.Remove(this);
+			bodyCameraAngleDifferences.Remove(this);
+			bodyCameraDistances.Remove(this);
+			bodyUniqueNames.Remove(uniqueName);
+			bodiesAll.Remove(this);
+			RemoveAllTags();
+			render = true;
+		}
 
 		// DUPLICATION - UPDATE FREQUENTLY
 		//public Body Duplicate(string uniqueName)
@@ -1046,14 +1117,8 @@ public static class Gear
 		{
 			foreach (var tag in tags)
 			{
-				tagBodies[tag].Remove(this);
-
-				if (tagBodies[tag].Count == 0)
-				{
-					tagBodies.Remove(tag);
-				}
+				RemoveTag(tag);
 			}
-			tags.Clear();
 		}
 		public string[] GetTags()
 		{
@@ -1288,13 +1353,13 @@ public static class Gear
 			if (sprites.ContainsKey(name) == false)
 			{
 				var parameters = $"Parameters:\n" +
-					$"{nameof(name)} = \"{name}\"" +
-					$"{nameof(display)} = {display}" +
-					$"{nameof(width)} = {width}, {nameof(height)} = {height}" +
-					$"{nameof(r)} = {r}, {nameof(g)} = {g}, {nameof(b)} = {b}, {nameof(o)} = {o}" +
-					$"{nameof(originX)} = {originX}, {nameof(originY)} = {originY}" +
-					$"{nameof(gridSize)} = {gridSize}" +
-					$"{nameof(indexH)} = {indexH}, {nameof(indexV)} = {indexV}";
+					$"{nameof(name)} = \"{name}\"\n" +
+					$"{nameof(display)} = {display.ToString().ToLower()}\n" +
+					$"{nameof(width)} = {width}, {nameof(height)} = {height}\n" +
+					$"{nameof(r)} = {r}, {nameof(g)} = {g}, {nameof(b)} = {b}, {nameof(o)} = {o}\n" +
+					$"{nameof(originX)} = {originX}, {nameof(originY)} = {originY}\n" +
+					$"{nameof(gridSize)} = {gridSize}\n" +
+					$"{nameof(indexH)} = {indexH}, {nameof(indexV)} = {indexV}\n";
 				if (nameNotFound)
 				{
 					Error($"{parameters}\n\n{GetContentNotFoundError("sprite", name)}", 1);
@@ -1839,14 +1904,15 @@ public static class Gear
 		/// </summary>
 		public static string GetFromArray<T>(T[] array, string separator = ", ", bool arrayIsNullError = true, bool arrayIsEmptyError = true)
 		{
+			var arrayStr = array == null ? "null" : $"{array}";
 			var parameters = $"Parameters:\n" +
-				$"{nameof(array)} = {array}\n" +
+				$"{nameof(array)} = {arrayStr}\n" +
 				$"{nameof(separator)} = \"{separator}\"\n" +
 				$"{nameof(arrayIsNullError)} = {arrayIsNullError.ToString().ToLower()}\n" +
 				$"{nameof(arrayIsEmptyError)} = {arrayIsEmptyError.ToString().ToLower()}";
 			var result = "";
 
-			if (IsNullError(parameters, "array", $"{array}", arrayIsNullError, 1)) return default;
+			if (IsNullError(parameters, "array", array, arrayIsNullError, 1)) return default;
 			if (ArrayIsEmptyError(parameters, array, "array", $"{array}", arrayIsEmptyError, 1)) return default;
 
 			for (int i = 0; i < array.Length; i++)
@@ -1861,8 +1927,15 @@ public static class Gear
 		/// <summary>
 		/// Adds <paramref name="text"/> to the clipboard (copies it). It can be accessed later via <typeparamref name="Ctrl"/> + <typeparamref name="V"/> or <see cref="ClipboardGet"/>.
 		/// </summary>
-		public static void Copy(string text)
+		public static void Copy(string text, bool textIsNullError = true)
 		{
+			var textStr = text == null ? "null" : $"\"{text}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(text)} = {textStr}\n" +
+				$"{nameof(textIsNullError)} = {textIsNullError.ToString().ToLower()}";
+
+			if (IsNullError(parameters, nameof(text), text, textIsNullError, 1)) return;
+
 			Clipboard.SetText(text);
 		}
 		/// <summary>
@@ -2876,6 +2949,27 @@ public static class Gear
 	}
 	public static class Debug
 	{
+		public static void SetUserErrorMessage(string message, bool messageIsNullError = true)
+		{
+			var messageStr = message == null ? "null" : $"\"{message}\"";
+			var parameters = $"Parameters:\n" +
+				$"{nameof(message)} = {messageStr}\n" +
+				$"{nameof(messageIsNullError)} = {messageIsNullError.ToString().ToLower()}";
+
+			if (IsNullError(parameters, nameof(message), message, messageIsNullError, 1)) return;
+
+			userErrorMessage = message;
+		}
+		public static string GetUserErrorMessage()
+		{
+			return userErrorMessage;
+		}
+
+		public static bool IsActivated()
+		{
+			return Debugger.IsAttached;
+		}
+
 		public static int GetCodeLine(int index = 0)
 		{
 			var info = new StackFrame(index + 1, true);
@@ -2904,8 +2998,9 @@ public static class Gear
 				"Update", "DoUpdate", "Tick", "TickOnIdle", "Interop.Mso.IMsoComponent.FDoIdle", "Interop.Mso.IMsoComponentManager.FPushMessageLoop", "RunMessageLoopInner", "RunMessageLoop", "Run", "RunLoop", "Main"
 			};
 			var method = info.GetMethod();
+			var fullName = method.ReflectedType.FullName.Replace('+', '.');
 			if (method == null) return null;
-			return ignoredCases.Contains(method.Name) ? null : method.Name;
+			return ignoredCases.Contains(method.Name) ? null : $"{fullName}.{method.Name}";
 		}
 	}
 	/// <summary>
@@ -3293,6 +3388,26 @@ public static class Gear
 			keys.Clear();
 			values.Clear();
 			dict.Clear();
+		}
+		public void Shuffle()
+		{
+			for (int i = 0; i < indexes.Count - 1; i++)
+			{
+				var j = (int)Number.GetRandomized(i, indexes.Count - 1);
+				var tempIndex = indexes[i];
+				//var tempKey = keys[tempIndex];
+				var tempValue = values[tempIndex];
+
+				dict[keys[indexes[i]]] = values[indexes[j]];
+				//keys[indexes[i]] = keys[indexes[j]];
+				values[indexes[i]] = values[indexes[j]];
+				indexes[i] = indexes[j];
+
+				dict[keys[indexes[j]]] = tempValue;
+				//keys[indexes[j]] = tempKey;
+				values[indexes[j]] = tempValue;
+				indexes[j] = tempIndex;
+			}
 		}
 
 		public int GetDataAmount()
@@ -4470,15 +4585,14 @@ public static class Gear
 
 		static bool ccw(Point a, Point b, Point c) => (c.GetY() - a.GetY()) * (b.GetX() - a.GetX()) > (b.GetY() - a.GetY()) * (c.GetX() - a.GetX());
 	}
-	// Find the point of intersection between
-	// the lines p1 --> p2 and p3 --> p4.
 	private static void GetCrossPointOfTwoLines(Point startA, Point endA, Point startB, Point endB,
 		 out bool lines_intersect, out bool segments_intersect,
 		 out Point[] intersection,
 		 out Point close_p1, out Point close_p2)
 	{
-		var lineLengthA = startA.GetDistanceToPoint(endA);
-		var lineLengthB = startB.GetDistanceToPoint(endB);
+		// Find the point of intersection between
+		// the lines p1 --> p2 and p3 --> p4.
+
 		intersection = new Point[0];
 		// Get the segments' parameters.
 		float dx12 = endA.GetX() - startA.GetX();
@@ -4619,7 +4733,9 @@ public static class Gear
 
 	private static void Error(string message, int index)
 	{
-		Window.PopUp($"File:\n{Debug.GetCodeFileName(index + 1)}\n\nLine:\n{Debug.GetCodeLine(index + 1)}\n\nMethod:\n{Debug.GetCodeMethodName(index)}\n\n{message}", Window.GetTitle(), PopUpIcon.Error);
+		var resultMessage = Debug.IsActivated() ? $"File:\n{Debug.GetCodeFileName(index + 1)}\n\nLine:\n{Debug.GetCodeLine(index + 1)}\n\nMethod:\n{Debug.GetCodeMethodName(index)}\n\n{message}" : userErrorMessage;
+
+		Window.PopUp(resultMessage, $"Error | {Window.GetTitle()}", PopUpIcon.Error);
 		Window.Close();
 	}
 	private static string GetNotFoundError(string type, string name, string inside = "")

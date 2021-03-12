@@ -40,6 +40,84 @@ D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.dll
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\ref\Gear_Project.dll
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.pdb
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.genruntimeconfig.cache
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ball.png
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\paddle.png
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\bottle.wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (1).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (10).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (11).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (12).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (13).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (14).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (15).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (16).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (2).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-explosion (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-explosion (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-explosion (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-explosion (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-explosion.wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-miss (1).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-miss (2).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-miss (3).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid-miss (4).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\background (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\background (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\background (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\background (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\button.wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\empty.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\highscore.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\meteors (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\meteors (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\meteors (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (0).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (5).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (6).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (7).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (8).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (9).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\pause-off.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\pause-on.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\play.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\score.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (10).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (11).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (5).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (6).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (7).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (8).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ship-explosion (9).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (5).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (6).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot (7).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot-explosion (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot-explosion (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot-explosion (3).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot-explosion (4).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\shot-explosion (5).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\sound-off.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\sound-on.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\stars (1).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\stars (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\number (2).png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\explosion (1).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\explosion (2).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\laser (1).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\laser (2).wav
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\play-border.png

@@ -4,12 +4,91 @@
   <Platform>Windows</Platform>
   <Config />
   <SourceFiles>
-    <File>D:/code/MonoGame/Gear/Content/bottle.wav</File>
-    <File>D:/code/MonoGame/Gear/Content/ball.png</File>
+    <File>D:/code/MonoGame/Gear/Content/play.png</File>
+    <File>D:/code/MonoGame/Gear/Content/play-border.png</File>
+    <File>D:/code/MonoGame/Gear/Content/explosion (1).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/explosion (2).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/laser (1).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/laser (2).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (1).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (10).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (11).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (12).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (13).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (14).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (15).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (16).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/ambient (2).mp3</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion.wav</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-miss (1).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-miss (2).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-miss (3).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-miss (4).wav</File>
+    <File>D:/code/MonoGame/Gear/Content/background (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/background (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/background (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/background (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/button.wav</File>
+    <File>D:/code/MonoGame/Gear/Content/empty.png</File>
     <File>D:/code/MonoGame/Gear/Content/font.spritefont</File>
-    <File>D:/code/MonoGame/Gear/Content/paddle.png</File>
+    <File>D:/code/MonoGame/Gear/Content/highscore.png</File>
+    <File>D:/code/MonoGame/Gear/Content/meteors (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/meteors (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/meteors (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (0).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (5).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (6).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (7).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (8).png</File>
+    <File>D:/code/MonoGame/Gear/Content/number (9).png</File>
+    <File>D:/code/MonoGame/Gear/Content/pause-off.png</File>
+    <File>D:/code/MonoGame/Gear/Content/pause-on.png</File>
+    <File>D:/code/MonoGame/Gear/Content/score.png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (10).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (11).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (5).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (6).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (7).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (8).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship-explosion (9).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (5).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (6).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot (7).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot-explosion (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot-explosion (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot-explosion (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot-explosion (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/shot-explosion (5).png</File>
+    <File>D:/code/MonoGame/Gear/Content/sound-off.png</File>
+    <File>D:/code/MonoGame/Gear/Content/sound-on.png</File>
+    <File>D:/code/MonoGame/Gear/Content/stars (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/stars (2).png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
   </DestFiles>
 </SourceFileCollection>
