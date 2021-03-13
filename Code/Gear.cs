@@ -127,6 +127,7 @@ public static class Gear
 	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalStartTimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
 	private static Dictionary<Body, float> bodyCameraDistances = new Dictionary<Body, float>(), bodyCameraAngle = new Dictionary<Body, float>(), bodyCameraAngleDifferences = new Dictionary<Body, float>();
 	private static Dictionary<string, List<string>> soundCollections = new Dictionary<string, List<string>>();
+	private static Dictionary<Body, bool> bodiesLastTickHovered = new Dictionary<Body, bool>(), bodiesClicked = new Dictionary<Body, bool>();
 
 	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
 	private static List<Body> bodiesAll = new List<Body>();
@@ -203,6 +204,10 @@ public static class Gear
 		public abstract void EachTick(int tickCount);
 
 		public virtual void NetworkMessageJustReceived(string sender, string message) { }
+		public virtual void BodyHitboxJustHovered(Body body) { }
+		public virtual void BodyHitboxJustUnhovered(Body body) { }
+		public virtual void BodyHitboxJustClicked(Body body) { }
+		public virtual void BodyHitboxJustClickReleased(Body body) { }
 
 		protected override void Initialize()
 		{
@@ -258,6 +263,7 @@ public static class Gear
 				tick++;
 				AdvanceTickTime();
 				UpdateKeys();
+				UpdateBodies();
 
 				eachTickLineCall = Debug.GetCodeLine() + 1;
 				program.EachTick(tick);
@@ -293,7 +299,6 @@ public static class Gear
 			tpsAverage = tpsAverages.Average();
 			tpsAverageIndex++;
 		}
-
 		private static void UpdateKeys()
 		{
 			keysPressed.Clear();
@@ -320,6 +325,52 @@ public static class Gear
 			}
 
 			lastFrameKeysPressed = new List<Keys>(keysPressed);
+		}
+		private static void UpdateBodies()
+		{
+			var leftClick = Input.LeftMouseButtonIsPressed();
+			var justLeftClick = Gate.IsOpened("just-left-click", leftClick);
+			foreach (var body in bodiesAll)
+			{
+				var isHovered = body.IsIgnoringAllObstacles() == false && body.GetAllHitboxLines().Length > 2 &&
+					body.HitboxOverlapsPoint(Input.GetMouseCursorPosition());
+				if (bodiesLastTickHovered.ContainsKey(body) == false)
+				{
+					bodiesLastTickHovered.Add(body, false);
+				}
+				if (bodiesClicked.ContainsKey(body) == false)
+				{
+					bodiesClicked.Add(body, false);
+				}
+
+				if (Gate.IsOpened($"{body}-hover", isHovered))
+				{
+					program.BodyHitboxJustHovered(body);
+				}
+				if (Gate.IsOpened($"{body}-unhover", isHovered == false && bodiesLastTickHovered[body]))
+				{
+					program.BodyHitboxJustUnhovered(body);
+				}
+				if (Gate.IsOpened($"{body}-click", isHovered && justLeftClick))
+				{
+					bodiesClicked[body] = true;
+					program.BodyHitboxJustClicked(body);
+				}
+				if (Gate.IsOpened($"{body}-click-released", isHovered && leftClick == false && bodiesClicked[body]))
+				{
+					program.BodyHitboxJustClickReleased(body);
+				}
+
+				bodiesLastTickHovered.Clear();
+				if (isHovered)
+				{
+					bodiesLastTickHovered[body] = true;
+				}
+			}
+			if (leftClick == false)
+			{
+				bodiesClicked.Clear();
+			}
 		}
 
 		protected override void Draw(GameTime gameTime)
@@ -945,13 +996,13 @@ public static class Gear
 		[JsonProperty]
 		private Point position, spriteOrigin, spriteIndex;
 		[JsonProperty]
-		private int UID, spriteGridSize;
+		private int UID, spriteGridSize, createdAtTick;
 		[JsonProperty]
 		private Angle angle;
 		[JsonProperty]
 		private string uniqueName, spriteName;
 		[JsonProperty]
-		private float hitboxWidth, angleWidth;
+		private float hitboxWidth, angleWidth, createdAtTime;
 		[JsonProperty]
 		private bool boundariesShown, originShown, angleShown, spriteShown, hitboxShown, hitboxCrossPointsShown, hitboxMiddlePointShown, positionLocked, angleLocked, sizeLocked, ignoreCollisions;
 		[JsonProperty]
@@ -1000,6 +1051,8 @@ public static class Gear
 			UID = ID;
 			ID++;
 			size.SetWH(1, 1);
+			createdAtTick = tick;
+			createdAtTime = time;
 			UpdateCameraBodyTransform(this);
 		}
 		public void Delete()
@@ -1011,6 +1064,14 @@ public static class Gear
 			bodiesAll.Remove(this);
 			RemoveAllTags();
 			render = true;
+		}
+		public int GetTickOfCreation()
+		{
+			return createdAtTick;
+		}
+		public float GetTimeOfCreation()
+		{
+			return createdAtTime;
 		}
 
 		// DUPLICATION - UPDATE FREQUENTLY

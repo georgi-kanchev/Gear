@@ -48,6 +48,13 @@
 		}
 	}
 
+	int c = 0;
+	public override void BodyHitboxJustClicked(Gear.Body body)
+	{
+		c++;
+		Gear.Text.Display("font", $"{c}\n", overwrite: false);
+	}
+
 	public void RemoveLoadingPercents()
 	{
 		for (int i = 0; i < 3; i++)
