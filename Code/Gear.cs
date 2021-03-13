@@ -82,7 +82,7 @@ public static class Gear
 	{
 		Lowest, Medium, Highest
 	}
-	public enum Keys
+	public enum Key
 	{
 		None = 0, BackSpace = 8, Tab = 9, Enter = 13, Pause = 19, CapsLock = 20, Kana = 21, Kanji = 25, Escape = 27, ImeConvert = 28, ImeNoConvert = 29, Space = 32, PageUp = 33, PageDown = 34, End = 35, Home = 36, LeftArrow = 37, UpArrow = 38, RightArrow = 39, DownArrow = 40, Select = 41, Print = 42, Execute = 43, PrintScreen = 44, Insert = 45, Delete = 46, Help = 47, _0 = 48, _1 = 49, _2 = 50, _3 = 51, _4 = 52, _5 = 53, _6 = 54, _7 = 55, _8 = 56, _9 = 57, A = 65, B = 66, C = 67, D = 68, E = 69, F = 70, G = 71, H = 72, I = 73, J = 74, K = 75, L = 76, M = 77, N = 78, O = 79, P = 80, Q = 81, R = 82, S = 83, T = 84, U = 85, V = 86, W = 87, X = 88, Y = 89, Z = 90, LeftWindows = 91, RightWindows = 92, Apps = 93, Sleep = 95, Num0 = 96, Num1 = 97, Num2 = 98, Num3 = 99, Num4 = 100, Num5 = 101, Num6 = 102, Num7 = 103, Num8 = 104, Num9 = 105, NumMultiply = 106, NumAdd = 107, Separator = 108, NumSubtract = 109, NumDecimal = 110, NumDivide = 111, F1 = 112, F2 = 113, F3 = 114, F4 = 115, F5 = 116, F6 = 117, F7 = 118, F8 = 119, F9 = 120, F10 = 121, F11 = 122, F12 = 123, F13 = 124, F14 = 125, F15 = 126, F16 = 127, F17 = 128, F18 = 129, F19 = 130, F20 = 131, F21 = 132, F22 = 133, F23 = 134, F24 = 135, NumLock = 144, Scroll = 145, ShiftLeft = 160, ShiftRight = 161, ControlLeft = 162, ControlRight = 163, AltLeft = 164, AltRight = 165, BrowserBack = 166, BrowserForward = 167, BrowserRefresh = 168, BrowserStop = 169, BrowserSearch = 170, BrowserFavorites = 171, BrowserHome = 172, VolumeMute = 173, VolumeDown = 174, VolumeUp = 175, MediaNextTrack = 176, MediaPreviousTrack = 177, MediaStop = 178, MediaPlayPause = 179, LaunchMail = 180, SelectMedia = 181, LaunchApplication1 = 182, LaunchApplication2 = 183, Semicolon = 186, Equals = 187, Comma = 188, MinusDash = 189, Dot = 190, Slash = 191, GraveAccent = 192, ChatPadGreen = 202, ChatPadOrange = 203, SquareBracketOpen = 219, Backslash = 220, SquareBracketClose = 221, Quote = 222, Oem8 = 223, OemBackslash = 226, ProcessKey = 229, OemCopy = 242, OemAuto = 243, OemEnlW = 244, Attn = 246, Crsel = 247, Exsel = 248, EraseEof = 249, Play = 250, Zoom = 251, Pa1 = 253, OemClear = 254
 	}
@@ -111,6 +111,14 @@ public static class Gear
 	{
 		PerSecond, PerTick
 	}
+	public enum MouseHitboxInteraction
+	{
+		Hovered, Unhovered, Clicked, ClickReleased, Released
+	}
+	public enum KeyInteraction
+	{
+		Pressed, Released
+	}
 
 	private static PerformanceCounter ramAvailable = new PerformanceCounter("Memory", "Available MBytes");
 	private static PerformanceCounter ramUsedPercent = new PerformanceCounter("Memory", "% Committed Bytes In Use");
@@ -129,7 +137,7 @@ public static class Gear
 	private static Dictionary<string, List<string>> soundCollections = new Dictionary<string, List<string>>();
 	private static Dictionary<Body, bool> bodiesLastTickHovered = new Dictionary<Body, bool>(), bodiesClicked = new Dictionary<Body, bool>();
 
-	private static List<Keys> keysPressed = new List<Keys>(), lastFrameKeysPressed = new List<Keys>(), keysJustPressed = new List<Keys>(), keysJustReleased = new List<Keys>();
+	private static List<Key> keysPressed = new List<Key>(), lastFrameKeysPressed = new List<Key>();
 	private static List<Body> bodiesAll = new List<Body>();
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
@@ -204,10 +212,8 @@ public static class Gear
 		public abstract void EachTick(int tickCount);
 
 		public virtual void NetworkMessageJustReceived(string sender, string message) { }
-		public virtual void BodyHitboxJustHovered(Body body) { }
-		public virtual void BodyHitboxJustUnhovered(Body body) { }
-		public virtual void BodyHitboxJustClicked(Body body) { }
-		public virtual void BodyHitboxJustClickReleased(Body body) { }
+		public virtual void MouseJustInteractedWithHitbox(Body body, MouseHitboxInteraction interaction) { }
+		public virtual void UserJustInteractedWithKey(Key key, KeyInteraction interaction) { }
 
 		protected override void Initialize()
 		{
@@ -302,29 +308,27 @@ public static class Gear
 		private static void UpdateKeys()
 		{
 			keysPressed.Clear();
-			keysJustPressed.Clear();
-			keysJustReleased.Clear();
 
 			var keyPresses = Keyboard.GetState().GetPressedKeys();
 
 			foreach (var key in keyPresses)
 			{
-				var gearKey = (Keys)(int)key;
+				var gearKey = (Key)(int)key;
 				keysPressed.Add(gearKey);
 				if (lastFrameKeysPressed.Contains(gearKey) == false)
 				{
-					keysJustPressed.Add(gearKey);
+					program.UserJustInteractedWithKey(gearKey, KeyInteraction.Pressed);
 				}
 			}
 			foreach (var key in lastFrameKeysPressed)
 			{
 				if (keysPressed.Contains(key) == false)
 				{
-					keysJustReleased.Add(key);
+					program.UserJustInteractedWithKey(key, KeyInteraction.Released);
 				}
 			}
 
-			lastFrameKeysPressed = new List<Keys>(keysPressed);
+			lastFrameKeysPressed = new List<Key>(keysPressed);
 		}
 		private static void UpdateBodies()
 		{
@@ -345,23 +349,24 @@ public static class Gear
 
 				if (Gate.IsOpened($"{body}-hover", isHovered))
 				{
-					program.BodyHitboxJustHovered(body);
+					program.MouseJustInteractedWithHitbox(body, MouseHitboxInteraction.Hovered);
 				}
 				if (Gate.IsOpened($"{body}-unhover", isHovered == false && bodiesLastTickHovered[body]))
 				{
-					program.BodyHitboxJustUnhovered(body);
+					program.MouseJustInteractedWithHitbox(body, MouseHitboxInteraction.Unhovered);
 				}
 				if (Gate.IsOpened($"{body}-click", isHovered && justLeftClick))
 				{
 					bodiesClicked[body] = true;
-					program.BodyHitboxJustClicked(body);
+					program.MouseJustInteractedWithHitbox(body, MouseHitboxInteraction.Clicked);
 				}
 				if (Gate.IsOpened($"{body}-click-released", isHovered && leftClick == false && bodiesClicked[body]))
 				{
-					program.BodyHitboxJustClickReleased(body);
+					program.MouseJustInteractedWithHitbox(body, MouseHitboxInteraction.ClickReleased);
 				}
 
-				bodiesLastTickHovered.Clear();
+				bodiesLastTickHovered[body] = false;
+
 				if (isHovered)
 				{
 					bodiesLastTickHovered[body] = true;
@@ -1148,17 +1153,15 @@ public static class Gear
 			if (IsNullError(parameters, nameof(tag), tag, tagIsNullError, 1)) return;
 
 			if (ValueAlreadyAddedError(parameters, tags, $"{nameof(Body)}'s {nameof(tag)}", tag, tagAlreadyAddedError, 1))return;
+
+			tags.Add(tag);
+			if (tagBodies.ContainsKey(tag))
+			{
+				tagBodies[tag].Add(this);
+			}
 			else
 			{
-				tags.Add(tag);
-				if (tagBodies.ContainsKey(tag))
-				{
-					tagBodies[tag].Add(this);
-				}
-				else
-				{
-					tagBodies.Add(tag, new List<Body>() { this });
-				}
+				tagBodies.Add(tag, new List<Body>() { this });
 			}
 		}
 		public void RemoveTag(string tag, bool tagIsNullError = true, bool tagNotFoundError = true)
@@ -1413,13 +1416,13 @@ public static class Gear
 		}
 		#endregion
 		#region Sprite
-		public void DisplaySprite(string name, bool display = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0, bool nameNotFound = true)
+		public void DisplaySprite(string name, bool displayed = true, int width = 64, int height = 64, float r = 255, float g = 255, float b = 255, float o = 255, int originX = 0, int originY = 0, int gridSize = 0, int indexH = 0, int indexV = 0, bool nameNotFound = true)
 		{
 			if (sprites.ContainsKey(name) == false)
 			{
 				var parameters = $"Parameters:\n" +
 					$"{nameof(name)} = \"{name}\"\n" +
-					$"{nameof(display)} = {display.ToString().ToLower()}\n" +
+					$"{nameof(displayed)} = {displayed.ToString().ToLower()}\n" +
 					$"{nameof(width)} = {width}, {nameof(height)} = {height}\n" +
 					$"{nameof(r)} = {r}, {nameof(g)} = {g}, {nameof(b)} = {b}, {nameof(o)} = {o}\n" +
 					$"{nameof(originX)} = {originX}, {nameof(originY)} = {originY}\n" +
@@ -1438,7 +1441,7 @@ public static class Gear
 			spriteOrigin = new Point(originX, originY);
 			spriteGridSize = gridSize;
 			spriteIndex = new Point(indexH, indexV);
-			spriteShown = display;
+			spriteShown = displayed;
 			render = true;
 		}
 		public string GetSpriteName()
@@ -2752,103 +2755,87 @@ public static class Gear
 				MouseCursor.FromTexture2D(sprites[spritePath], originX, originY));
 		}
 
-		public static string GetTextFromKey(Keys key)
+		public static string GetTextFromKey(Key key)
 		{
-			var shift = KeyIsPressed(Keys.ShiftLeft) || KeyIsPressed(Keys.ShiftRight);
+			var shift = KeyIsPressed(Key.ShiftLeft) || KeyIsPressed(Key.ShiftRight);
 			var result = "";
 			switch (key)
 			{
-				case Keys.Space: result = " "; break;
-				case Keys._0: result = shift ? ")" : "0"; break;
-				case Keys._1: result = shift ? "!" : "1"; break;
-				case Keys._2: result = shift ? "@" : "2"; break;
-				case Keys._3: result = shift ? "#" : "3"; break;
-				case Keys._4: result = shift ? "$" : "4"; break;
-				case Keys._5: result = shift ? "%" : "5"; break;
-				case Keys._6: result = shift ? "^" : "6"; break;
-				case Keys._7: result = shift ? "&" : "7"; break;
-				case Keys._8: result = shift ? "*" : "8"; break;
-				case Keys._9: result = shift ? "(" : "9"; break;
-				case Keys.A: result = "a"; break;
-				case Keys.B: result = "b"; break;
-				case Keys.C: result = "c"; break;
-				case Keys.D: result = "d"; break;
-				case Keys.E: result = "e"; break;
-				case Keys.F: result = "f"; break;
-				case Keys.G: result = "g"; break;
-				case Keys.H: result = "h"; break;
-				case Keys.I: result = "i"; break;
-				case Keys.J: result = "j"; break;
-				case Keys.K: result = "k"; break;
-				case Keys.L: result = "l"; break;
-				case Keys.M: result = "m"; break;
-				case Keys.N: result = "n"; break;
-				case Keys.O: result = "o"; break;
-				case Keys.P: result = "p"; break;
-				case Keys.Q: result = "q"; break;
-				case Keys.R: result = "r"; break;
-				case Keys.S: result = "s"; break;
-				case Keys.T: result = "t"; break;
-				case Keys.U: result = "u"; break;
-				case Keys.V: result = "v"; break;
-				case Keys.W: result = "w"; break;
-				case Keys.X: result = "x"; break;
-				case Keys.Y: result = "y"; break;
-				case Keys.Z: result = "z"; break;
-				case Keys.Num0: result = "0"; break;
-				case Keys.Num1: result = "1"; break;
-				case Keys.Num2: result = "2"; break;
-				case Keys.Num3: result = "3"; break;
-				case Keys.Num4: result = "4"; break;
-				case Keys.Num5: result = "5"; break;
-				case Keys.Num6: result = "6"; break;
-				case Keys.Num7: result = "7"; break;
-				case Keys.Num8: result = "8"; break;
-				case Keys.Num9: result = "9"; break;
-				case Keys.NumMultiply: result = "*"; break;
-				case Keys.NumAdd: result = "+"; break;
-				case Keys.NumSubtract: result = "-"; break;
-				case Keys.NumDecimal: result = "."; break;
-				case Keys.NumDivide: result = "/"; break;
-				case Keys.Semicolon: result = shift ? ":" : ";"; break;
-				case Keys.Equals: result = shift ? "+" : "="; break;
-				case Keys.Comma: result = shift ? "<" : ","; break;
-				case Keys.MinusDash: result = shift ? "" : "-"; break;
-				case Keys.Dot: result = shift ? ">" : "."; break;
-				case Keys.Slash: result = shift ? "?" : "/"; break;
-				case Keys.GraveAccent: result = shift ? "~" : "`"; break;
-				case Keys.SquareBracketOpen: result = shift ? "{" : "["; break;
-				case Keys.Backslash: result = shift ? "|" : "\\"; break;
-				case Keys.SquareBracketClose: result = shift ? "}" : "]"; break;
-				case Keys.Quote: result = shift ? "\"" : "'"; break;
+				case Key.Space: result = " "; break;
+				case Key._0: result = shift ? ")" : "0"; break;
+				case Key._1: result = shift ? "!" : "1"; break;
+				case Key._2: result = shift ? "@" : "2"; break;
+				case Key._3: result = shift ? "#" : "3"; break;
+				case Key._4: result = shift ? "$" : "4"; break;
+				case Key._5: result = shift ? "%" : "5"; break;
+				case Key._6: result = shift ? "^" : "6"; break;
+				case Key._7: result = shift ? "&" : "7"; break;
+				case Key._8: result = shift ? "*" : "8"; break;
+				case Key._9: result = shift ? "(" : "9"; break;
+				case Key.A: result = "a"; break;
+				case Key.B: result = "b"; break;
+				case Key.C: result = "c"; break;
+				case Key.D: result = "d"; break;
+				case Key.E: result = "e"; break;
+				case Key.F: result = "f"; break;
+				case Key.G: result = "g"; break;
+				case Key.H: result = "h"; break;
+				case Key.I: result = "i"; break;
+				case Key.J: result = "j"; break;
+				case Key.K: result = "k"; break;
+				case Key.L: result = "l"; break;
+				case Key.M: result = "m"; break;
+				case Key.N: result = "n"; break;
+				case Key.O: result = "o"; break;
+				case Key.P: result = "p"; break;
+				case Key.Q: result = "q"; break;
+				case Key.R: result = "r"; break;
+				case Key.S: result = "s"; break;
+				case Key.T: result = "t"; break;
+				case Key.U: result = "u"; break;
+				case Key.V: result = "v"; break;
+				case Key.W: result = "w"; break;
+				case Key.X: result = "x"; break;
+				case Key.Y: result = "y"; break;
+				case Key.Z: result = "z"; break;
+				case Key.Num0: result = "0"; break;
+				case Key.Num1: result = "1"; break;
+				case Key.Num2: result = "2"; break;
+				case Key.Num3: result = "3"; break;
+				case Key.Num4: result = "4"; break;
+				case Key.Num5: result = "5"; break;
+				case Key.Num6: result = "6"; break;
+				case Key.Num7: result = "7"; break;
+				case Key.Num8: result = "8"; break;
+				case Key.Num9: result = "9"; break;
+				case Key.NumMultiply: result = "*"; break;
+				case Key.NumAdd: result = "+"; break;
+				case Key.NumSubtract: result = "-"; break;
+				case Key.NumDecimal: result = "."; break;
+				case Key.NumDivide: result = "/"; break;
+				case Key.Semicolon: result = shift ? ":" : ";"; break;
+				case Key.Equals: result = shift ? "+" : "="; break;
+				case Key.Comma: result = shift ? "<" : ","; break;
+				case Key.MinusDash: result = shift ? "" : "-"; break;
+				case Key.Dot: result = shift ? ">" : "."; break;
+				case Key.Slash: result = shift ? "?" : "/"; break;
+				case Key.GraveAccent: result = shift ? "~" : "`"; break;
+				case Key.SquareBracketOpen: result = shift ? "{" : "["; break;
+				case Key.Backslash: result = shift ? "|" : "\\"; break;
+				case Key.SquareBracketClose: result = shift ? "}" : "]"; break;
+				case Key.Quote: result = shift ? "\"" : "'"; break;
 				default: result = null; break;
 			}
 			result = shift && result != null ? result.ToUpper() : result;
 			return result;
 		}
-		public static Keys[] GetPressedKeys()
+		public static Key[] GetPressedKeys()
 		{
 			return keysPressed.ToArray();
 		}
-		public static Keys[] GetJustPressedKeys()
-		{
-			return keysJustPressed.ToArray();
-		}
-		public static Keys[] GetJustReleasedKeys()
-		{
-			return keysJustReleased.ToArray();
-		}
-		public static bool KeyIsPressed(Keys key)
+		public static bool KeyIsPressed(Key key)
 		{
 			return keysPressed.Contains(key);
-		}
-		public static bool KeyWasJustPressed(Keys key)
-		{
-			return keysJustPressed.Contains(key);
-		}
-		public static bool KeyWasJustReleased(Keys key)
-		{
-			return keysJustReleased.Contains(key);
 		}
 
 		public static bool IsPressHolding(string name, bool condition, float secondsDelay = 0.5f, float updatesPerSecond = 0.1f)

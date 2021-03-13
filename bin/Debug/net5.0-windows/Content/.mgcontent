@@ -4,6 +4,9 @@
   <Platform>Windows</Platform>
   <Config />
   <SourceFiles>
+    <File>D:/code/MonoGame/Gear/Content/sound-on.png</File>
+    <File>D:/code/MonoGame/Gear/Content/aim.png</File>
+    <File>D:/code/MonoGame/Gear/Content/pickup.png</File>
     <File>D:/code/MonoGame/Gear/Content/play.png</File>
     <File>D:/code/MonoGame/Gear/Content/play-border.png</File>
     <File>D:/code/MonoGame/Gear/Content/explosion (1).wav</File>
@@ -83,12 +86,10 @@
     <File>D:/code/MonoGame/Gear/Content/shot-explosion (4).png</File>
     <File>D:/code/MonoGame/Gear/Content/shot-explosion (5).png</File>
     <File>D:/code/MonoGame/Gear/Content/sound-off.png</File>
-    <File>D:/code/MonoGame/Gear/Content/sound-on.png</File>
     <File>D:/code/MonoGame/Gear/Content/stars (1).png</File>
     <File>D:/code/MonoGame/Gear/Content/stars (2).png</File>
   </SourceFiles>
   <DestFiles>
-    <File xsi:nil="true" />
     <File xsi:nil="true" />
   </DestFiles>
 </SourceFileCollection>

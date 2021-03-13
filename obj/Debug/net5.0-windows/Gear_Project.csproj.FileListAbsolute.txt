@@ -121,3 +121,5 @@ D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\explosion (2).wav
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\laser (1).wav
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\laser (2).wav
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\play-border.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\aim.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\pickup.png

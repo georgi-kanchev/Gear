@@ -1,4 +1,5 @@
 Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
+"D:/code/MonoGame/Gear/Content/aim.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/aim.xnb","TextureProcessor","Texture2DContent",2347,11749,0.5857986
 "D:/code/MonoGame/Gear/Content/ambient (1).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/ambient (1).xnb","SongProcessor","SongContent",2680895,129,1.490789
 "D:/code/MonoGame/Gear/Content/ambient (10).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/ambient (10).xnb","SongProcessor","SongContent",1161698,130,0.7632294
 "D:/code/MonoGame/Gear/Content/ambient (11).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/ambient (11).xnb","SongProcessor","SongContent",1371110,130,0.7721165
@@ -47,6 +48,7 @@ Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Siz
 "D:/code/MonoGame/Gear/Content/number (9).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/number (9).xnb","TextureProcessor","Texture2DContent",396,1833,0.011263
 "D:/code/MonoGame/Gear/Content/pause-off.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/pause-off.xnb","TextureProcessor","Texture2DContent",303,2005,0.0103456
 "D:/code/MonoGame/Gear/Content/pause-on.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/pause-on.xnb","TextureProcessor","Texture2DContent",282,1909,0.0104885
+"D:/code/MonoGame/Gear/Content/pickup.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/pickup.xnb","TextureProcessor","Texture2DContent",1314,1241,0.0250928
 "D:/code/MonoGame/Gear/Content/play.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/play.xnb","TextureProcessor","Texture2DContent",1608,22237,0.3177009
 "D:/code/MonoGame/Gear/Content/play-border.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/play-border.xnb","TextureProcessor","Texture2DContent",1767,22237,0.020804
 "D:/code/MonoGame/Gear/Content/score.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/score.xnb","TextureProcessor","Texture2DContent",876,12169,0.0185027
@@ -78,6 +80,6 @@ Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Siz
 "D:/code/MonoGame/Gear/Content/shot-explosion (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/shot-explosion (4).xnb","TextureProcessor","Texture2DContent",1557,16469,0.0188238
 "D:/code/MonoGame/Gear/Content/shot-explosion (5).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/shot-explosion (5).xnb","TextureProcessor","Texture2DContent",1288,16469,0.0199189
 "D:/code/MonoGame/Gear/Content/sound-off.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/sound-off.xnb","TextureProcessor","Texture2DContent",402,2485,0.0160265
-"D:/code/MonoGame/Gear/Content/sound-on.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/sound-on.xnb","TextureProcessor","Texture2DContent",282,1525,0.0156556
+"D:/code/MonoGame/Gear/Content/sound-on.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/sound-on.xnb","TextureProcessor","Texture2DContent",315,2485,0.2675337
 "D:/code/MonoGame/Gear/Content/stars (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/stars (1).xnb","TextureProcessor","Texture2DContent",3786,518485,0.0366333
 "D:/code/MonoGame/Gear/Content/stars (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/stars (2).xnb","TextureProcessor","Texture2DContent",3909,518485,0.0368236
