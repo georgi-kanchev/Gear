@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PipelineBuildEvent xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
-  <SourceFile>D:/code/MonoGame/Gear/Content/ship (4).png</SourceFile>
-  <SourceTime>2021-03-14T05:40:14.0062931+02:00</SourceTime>
-  <DestFile>D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/ship (4).xnb</DestFile>
-  <DestTime>2021-03-14T05:42:21.7582902+02:00</DestTime>
+  <SourceFile>D:/code/MonoGame/Gear/Content/paused.png</SourceFile>
+  <SourceTime>2021-03-14T02:46:35.7912517+02:00</SourceTime>
+  <DestFile>D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/paused.xnb</DestFile>
+  <DestTime>2021-03-14T02:47:28.4827146+02:00</DestTime>
   <Importer>TextureImporter</Importer>
   <ImporterTime>2020-08-10T16:17:54+03:00</ImporterTime>
   <Processor>TextureProcessor</Processor>

@@ -176,6 +176,9 @@
     <None Update="Content\pause-on.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
+    <None Update="Content\paused.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Content\pickup.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

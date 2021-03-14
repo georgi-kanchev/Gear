@@ -115,9 +115,13 @@ public static class Gear
 	{
 		Hovered, Unhovered, Clicked, ClickReleased, Released
 	}
-	public enum KeyInteraction
+	public enum Interaction
 	{
 		Pressed, Released
+	}
+	public enum MouseButton
+	{
+		Left, Middle, Right
 	}
 
 	private static PerformanceCounter ramAvailable = new PerformanceCounter("Memory", "Available MBytes");
@@ -137,6 +141,7 @@ public static class Gear
 	private static Dictionary<string, List<string>> soundCollections = new Dictionary<string, List<string>>();
 	private static Dictionary<Body, bool> bodiesLastTickHovered = new Dictionary<Body, bool>(), bodiesClicked = new Dictionary<Body, bool>();
 
+	private static bool[] mouseButtonsLastFramePressed = new bool[3];
 	private static List<Key> keysPressed = new List<Key>(), lastFrameKeysPressed = new List<Key>();
 	private static List<Body> bodiesAll = new List<Body>();
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
@@ -213,7 +218,8 @@ public static class Gear
 
 		public virtual void NetworkMessageJustReceived(string sender, string message) { }
 		public virtual void MouseJustInteractedWithHitbox(Body body, MouseHitboxInteraction interaction) { }
-		public virtual void UserJustInteractedWithKey(Key key, KeyInteraction interaction) { }
+		public virtual void UserJustInteractedWithKey(Key key, Interaction interaction) { }
+		public virtual void UserJustInteractedWithMouseButton(MouseButton button, Interaction interaction) { }
 
 		protected override void Initialize()
 		{
@@ -269,6 +275,7 @@ public static class Gear
 				tick++;
 				AdvanceTickTime();
 				UpdateKeys();
+				UpdateMouseButtons();
 				UpdateBodies();
 
 				eachTickLineCall = Debug.GetCodeLine() + 1;
@@ -317,18 +324,43 @@ public static class Gear
 				keysPressed.Add(gearKey);
 				if (lastFrameKeysPressed.Contains(gearKey) == false)
 				{
-					program.UserJustInteractedWithKey(gearKey, KeyInteraction.Pressed);
+					program.UserJustInteractedWithKey(gearKey, Interaction.Pressed);
 				}
 			}
 			foreach (var key in lastFrameKeysPressed)
 			{
 				if (keysPressed.Contains(key) == false)
 				{
-					program.UserJustInteractedWithKey(key, KeyInteraction.Released);
+					program.UserJustInteractedWithKey(key, Interaction.Released);
 				}
 			}
 
 			lastFrameKeysPressed = new List<Key>(keysPressed);
+		}
+		private static void UpdateMouseButtons()
+		{
+			var pressed = new bool[3]
+			{
+				Input.LeftMouseButtonIsPressed(),
+				Input.MiddleMouseButtonIsPressed(),
+				Input.RightMouseButtonIsPressed()
+			};
+			for (int i = 0; i < 3; i++)
+			{
+				if (mouseButtonsLastFramePressed[i] == false && pressed[i])
+				{
+					program.UserJustInteractedWithMouseButton((MouseButton)i, Interaction.Pressed);
+				}
+				if (mouseButtonsLastFramePressed[i] && pressed[i] == false)
+				{
+					program.UserJustInteractedWithMouseButton((MouseButton)i, Interaction.Released);
+				}
+			}
+			for (int i = 0; i < 3; i++)
+			{
+				mouseButtonsLastFramePressed[i] = false;
+			}
+			mouseButtonsLastFramePressed = pressed;
 		}
 		private static void UpdateBodies()
 		{
@@ -1036,13 +1068,25 @@ public static class Gear
 			}
 			return bodyUniqueNames[uniqueName];
 		}
-		public static Body[] GetByTag(string tag)
+		public static Body[] GetAllByTag(string tag)
 		{
 			if (tag == null || tagBodies.ContainsKey(tag) == false)
 			{
-				return default;
+				return new Body[0];
 			}
 			return tagBodies[tag].ToArray();
+		}
+		public static Body[] GetAllHovered()
+		{
+			var hovered = new List<Body>();
+			foreach (var kvp in bodiesLastTickHovered)
+			{
+				if (kvp.Value)
+				{
+					hovered.Add(kvp.Key);
+				}
+			}
+			return hovered.ToArray();
 		}
 
 		public Body(string uniqueName, bool nameIsNullError = true, bool nameExistsError = true)
@@ -2935,7 +2979,7 @@ public static class Gear
 				signalEndTimes[name] += ticksDeltaTime;
 				return false;
 			}
-			if (time >= signalEndTimes[name])
+			if (time - ticksDeltaTime >= signalEndTimes[name])
 			{
 				if (delete) Delete(name);
 				return true;
@@ -2957,7 +3001,7 @@ public static class Gear
 
 		public static bool IsIntervalOccuring(string name, float intervalsInSeconds, int repeats = 1000000)
 		{
-			intervalsInSeconds = Number.GetLimited(intervalsInSeconds, 0.1f, 100000);
+			intervalsInSeconds = Number.GetLimited(intervalsInSeconds, 0.01f, 100000);
 			if (Gate.IsOpened(name, Signal.IsOccurring(name, false), repeats))
 			{
 				Signal.Create(name, intervalsInSeconds);
