@@ -124,3 +124,6 @@ D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\play-border.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\aim.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\pickup.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\paused.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\cd-border.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\cd.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\exit.png

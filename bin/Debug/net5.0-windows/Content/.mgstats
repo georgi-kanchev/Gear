@@ -26,7 +26,10 @@ Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Siz
 "D:/code/MonoGame/Gear/Content/background (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/background (3).xnb","TextureProcessor","Texture2DContent",89145,518485,0.0459092
 "D:/code/MonoGame/Gear/Content/background (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/background (4).xnb","TextureProcessor","Texture2DContent",76407,518485,0.0439828
 "D:/code/MonoGame/Gear/Content/button.wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/button.xnb","SoundEffectProcessor","SoundEffectContent",40352,40413,0.2103861
+"D:/code/MonoGame/Gear/Content/cd.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/cd.xnb","TextureProcessor","Texture2DContent",1024,121,0.329163
+"D:/code/MonoGame/Gear/Content/cd-border.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/cd-border.xnb","TextureProcessor","Texture2DContent",756,36565,0.041328
 "D:/code/MonoGame/Gear/Content/empty.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/empty.xnb","TextureProcessor","Texture2DContent",69,89,0.0095775
+"D:/code/MonoGame/Gear/Content/exit.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/exit.xnb","TextureProcessor","Texture2DContent",348,2389,0.6003853
 "D:/code/MonoGame/Gear/Content/explosion (1).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/explosion (1).xnb","SoundEffectProcessor","SoundEffectContent",543416,543477,0.5218579
 "D:/code/MonoGame/Gear/Content/explosion (2).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/explosion (2).xnb","SoundEffectProcessor","SoundEffectContent",887988,888049,0.2199788
 "D:/code/MonoGame/Gear/Content/font.spritefont","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows/Content/font.xnb","FontDescriptionProcessor","SpriteFontContent",2008,70690,0.1721447

@@ -1,8 +1,8 @@
 ﻿public class Program : Gear.Instance
 {
-	int highscore, currScore, shipFrame = 1, shotFrame = 1;
+	int highscore, currScore, shipFrame = 1, shotFrame = 1, astSpawnChance = 80;
 	bool soundOn = true, paused = true;
-	float scrollSpeed = 1, dodgeSpeed = 200, shotSpeed = 300;
+	float scrollSpeed = 1, dodgeSpeed = 600, shotSpeed = 300, energy, maxEnergy = 480 - 14, energyRegen = 4;
 	float[] bgScrollX = new float[3];
 
 	public override Program Create() => this;
@@ -48,6 +48,7 @@
 			UpdateShip();
 			UpdateShot();
 			UpdateAsteroids();
+			UpdateEnergy();
 		}
 
 		if (Gear.Timer.IsIntervalOccuring("ship-animation", 0.05f))
@@ -58,7 +59,7 @@
 		{
 			AnimateShotCast();
 		}
-		if (Gear.Timer.IsIntervalOccuring("asteroid-spawn", Gear.Number.GetRandomized(1, 5)))
+		if (Gear.Timer.IsIntervalOccuring("asteroid-spawn", 3) && Gear.Number.HasChance(astSpawnChance))
 		{
 			SpawnAsteroid();
 		}
@@ -67,135 +68,83 @@
 
 	public override void MouseJustInteractedWithHitbox(Gear.Body body, Gear.MouseHitboxInteraction interaction)
 	{
-		if (body.GetUniqueName() == "play" && body.SpriteIsDisplayed())
+		if (body.SpriteIsDisplayed() == false) return;
+		var sprite = body.GetSpriteName();
+		var name = body.GetUniqueName();
+		switch (name)
 		{
-			var size = 80;
-			var shade = 200;
-			var displayed = true;
-			switch (interaction)
-			{
-				case Gear.MouseHitboxInteraction.Hovered:
+			case "play":
+				{
+					AnimateButton(sprite, interaction != Gear.MouseHitboxInteraction.ClickReleased, 80, 71, 78, 36, 39);
+					if (interaction == Gear.MouseHitboxInteraction.ClickReleased)
 					{
-						size = 82;
-						shade = 255;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.Unhovered:
-					{
-						size = 80;
-						shade = 200;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.Clicked:
-					{
-						size = 78;
-						shade = 150;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.ClickReleased:
-					{
-						size = 82;
-						shade = 255;
-						displayed = false;
-						if (soundOn)
-						{
-							Gear.Sound.Play("button");
-						}
 						HideMenu();
 						StartGame();
-						break;
 					}
-				case Gear.MouseHitboxInteraction.Released:
+					break;
+				}
+			case "sound":
+				{
+					AnimateButton(sprite, true, 25, width: 24, height: 25, originX: 12, originY: 12);
+					if (interaction == Gear.MouseHitboxInteraction.ClickReleased)
 					{
-						size = 82;
-						shade = 255;
-						break;
-					}
-			}
-			body.DisplaySprite("play", displayed: displayed, width: 71, height: 78, originX: 36, originY: 39, r: shade, g: shade, b: shade);
-			body.SetSizeWH(size, size);
-		}
-		if (body.GetUniqueName() == "sound" && body.SpriteIsDisplayed())
-		{
-			var size = 25;
-			var shade = 200;
-			var sprite = body.GetSpriteName();
-			switch (interaction)
-			{
-				case Gear.MouseHitboxInteraction.Hovered:
-					{
-						size = 27;
-						shade = 255;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.Unhovered:
-					{
-						size = 25;
-						shade = 200;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.Clicked:
-					{
-						size = 23;
-						shade = 150;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.ClickReleased:
-					{
-						size = 27;
-						shade = 255;
 						sprite = sprite == "sound-on" ? "sound-off" : "sound-on";
+						AnimateButton(sprite, true, 25, width: 24, height: 25, originX: 12, originY: 12);
 						soundOn = sprite == "sound-off";
-						if (soundOn)
-						{
-							Gear.Sound.Play("button");
-						}
-						break;
 					}
-				case Gear.MouseHitboxInteraction.Released:
+					break;
+				}
+			case "exit":
+				{
+					AnimateButton(sprite, true, 24, width: 24, height: 24, originX: 12, originY: 12);
+					if (interaction == Gear.MouseHitboxInteraction.ClickReleased)
 					{
-						size = 27;
-						shade = 255;
-						break;
+						Gear.Window.Close();
 					}
-			}
-			body.DisplaySprite(sprite, width: 24, height: 25, originX: 12, originY: 12, r: shade, g: shade, b: shade);
-			body.SetSizeWH(size, size);
-		}
-		if (body.GetUniqueName() == "pause" && body.SpriteIsDisplayed())
-		{
-			var size = 24;
-			var shade = 200;
-			var sprite = body.GetSpriteName();
-			switch (interaction)
-			{
-				case Gear.MouseHitboxInteraction.Hovered:
+					break;
+				}
+			case "pause":
+				{
+					AnimateButton(sprite, true, 24, width: 24, height: 24, originX: 12, originY: 12);
+					sprite = body.GetSpriteName();
+					if (interaction == Gear.MouseHitboxInteraction.ClickReleased)
 					{
-						size = 26;
-						shade = 255;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.Unhovered:
-					{
-						size = 24;
-						shade = 200;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.Clicked:
-					{
-						size = 22;
-						shade = 150;
-						break;
-					}
-				case Gear.MouseHitboxInteraction.ClickReleased:
-					{
-						size = 26;
-						shade = 255;
-						sprite = sprite == "pause-on" ? "pause-off" : "pause-on";
-						paused = sprite == "pause-off";
+						paused = !paused;
+						AnimateButton(paused ? "pause-off" : "pause-on", true, 24, width: 24, height: 24, originX: 12, originY: 12);
 
 						var pausedBody = Gear.Body.GetByUniqueName("paused");
 						pausedBody.DisplaySprite("paused", displayed: paused, width: 87, height: 14, originX: 44, originY: 7);
+					}
+					break;
+				}
+		}
+
+		void AnimateButton(string sprite, bool displayed, int size, int width, int height, int originX, int originY)
+		{
+			var shade = 200;
+			switch (interaction)
+			{
+				case Gear.MouseHitboxInteraction.Hovered:
+					{
+						size = size + 2;
+						shade = 255;
+						break;
+					}
+				case Gear.MouseHitboxInteraction.Unhovered:
+					{
+						shade = 200;
+						break;
+					}
+				case Gear.MouseHitboxInteraction.Clicked:
+					{
+						size = size - 2;
+						shade = 150;
+						break;
+					}
+				case Gear.MouseHitboxInteraction.ClickReleased:
+					{
+						size = size + 2;
+						shade = 255;
 						if (soundOn)
 						{
 							Gear.Sound.Play("button");
@@ -204,50 +153,26 @@
 					}
 				case Gear.MouseHitboxInteraction.Released:
 					{
-						size = 26;
+						size = size + 2;
 						shade = 255;
 						break;
 					}
 			}
-			body.DisplaySprite(sprite, width: 24, height: 24, originX: 12, originY: 12, r: shade, g: shade, b: shade);
+			body.DisplaySprite(sprite, displayed: displayed, width: width, height: height, originX: originX, originY: originY, r: shade, g: shade, b: shade);
 			body.SetSizeWH(size, size);
 		}
 	}
 	public override void UserJustInteractedWithMouseButton(Gear.MouseButton button, Gear.Interaction interaction)
 	{
-		var hoverCount = 0;
-		var hovered = Gear.Body.GetAllHovered();
-		foreach (var body in hovered)
-		{
-			if (body.SpriteIsDisplayed())
-			{
-				hoverCount++;
-			}
-		}
-		if (interaction == Gear.Interaction.Released || paused || hoverCount > 0 || button != Gear.MouseButton.Left) return;
+		if (CanShoot(interaction) == false) return;
 
-		var ship = Gear.Body.GetByUniqueName("ship");
-		var shot = Gear.Body.GetByUniqueName("shot");
-		var shotCreated = shot != null;
-		shot = shotCreated == false ? new Gear.Body("shot") : shot;
+		Shoot();
+	}
+	public override void UserJustInteractedWithKey(Gear.Key key, Gear.Interaction interaction)
+	{
+		if (CanShoot(interaction) == false) return;
 
-		shotFrame = 1;
-		shot.SetPosition(ship.GetPosition());
-		shot.SetAngle(ship.GetAngle());
-		shot.DisplaySprite("shot (1)", width: 64, height: 64, originX: 32, originY: 32);
-		if (shotCreated == false)
-		{
-			shot.AddTag("shot");
-			shot.AddHitboxLine("up", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(30, -10)));
-			shot.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
-			shot.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
-			shot.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
-		}
-
-		if (soundOn)
-		{
-			Gear.Sound.PlayFromCollection("shot", pitchPercent: 75);
-		}
+		Shoot();
 	}
 
 	void InitializeSounds()
@@ -334,8 +259,17 @@
 	void CreateGame()
 	{
 		var canvasSize = Gear.Canvas.GetSize();
+
+		var exit = new Gear.Body("exit");
+		exit.SetPositionXY(canvasSize.GetW() / 2 - 18, -canvasSize.GetH() / 2 + 16);
+		exit.DisplaySprite("exit", width: 24, height: 24, originX: 12, originY: 12, r: 200, g: 200, b: 200);
+		exit.AddHitboxLine("up", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(12, -12)));
+		exit.AddHitboxLine("down", new Gear.Line(new Gear.Point(-12, 12), new Gear.Point(12, 12)));
+		exit.AddHitboxLine("left", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(-12, 12)));
+		exit.AddHitboxLine("right", new Gear.Line(new Gear.Point(12, -12), new Gear.Point(12, 12)));
+
 		var sound = new Gear.Body("sound");
-		sound.SetPositionXY(canvasSize.GetW() / 2 - 18, -canvasSize.GetH() / 2 + 16);
+		sound.SetPositionXY(canvasSize.GetW() / 2 - 46, -canvasSize.GetH() / 2 + 16);
 		sound.DisplaySprite("sound-off", width: 24, height: 25, originX: 12, originY: 12);
 		sound.AddHitboxLine("up", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(12, -12)));
 		sound.AddHitboxLine("down", new Gear.Line(new Gear.Point(-12, 12), new Gear.Point(12, 12)));
@@ -344,7 +278,7 @@
 
 		var pause = new Gear.Body("pause");
 		pause.DisplaySprite("pause-on", displayed: false, width: 24, height: 24, originX: 12, originY: 12);
-		pause.SetPositionXY(canvasSize.GetW() / 2 - 45, -canvasSize.GetH() / 2 + 16);
+		pause.SetPositionXY(canvasSize.GetW() / 2 - 72, -canvasSize.GetH() / 2 + 16);
 		pause.AddHitboxLine("up", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(12, -12)));
 		pause.AddHitboxLine("down", new Gear.Line(new Gear.Point(-12, 12), new Gear.Point(12, 12)));
 		pause.AddHitboxLine("left", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(-12, 12)));
@@ -352,6 +286,12 @@
 
 		var ship = new Gear.Body("ship");
 		ship.SetPositionXY(-canvasSize.GetW() / 2 + 50, canvasSize.GetH() / 2 + 50);
+		ship.DisplaySprite("ship (1)", width: 128, height: 128, originX: 64, originY: 64);
+		ship.AddHitboxLine("up", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(30, -10)));
+		ship.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
+		ship.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
+		ship.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
+		ship.DisplayHitbox(r: 0, b: 0);
 
 		new Gear.Body("paused");
 		var score = new Gear.Body("score");
@@ -362,6 +302,14 @@
 			var scoreNumb = new Gear.Body($"score-{i}");
 			scoreNumb.SetPositionXY(-canvasSize.GetW() / 2 + 35 + i * 25, -canvasSize.GetH() / 2 + 8);
 		}
+
+		var cd = new Gear.Body("cd");
+		var cdBorder = new Gear.Body("cd-border");
+		cd.SetPositionXY(-canvasSize.GetW() / 2 + 7, canvasSize.GetH() / 2 - 14);
+		cd.DisplaySprite("cd", false, width: 1, height: 9);
+		cd.SetSizeWH(canvasSize.GetW() - 14, 9);
+		cdBorder.SetPositionXY(-canvasSize.GetW() / 2, canvasSize.GetH() / 2 - 19);
+		cdBorder.DisplaySprite("cd-border", false, width: 480, height: 19);
 	}
 	void StartGame()
 	{
@@ -373,6 +321,11 @@
 		var score = Gear.Body.GetByUniqueName("score");
 		score.DisplaySprite("highscore", width: 57, height: 53);
 		score.SetSizeWH(25, 25);
+
+		var cdBorder = Gear.Body.GetByUniqueName("cd-border");
+		cdBorder.DisplaySprite("cd-border", true, width: 480, height: 19);
+		var cd = Gear.Body.GetByUniqueName("cd");
+		cd.DisplaySprite("cd", true, width: 1, height: 9);
 
 		DisplayNumber("score-", currScore);
 	}
@@ -460,9 +413,53 @@
 		if (shot.Length == 0 || shotFrame != 7) return;
 
 		var shotPos = shot[0].GetPosition();
+		var rightScreenEdge = Gear.Canvas.GetSize().GetW() / 2;
 
 		shotPos.MoveAtAngle(shot[0].GetAngle(), shotSpeed);
+		if (shotPos.GetX() > rightScreenEdge)
+		{
+			shotPos.SetY(1000);
+		}
 		shot[0].SetPosition(shotPos);
+	}
+	void Shoot()
+	{
+		var ship = Gear.Body.GetByUniqueName("ship");
+		var shot = Gear.Body.GetByUniqueName("shot");
+		var shotCreated = shot != null;
+		shot = shotCreated == false ? new Gear.Body("shot") : shot;
+
+		shotFrame = 1;
+		energy = 0;
+		shot.SetPosition(ship.GetPosition());
+		shot.SetAngle(ship.GetAngle());
+		shot.DisplaySprite("shot (1)", width: 64, height: 64, originX: 32, originY: 32);
+		if (shotCreated == false)
+		{
+			shot.AddTag("shot");
+			shot.AddHitboxLine("up", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(30, -10)));
+			shot.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
+			shot.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
+			shot.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
+			shot.DisplayHitbox();
+		}
+
+		if (soundOn)
+		{
+			Gear.Sound.PlayFromCollection("shot", pitchPercent: 75);
+		}
+	}
+	bool CanShoot(Gear.Interaction interaction)
+	{
+		return interaction == Gear.Interaction.Pressed && paused == false &&
+			AnythingIsHovered() == false && energy == maxEnergy;
+	}
+
+	void UpdateEnergy()
+	{
+		energy = energy < maxEnergy ? energy + energyRegen : maxEnergy;
+		var cd = Gear.Body.GetByUniqueName("cd");
+		cd.SetSizeW(energy);
 	}
 	void AnimateShotFly()
 	{
@@ -480,18 +477,50 @@
 
 		ast.SetPositionXY(canvasSize.GetW(), Gear.Number.GetRandomized(-canvasSize.GetH() / 2, canvasSize.GetH() / 2));
 		ast.DisplaySprite(sprite, originX: 32, originY: 32);
-		//ast.SetSizeWH(Gear.Number.GetRandomized(56, 72), Gear.Number.GetRandomized(56, 72));
 		ast.AddTag("asteroid");
+		ast.SetAngleA(Gear.Number.GetRandomized(0, 360));
+
+		ast.AddHitboxLine("up", new Gear.Line(new Gear.Point(-24, -24), new Gear.Point(24, -24)));
+		ast.AddHitboxLine("down", new Gear.Line(new Gear.Point(-24, 24), new Gear.Point(24, 24)));
+		ast.AddHitboxLine("left", new Gear.Line(new Gear.Point(-24, -24), new Gear.Point(-24, 24)));
+		ast.AddHitboxLine("right", new Gear.Line(new Gear.Point(24, -24), new Gear.Point(24, 24)));
+		ast.DisplayHitbox(g: 0, b: 0);
+
+		var size = Gear.Number.GetRandomized(16, 72);
+		ast.SetSizeWH(size, size);
 	}
 	void UpdateAsteroids()
 	{
+		var canvasSize = Gear.Canvas.GetSize();
 		var asteroids = Gear.Body.GetAllByTag("asteroid");
 		foreach (var asteroid in asteroids)
 		{
 			var pos = asteroid.GetPosition();
-			pos.MoveAtAngle(new Gear.Angle(Gear.Number.GetRandomized(170, 190)), scrollSpeed * 100);
-
+			var ang = asteroid.GetAngle();
+			pos.MoveAtAngle(new Gear.Angle(180), scrollSpeed * 100);
+			if (pos.GetX() < -canvasSize.GetW() / 2 - 100)
+			{
+				pos.SetXY(canvasSize.GetW() / 2 + Gear.Number.GetRandomized(50, 200),
+					Gear.Number.GetRandomized(-canvasSize.GetH() / 2, canvasSize.GetH() / 2));
+			}
+			ang.Rotate(10);
 			asteroid.SetPosition(pos);
+			asteroid.SetAngle(ang);
 		}
+	}
+
+	bool AnythingIsHovered()
+	{
+		var hoverCount = 0;
+		var hovered = Gear.Body.GetAllHovered();
+		foreach (var body in hovered)
+		{
+			if (body.SpriteIsDisplayed())
+			{
+				hoverCount++;
+			}
+		}
+
+		return hoverCount > 0;
 	}
 }
