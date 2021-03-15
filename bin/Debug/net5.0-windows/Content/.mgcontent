@@ -4,16 +4,10 @@
   <Platform>Windows</Platform>
   <Config />
   <SourceFiles>
-    <File>D:/code/MonoGame/Gear/Content/exit.png</File>
-    <File>D:/code/MonoGame/Gear/Content/cd.png</File>
-    <File>D:/code/MonoGame/Gear/Content/cd-border.png</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid (1).png</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid (2).png</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid (3).png</File>
-    <File>D:/code/MonoGame/Gear/Content/ship (1).png</File>
-    <File>D:/code/MonoGame/Gear/Content/ship (2).png</File>
-    <File>D:/code/MonoGame/Gear/Content/ship (3).png</File>
-    <File>D:/code/MonoGame/Gear/Content/ship (4).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (4).png</File>
     <File>D:/code/MonoGame/Gear/Content/ship-explosion (1).png</File>
     <File>D:/code/MonoGame/Gear/Content/ship-explosion (10).png</File>
     <File>D:/code/MonoGame/Gear/Content/ship-explosion (11).png</File>
@@ -25,6 +19,16 @@
     <File>D:/code/MonoGame/Gear/Content/ship-explosion (7).png</File>
     <File>D:/code/MonoGame/Gear/Content/ship-explosion (8).png</File>
     <File>D:/code/MonoGame/Gear/Content/ship-explosion (9).png</File>
+    <File>D:/code/MonoGame/Gear/Content/exit.png</File>
+    <File>D:/code/MonoGame/Gear/Content/cd.png</File>
+    <File>D:/code/MonoGame/Gear/Content/cd-border.png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/asteroid (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (1).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (2).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (3).png</File>
+    <File>D:/code/MonoGame/Gear/Content/ship (4).png</File>
     <File>D:/code/MonoGame/Gear/Content/aim.png</File>
     <File>D:/code/MonoGame/Gear/Content/score.png</File>
     <File>D:/code/MonoGame/Gear/Content/paused.png</File>
@@ -47,10 +51,6 @@
     <File>D:/code/MonoGame/Gear/Content/ambient (15).mp3</File>
     <File>D:/code/MonoGame/Gear/Content/ambient (16).mp3</File>
     <File>D:/code/MonoGame/Gear/Content/ambient (2).mp3</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (1).png</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (2).png</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (3).png</File>
-    <File>D:/code/MonoGame/Gear/Content/asteroid-explosion (4).png</File>
     <File>D:/code/MonoGame/Gear/Content/asteroid-explosion.wav</File>
     <File>D:/code/MonoGame/Gear/Content/asteroid-miss (1).wav</File>
     <File>D:/code/MonoGame/Gear/Content/asteroid-miss (2).wav</File>
@@ -94,6 +94,9 @@
     <File>D:/code/MonoGame/Gear/Content/stars (2).png</File>
   </SourceFiles>
   <DestFiles>
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
+    <File xsi:nil="true" />
     <File xsi:nil="true" />
   </DestFiles>
 </SourceFileCollection>

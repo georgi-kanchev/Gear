@@ -220,7 +220,8 @@ public static class Gear
 		public virtual void MouseJustInteractedWithHitbox(Body body, MouseHitboxInteraction interaction) { }
 		public virtual void UserJustInteractedWithKey(Key key, Interaction interaction) { }
 		public virtual void UserJustInteractedWithMouseButton(MouseButton button, Interaction interaction) { }
-
+		public virtual void BodyJustCollidedWithBody(Body bodyA, Body bodyB) { }
+		
 		protected override void Initialize()
 		{
 			spriteBatch = new SpriteBatch(game.GraphicsDevice);
@@ -370,6 +371,16 @@ public static class Gear
 			{
 				var isHovered = body.IsIgnoringAllObstacles() == false && body.GetAllHitboxLines().Length > 2 &&
 					body.HitboxOverlapsPoint(Input.GetMouseCursorPosition());
+				var obstacles = body.GetObstacles();
+
+				foreach (var obstacle in obstacles)
+				{
+					if (Gate.IsOpened($"{body}-{obstacle}-collision", body.HitboxOverlapsObstacle(obstacle)))
+					{
+						program.BodyJustCollidedWithBody(body, obstacle);
+					}
+				}
+
 				if (bodiesLastTickHovered.ContainsKey(body) == false)
 				{
 					bodiesLastTickHovered.Add(body, false);
@@ -1111,6 +1122,8 @@ public static class Gear
 			bodyCameraDistances.Remove(this);
 			bodyUniqueNames.Remove(uniqueName);
 			bodiesAll.Remove(this);
+			bodiesClicked.Remove(this);
+			bodiesLastTickHovered.Remove(this);
 			RemoveAllTags();
 			render = true;
 		}
@@ -1214,7 +1227,7 @@ public static class Gear
 				$"{nameof(tag)} = \"{tag}\"\n" +
 				$"{nameof(tagIsNullError)} = {tagIsNullError.ToString().ToLower()}\n" +
 				$"{nameof(tagNotFoundError)} = {tagNotFoundError.ToString().ToLower()}";
-			if (IsNullError(parameters, nameof(tag), tag, tagNotFoundError, 1)) return;
+			if (IsNullError(parameters, nameof(tag), tag, tagIsNullError, 1)) return;
 			if (ValueNotFoundError(parameters, tags, nameof(tag), tag, tagNotFoundError, 1)) return;
 
 			tags.Remove(tag);
@@ -1229,12 +1242,27 @@ public static class Gear
 		{
 			foreach (var tag in tags)
 			{
-				RemoveTag(tag);
+				tagBodies[tag].Remove(this);
+				if (tagBodies[tag].Count == 0)
+				{
+					tagBodies.Remove(tag);
+				}
 			}
+			
+			tags.Clear();
 		}
 		public string[] GetTags()
 		{
 			return tags.ToArray();
+		}
+		public bool HasTag(string tag, bool tagIsNullError = true)
+		{
+			var parameters = $"Parameters:\n" +
+				$"{nameof(tag)} = \"{tag}\"\n" +
+				$"{nameof(tagIsNullError)} = {tagIsNullError.ToString().ToLower()}";
+			if (IsNullError(parameters, nameof(tag), tag, tagIsNullError, 1)) return false;
+
+			return tags.Contains(tag);
 		}
 
 		public override string ToString()
@@ -1718,6 +1746,14 @@ public static class Gear
 			}
 			return result.ToArray();
 		}
+		public bool HasHitboxObstacle(Body body)
+		{
+			return hitboxObstacles.Contains(body);
+		}
+		public bool HasHitboxException(Body body)
+		{
+			return hitboxExceptions.Contains(body);
+		}
 
 		public void AddHitboxException(Body body, bool bodyAlreadyAddedError = true)
 		{
@@ -1749,7 +1785,7 @@ public static class Gear
 					var parameters = $"Parameters:\n" +
 						$"{nameof(body)} = {body}\n" +
 						$"{nameof(bodyAlreadyAddedError)} = {bodyAlreadyAddedError.ToString().ToLower()})";
-					Error(GetAlreadyExistsError("", nameof(body), $"{body}"), 2);
+					Error(GetAlreadyExistsError(nameof(body), $"{body}"), 2);
 				}
 				return;
 			}
