@@ -1,8 +1,9 @@
 ﻿public class Program : Gear.Instance
 {
-	int highscore, currScore, shipFrame = 1, shotFrame = 1, astSpawnChance = 80;
-	bool soundOn = true, paused = true, shipExplosion;
-	float scrollSpeed = 1, dodgeSpeed = 600, shotSpeed = 300, energy, maxEnergy = 480 - 14, energyRegen = 4;
+	const float maxEnergy = 480 - 14;
+	int highscore, currScore, shipFrame, shotFrame, astSpawnChance;
+	bool soundOn = true, paused = true, shipExplosion, shotExplosion;
+	float scrollSpeed, dodgeSpeed, shotSpeed, energy, energyRegen;
 	float[] bgScrollX = new float[3];
 	Gear.Storage<Gear.Body, int> astFrames = new Gear.Storage<Gear.Body, int>();
 
@@ -33,6 +34,7 @@
 	{
 		if (tickCount == 40)
 		{
+			LoadHighScore();
 			InitializeSounds();
 			RemoveLoadingPercents();
 			CreateBackground();
@@ -59,9 +61,9 @@
 		}
 		if (Gear.Timer.IsIntervalOccuring("shot-animation", 0.02f) && paused == false)
 		{
-			AnimateShotCast();
+			AnimateShot();
 		}
-		if (Gear.Timer.IsIntervalOccuring("ast-animation", shipExplosion ? 0.8f : 0.1f) && paused == false)
+		if (Gear.Timer.IsIntervalOccuring("ast-animation", shipExplosion ? 0.8f : 0.05f) && paused == false)
 		{
 			AnimateAsteroids();
 		}
@@ -201,10 +203,29 @@
 			if (astFrames.HasUniqueKey(bodyB) == false)
 			{
 				astFrames.Expand(0, bodyB, 1);
+				shotExplosion = true;
+				shotFrame = 0;
+				currScore += 2;
+				DisplayNumber("score-", currScore);
+				if (soundOn)
+				{
+					Gear.Sound.Play("asteroid-explosion", pitchPercent: 100);
+				}
 			}
 		}
 	}
 
+	void LoadHighScore()
+	{
+		var raw = Gear.Text.Load("", "best", "score");
+		var highscoreStr = Gear.Text.GetDecrypted(raw, '*', true);
+		if (raw == null) return;
+
+		var loadedHighScore = Gear.Number.GetFromText(highscoreStr, invalidTextError: false);
+		if (loadedHighScore.Length == 0) return;
+
+		highscore = (int)loadedHighScore[0];
+	}
 	void InitializeSounds()
 	{
 		Gear.Sound.CreateCollection("shot");
@@ -305,7 +326,7 @@
 
 		var sound = new Gear.Body("sound");
 		sound.SetPositionXY(canvasSize.GetW() / 2 - 46, -canvasSize.GetH() / 2 + 16);
-		sound.DisplaySprite("sound-off", width: 24, height: 25, originX: 12, originY: 12);
+		sound.DisplaySprite("sound-off", width: 24, height: 25, originX: 12, originY: 12, r: 200, g: 200, b: 200);
 		sound.AddHitboxLine("up", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(12, -12)));
 		sound.AddHitboxLine("down", new Gear.Line(new Gear.Point(-12, 12), new Gear.Point(12, 12)));
 		sound.AddHitboxLine("left", new Gear.Line(new Gear.Point(-12, -12), new Gear.Point(-12, 12)));
@@ -327,9 +348,7 @@
 		ship.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
 		ship.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
 		ship.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
-		ship.DisplayHitbox();
 		ship.AddTag("game");
-		ship.DisplayHitboxMiddlePoint();
 
 		var paused = new Gear.Body("paused");
 		paused.AddTag("game");
@@ -341,7 +360,7 @@
 		for (int i = 0; i < 5; i++)
 		{
 			var scoreNumb = new Gear.Body($"score-{i}");
-			scoreNumb.SetPositionXY(-canvasSize.GetW() / 2 + 35 + i * 25, -canvasSize.GetH() / 2 + 8);
+			scoreNumb.SetPositionXY(-canvasSize.GetW() / 2 + 35 + i * 19, -canvasSize.GetH() / 2 + 8);
 			scoreNumb.AddTag("game");
 		}
 
@@ -367,17 +386,17 @@
 		shotFrame = 1;
 		astSpawnChance = 80;
 		scrollSpeed = 1;
-		dodgeSpeed = 600;
+		dodgeSpeed = 300;
 		shotSpeed = 300;
 		energy = 0;
-		energyRegen = 4;
+		energyRegen = 1;
 
 		var ship = Gear.Body.GetByUniqueName("ship");
 		ship.RemoveAllHitboxObstacles();
 		ship.SetPositionXY(-canvasSize.GetW() / 2 + 50, canvasSize.GetH() / 2 + 50);
 
 		var pause = Gear.Body.GetByUniqueName("pause");
-		pause.DisplaySprite("pause-on", displayed: true, width: 24, height: 24, originX: 12, originY: 12);
+		pause.DisplaySprite("pause-on", displayed: true, width: 24, height: 24, originX: 12, originY: 12, r: 200, g: 200, b: 200);
 
 		var score = Gear.Body.GetByUniqueName("score");
 		score.DisplaySprite("highscore", width: 57, height: 53);
@@ -429,15 +448,12 @@
 	void ScrollBackgrounds()
 	{
 		var background = Gear.Body.GetByUniqueName("background");
-		var stars = Gear.Body.GetByUniqueName("stars");
 		var meteors = Gear.Body.GetByUniqueName("meteors");
 
 		bgScrollX[0] += scrollSpeed * 0.01f;
-		//bgScrollX[1] += 0.01f;
 		bgScrollX[2] += scrollSpeed * 0.1f;
 
 		ScrollBody(background, (int)bgScrollX[0], 255);
-		//ScrollBody(stars, (int)bgScrollX[1], 100);
 		ScrollBody(meteors, (int)bgScrollX[2], 255);
 
 		void ScrollBody(Gear.Body body, int speed, int opacity)
@@ -458,6 +474,7 @@
 		shot = shotCreated == false ? new Gear.Body("shot") : shot;
 
 		shotFrame = 1;
+		shotExplosion = false;
 		energy = 0;
 		shot.RemoveAllHitboxObstacles();
 		shot.SetPosition(ship.GetPosition());
@@ -470,7 +487,6 @@
 			shot.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
 			shot.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
 			shot.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
-			shot.DisplayHitbox();
 		}
 		var asts = Gear.Body.GetAllByTag("asteroid");
 		foreach (var ast in asts)
@@ -505,19 +521,31 @@
 		}
 		shot.SetPosition(shotPos);
 	}
-	void AnimateShotCast()
+	void AnimateShot()
 	{
 		var shot = Gear.Body.GetByUniqueName("shot");
 		var ship = Gear.Body.GetByUniqueName("ship");
-		if (shot == null || ship == null || shotFrame > 6) return;
+		if (shot == null || ship == null || (shotFrame > 6 && shotExplosion == false)) return;
 
 		var shipAng = ship.GetAngle();
 		var shipPos = ship.GetPosition();
+		var explosionStr = shotExplosion ? "-explosion" : "";
 
 		shotFrame++;
-		shot.DisplaySprite($"shot ({shotFrame})", width: 64, height: 64, originX: 32, originY: 32);
-		shot.SetPosition(shipPos);
-		shot.SetAngle(shipAng);
+		if (shotExplosion)
+		{
+			if (shotFrame > 5)
+			{
+				shot.Delete();
+				return;
+			}
+		}
+		else
+		{
+			shot.SetPosition(shipPos);
+			shot.SetAngle(shipAng);
+		}
+		shot.DisplaySprite($"shot{explosionStr} ({shotFrame})", width: 64, height: 64, originX: 32, originY: 32);
 	}
 	void AnimateShotFly()
 	{
@@ -541,6 +569,12 @@
 		{
 			paused = true;
 			scrollSpeed = 0;
+			if (currScore > highscore)
+			{
+				highscore = currScore;
+				var fileContent = Gear.Text.GetEncrypted($"{highscore}", '*', true);
+				Gear.Text.Save(fileContent, "", "best", "score");
+			}
 			HideGame();
 			ShowMenu();
 			return;
@@ -582,7 +616,6 @@
 		var ast = new Gear.Body($"ast-{Gear.Performance.GetTickCount()}");
 		var sprite = $"asteroid ({Gear.Number.GetRandomized(1, 3)})";
 		var ship = Gear.Body.GetByUniqueName("ship");
-		var shot = Gear.Body.GetByUniqueName("shot");
 
 		ast.SetPositionXY(canvasSize.GetW(), Gear.Number.GetRandomized(-canvasSize.GetH() / 2, canvasSize.GetH() / 2));
 		ast.DisplaySprite(sprite, originX: 32, originY: 32);
@@ -593,10 +626,8 @@
 		ast.AddHitboxLine("down", new Gear.Line(new Gear.Point(-24, 24), new Gear.Point(24, 24)));
 		ast.AddHitboxLine("left", new Gear.Line(new Gear.Point(-24, -24), new Gear.Point(-24, 24)));
 		ast.AddHitboxLine("right", new Gear.Line(new Gear.Point(24, -24), new Gear.Point(24, 24)));
-		ast.DisplayHitbox();
 		ast.AddTag("game");
 		ast.AddHitboxObstacle(ship);
-		ast.DisplayHitboxMiddlePoint();
 		ship.AddHitboxObstacle(ast);
 
 		var size = Gear.Number.GetRandomized(16, 72);
@@ -605,20 +636,26 @@
 	void UpdateAsteroids()
 	{
 		var canvasSize = Gear.Canvas.GetSize();
-		var asteroids = Gear.Body.GetAllByTag("asteroid");
-		foreach (var asteroid in asteroids)
+		var asts = Gear.Body.GetAllByTag("asteroid");
+		foreach (var ast in asts)
 		{
-			var pos = asteroid.GetPosition();
-			var ang = asteroid.GetAngle();
+			var pos = ast.GetPosition();
+			var ang = ast.GetAngle();
+			var sprite = $"asteroid ({Gear.Number.GetRandomized(1, 3)})";
 			pos.MoveAtAngle(new Gear.Angle(180), scrollSpeed * 100);
 			if (pos.GetX() < -canvasSize.GetW() / 2 - 100)
 			{
 				pos.SetXY(canvasSize.GetW() / 2 + Gear.Number.GetRandomized(50, 200),
 					Gear.Number.GetRandomized(-canvasSize.GetH() / 2, canvasSize.GetH() / 2));
+				ast.DisplaySprite(sprite, originX: 32, originY: 32);
+				var size = Gear.Number.GetRandomized(16, 72);
+				ast.SetSizeWH(size, size);
+				currScore++;
+				DisplayNumber("score-", currScore);
 			}
 			ang.Rotate(10);
-			asteroid.SetPosition(pos);
-			asteroid.SetAngle(ang);
+			ast.SetPosition(pos);
+			ast.SetAngle(ang);
 		}
 	}
 	void AnimateAsteroids()

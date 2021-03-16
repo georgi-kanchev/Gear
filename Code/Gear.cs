@@ -1058,8 +1058,6 @@ public static class Gear
 		[JsonProperty]
 		private List<Body> hitboxObstacles = new List<Body>(), hitboxExceptions = new List<Body>();
 		[JsonProperty]
-		private Dictionary<Body, List<Point>> hitboxCrossPoints = new Dictionary<Body, List<Point>>();
-		[JsonProperty]
 		private Dictionary<string, float[]> hitboxLineDistances = new Dictionary<string, float[]>(), hitboxLineAngles = new Dictionary<string, float[]>();
 		[JsonProperty]
 		private Dictionary<string, Size> hitboxLineSizes = new Dictionary<string, Size>();
@@ -1588,37 +1586,6 @@ public static class Gear
 			return hitboxCrossPointsShown;
 		}
 
-		private void UpdateCrossPoints()
-		{
-			hitboxCrossPoints.Clear();
-			foreach (var obstacle in hitboxObstacles)
-			{
-				foreach (var kvp in hitboxLines)
-				{
-					var line = kvp.Value;
-					if (hitboxExceptions.Contains(obstacle) || ignoreCollisions)
-					{
-						continue;
-					}
-					foreach (var kvp2 in obstacle.hitboxLines)
-					{
-						var line2 = kvp2.Value;
-						var crossPoints = line.GetCrossPointWithLine(line2);
-						if (crossPoints.Length > 0)
-						{
-							if (hitboxCrossPoints.ContainsKey(obstacle) == false)
-							{
-								hitboxCrossPoints[obstacle] = new List<Point>();
-							}
-							foreach (var point in crossPoints)
-							{
-								hitboxCrossPoints[obstacle].Add(point);
-							}
-						}
-					}
-				}
-			}
-		}
 		#endregion
 		#region Creation
 		private void _SetHitboxLine(string uniqueKey, Line line)
@@ -1726,7 +1693,8 @@ public static class Gear
 		}
 		public bool HitboxOverlapsObstacleLine(Body body)
 		{
-			return hitboxObstacles.Contains(body) && hitboxCrossPoints.ContainsKey(body) && ignoreCollisions == false;
+			return ignoreCollisions == false && hitboxObstacles.Contains(body) &&
+				GetHitboxCrossPointsWithObstacle(body).Length > 0;
 		}
 		public bool HitboxOverlapsObstacle(Body body)
 		{
@@ -1734,15 +1702,25 @@ public static class Gear
 		}
 		public Point[] GetHitboxCrossPointsWithObstacle(Body body)
 		{
-			return HitboxOverlapsObstacleLine(body) ? hitboxCrossPoints[body].ToArray() : new Point[0];
+			var result = new List<Point>();
+			var bodyLines = body.GetAllHitboxLines();
+			var myLines = hitboxLines.Values;
+			foreach (var myLine in myLines)
+			{
+				foreach (var bodyLine in bodyLines)
+				{
+					result.AddRange(myLine.GetCrossPointWithLine(bodyLine));
+				}
+			}
+			return result.ToArray();
 		}
 		public Point[] GetAllHitboxCrossPoints()
 		{
 			var result = new List<Point>();
 
-			foreach (var kvp in hitboxCrossPoints)
+			foreach (var obstacle in hitboxObstacles)
 			{
-				result.AddRange(kvp.Value);
+				result.AddRange(GetHitboxCrossPointsWithObstacle(obstacle));
 			}
 			return result.ToArray();
 		}
@@ -1829,7 +1807,6 @@ public static class Gear
 
 				hitboxLines[key] = new Line(start, end);
 			}
-			UpdateCrossPoints();
 		}
 		#endregion
 		#region Middle Point
@@ -1878,16 +1855,14 @@ public static class Gear
 		public bool HitboxMiddlePointOverlapsObstacle(Body body)
 		{
 			if (hitboxObstacles.Contains(body) == false) return false;
-			var ray = new Line(GetHitboxMiddlePoint(), new Point(99_999, 99_999));
+			var ray = new Line(body.GetHitboxMiddlePoint(), new Point(99_999, -99_999));
 			var crossSum = 0;
-			foreach (var line in body.GetAllHitboxLines())
+			var lines = GetAllHitboxLines();
+			foreach (var line in lines)
 			{
-				if (ray.IsCrossingLine(line))
-				{
-					crossSum += ray.GetCrossPointWithLine(line).Length;
-				}
+				crossSum += ray.GetCrossPointWithLine(line).Length;
 			}
-			return crossSum % 2 != 0 && hitboxExceptions.Contains(body) == false && ignoreCollisions == false;
+			return crossSum == 1 && hitboxExceptions.Contains(body) == false && ignoreCollisions == false;
 		}
 		#endregion
 		#endregion
@@ -2198,7 +2173,7 @@ public static class Gear
 			}
 		}
 		/// <summary>
-		/// Reads the text from the file at <paramref name="filepath"/> with <paramref name="filename"/> and <paramref name="fileextension"/> and returns it as a <see cref="string"/> if successful. Returns <paramref name="null"/> otherwise. A text can be saved to a file with <see cref="Save"/>.<br></br><br></br>
+		/// Reads the text from the file at <paramref name="filePath"/> with <paramref name="fileName"/> and <paramref name="fileExtension"/> and returns it as a <see cref="string"/> if successful. Returns <paramref name="null"/> otherwise. A text can be saved to a file with <see cref="Save"/>.<br></br><br></br>
 		/// This is a slow operation - do not call frequently.
 		/// </summary>
 		public static string Load(string filePath = "", string fileName = "data", string fileExtension = "data")
@@ -4427,11 +4402,11 @@ public static class Gear
 			var closestCrossPointToLine = new Point();
 
 			GetCrossPointOfTwoLines(startPoint, endPoint, line.startPoint, line.endPoint, out linesCross, out segmentsCross, out intersection, out closestCrossPointToMe, out closestCrossPointToLine);
-			return intersection;
+			return segmentsCross ? intersection : new Point[0];
 		}
 		public bool IsCrossingLine(Line line)
 		{
-			return LineCrossesLine(startPoint, endPoint, line.startPoint, line.endPoint);
+			return GetCrossPointWithLine(line).Length == 1;
 		}
 		public bool ContainsPoint(Point point)
 		{
@@ -4788,13 +4763,7 @@ public static class Gear
 		float t2 = ((startB.GetX() - startA.GetX()) * dy12 + (startA.GetY() - startB.GetY()) * dx12) / -denominator;
 
 		// Find the point of intersection.
-		var point = new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1);
-		var lineA = new Line(startA, endA);
-		var lineB = new Line(startB, endB);
-		if (lineA.ContainsPoint(point) && lineB.ContainsPoint(point))
-		{
-			intersection = new Point[1] { point };
-		}
+		intersection = new Point[1] { new Point(startA.GetX() + dx12 * t1, startA.GetY() + dy12 * t1) };
 
 		// The segments intersect if t1 and t2 are between 0 and 1.
 		segments_intersect = ((t1 >= 0) && (t1 <= 1) && (t2 >= 0) && (t2 <= 1));
