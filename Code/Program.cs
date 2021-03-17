@@ -12,24 +12,30 @@
 	public override string[] LoadingScreenPrepare()
 	{
 		Gear.Canvas.SetPixelSizeWH(4, 4);
-
-		for (int i = 0; i < 3; i++)
+		return new string[]
 		{
-			var body = new Gear.Body($"loading-{i}");
-			body.SetPositionXY(-30 + i * 20, 0);
-		}
-
-		var numbers = new string[11];
-		for (int i = 0; i < 10; i++)
-		{
-			numbers[i] = $"number ({i}).png";
-		}
-		numbers[10] = "empty.png";
-		return numbers;
+			"cd.png",
+			"background (1).png", "background (2).png", "background (3).png", "background (4).png",
+			"stars (1).png", "stars (2).png",
+			"meteors (1).png", "meteors (2).png", "meteors (3).png"
+		};
 	}
 	public override void EachLoadingScreenUpdate(int percentLoaded)
 	{
-		DisplayNumber($"loading-", percentLoaded);
+		var canvasSize = Gear.Canvas.GetSize();
+		var progressBar = Gear.Body.GetByUniqueName("progress-bar");
+		if (Gear.Gate.IsOpened("loading-started", true))
+		{
+			new Gear.Body("background");
+			new Gear.Body("stars");
+			new Gear.Body("meteors");
+			ShowBackground();
+			progressBar = new Gear.Body("progress-bar");
+			progressBar.SetPositionXY(-canvasSize.GetW() / 2, canvasSize.GetH() / 2 - 9);
+			progressBar.DisplaySprite("cd", width: 1, height: 9);
+		}
+
+		progressBar.SetSizeW(percentLoaded * canvasSize.GetW() / 100);
 	}
 	public override void EachTick(int tickCount)
 	{
@@ -38,8 +44,7 @@
 			Gear.Window.SetTitle("Asteroids");
 			LoadHighScore();
 			InitializeSounds();
-			RemoveLoadingPercents();
-			CreateBackground();
+			RemoveLoadingScreen();
 			CreateMenu();
 			CreateGame();
 			ShowMenu();
@@ -104,6 +109,10 @@
 						soundOn = sprite == "sound-off";
 						AnimateButton(sprite, true, 25, width: 24, height: 25, originX: 12, originY: 12);
 						Gear.Melody.Pause(soundOn == false);
+						if (shipExplosion)
+						{
+							Gear.Melody.Pause(true);
+						}
 					}
 					break;
 				}
@@ -200,6 +209,7 @@
 			}
 			if (soundOn)
 			{
+				Gear.Melody.Pause(true);
 				Gear.Sound.PlayFromCollection("explosion");
 			}
 		}
@@ -224,6 +234,19 @@
 		PlayRandomAmbient();
 	}
 
+	void ShowBackground()
+	{
+		var background = Gear.Body.GetByUniqueName("background");
+		var stars = Gear.Body.GetByUniqueName("stars");
+		var meteors = Gear.Body.GetByUniqueName("meteors");
+		var backgroundSprite = $"background ({Gear.Number.GetRandomized(1, 4, 0)})";
+		var starsSprite = $"stars ({Gear.Number.GetRandomized(1, 2, 0)})";
+		var meteorsSprite = $"meteors ({Gear.Number.GetRandomized(1, 3, 0)})";
+
+		background.DisplaySprite(backgroundSprite, width: 480, height: 270, originX: 240, originY: 135);
+		stars.DisplaySprite(starsSprite, width: 480, height: 270, originX: 240, originY: 135, o: 100);
+		meteors.DisplaySprite(meteorsSprite, width: 480, height: 270, originX: 240, originY: 135);
+	}
 	void LoadHighScore()
 	{
 		var raw = Gear.Text.Load("", "best", "score");
@@ -258,37 +281,15 @@
 
 		PlayRandomAmbient();
 	}
-	void RemoveLoadingPercents()
+	void RemoveLoadingScreen()
 	{
-		for (int i = 0; i < 3; i++)
-		{
-			var body = Gear.Body.GetByUniqueName($"loading-{i}");
-			body.Delete();
-		}
-	}
-	void CreateBackground()
-	{
-		var background = new Gear.Body("background");
-		var stars = new Gear.Body("stars");
-		var meteors = new Gear.Body("meteors");
-	}
-	void ShowBackground()
-	{
-		var background = Gear.Body.GetByUniqueName("background");
-		var stars = Gear.Body.GetByUniqueName("stars");
-		var meteors = Gear.Body.GetByUniqueName("meteors");
-		var backgroundSprite = $"background ({Gear.Number.GetRandomized(1, 4, 0)})";
-		var starsSprite = $"stars ({Gear.Number.GetRandomized(1, 2, 0)})";
-		var meteorsSprite = $"meteors ({Gear.Number.GetRandomized(1, 3, 0)})";
-
-		background.DisplaySprite(backgroundSprite, width: 480, height: 270, originX: 240, originY: 135);
-		stars.DisplaySprite(starsSprite, width: 480, height: 270, originX: 240, originY: 135, o: 100);
-		meteors.DisplaySprite(meteorsSprite, width: 480, height: 270, originX: 240, originY: 135);
+		var body = Gear.Body.GetByUniqueName($"progress-bar");
+		body.Delete();
 	}
 	void PlayRandomAmbient()
 	{
 		var randomIndex = (int)Gear.Number.GetRandomized(0, 9);
-		Gear.Melody.Play(ambients[randomIndex]);
+		Gear.Melody.Play(ambients[randomIndex], 25);
 	}
 
 	void CreateMenu()
@@ -337,6 +338,10 @@
 		playBorder.DisplaySprite("play-border", width: 71, height: 78, originX: 36, originY: 39);
 		DisplayNumber("menu-highscore-", highscore);
 		ShowBackground();
+		if (soundOn)
+		{
+			Gear.Melody.Pause(false);
+		}
 	}
 
 	void CreateGame()
@@ -684,8 +689,8 @@
 				ast.DisplaySprite(sprite, originX: 32, originY: 32);
 				var size = Gear.Number.GetRandomized(16, 72);
 				ast.SetSizeWH(size, size);
-				scrollSpeed += 0.005f;
-				dodgeSpeed += 10;
+				scrollSpeed += 0.02f;
+				dodgeSpeed += 15;
 				currScore++;
 				DisplayNumber("score-", currScore);
 			}
