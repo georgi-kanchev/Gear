@@ -8,7 +8,7 @@
       "version": "1.0.0",
       "restore": {
         "projectUniqueName": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
-        "projectName": "Gear_Project",
+        "projectName": "Asteroids",
         "projectPath": "D:\\code\\MonoGame\\Gear\\Gear_Project.csproj",
         "packagesPath": "C:\\Users\\PC PC\\.nuget\\packages\\",
         "outputPath": "D:\\code\\MonoGame\\Gear\\obj\\",
@@ -26,7 +26,7 @@
         },
         "frameworks": {
           "net5.0-windows7.0": {
-            "targetAlias": "net5.0-windows",
+            "targetAlias": "net5.0-windows7.0",
             "projectReferences": {}
           }
         },
@@ -38,7 +38,7 @@
       },
       "frameworks": {
         "net5.0-windows7.0": {
-          "targetAlias": "net5.0-windows",
+          "targetAlias": "net5.0-windows7.0",
           "dependencies": {
             "Mono.Nat": {
               "target": "Package",

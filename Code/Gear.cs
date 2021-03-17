@@ -132,6 +132,7 @@ public static class Gear
 	private static Dictionary<string, SoundEffectInstance> sounds = new Dictionary<string, SoundEffectInstance>();
 	private static Dictionary<string, SoundEffect> soundsRaw = new Dictionary<string, SoundEffect>();
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
+	private static Dictionary<Song, string> melodyUniqueNames = new Dictionary<Song, string>();
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signalpauses = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gateEntriesCount = new Dictionary<string, int>();
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
@@ -150,7 +151,7 @@ public static class Gear
 	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
 	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole, windowIsDisplayed = true;
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time, cameraAngle;
-	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName, userErrorMessage;
+	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName, userErrorMessage, melodyOverKey = ";;'gosak";
 
 	private static string contentLoadingInfo =
 		"1. In File Explorer: Add it to the 'Content' folder/sub-folder inside it.\n" +
@@ -221,7 +222,8 @@ public static class Gear
 		public virtual void UserJustInteractedWithKey(Key key, Interaction interaction) { }
 		public virtual void UserJustInteractedWithMouseButton(MouseButton button, Interaction interaction) { }
 		public virtual void BodyJustCollidedWithBody(Body bodyA, Body bodyB) { }
-		
+		public virtual void MelodyJustEnded(string uniqueName) { }
+
 		protected override void Initialize()
 		{
 			spriteBatch = new SpriteBatch(game.GraphicsDevice);
@@ -260,6 +262,7 @@ public static class Gear
 
 			base.Initialize();
 		}
+
 		protected override void Update(GameTime gameTime)
 		{
 			if (pauseUnfocus && game.IsActive == false)
@@ -278,6 +281,7 @@ public static class Gear
 				UpdateKeys();
 				UpdateMouseButtons();
 				UpdateBodies();
+				UpdateSongOver();
 
 				eachTickLineCall = Debug.GetCodeLine() + 1;
 				program.EachTick(tick);
@@ -418,6 +422,13 @@ public static class Gear
 			if (leftClick == false)
 			{
 				bodiesClicked.Clear();
+			}
+		}
+		private static void UpdateSongOver()
+		{
+			if (Signal.IsOccurring(melodyOverKey, false))
+			{
+				program.MelodyJustEnded(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]);
 			}
 		}
 
@@ -612,7 +623,7 @@ public static class Gear
 				CountFolder(directories[i]);
 			}
 			if (CountFolder($"{mainDir}\\Content")) return;
-				
+
 			loadingScreenUpdatePerFiles = (int)Math.Ceiling(contentFileCount / 10d);
 		}
 		private static bool CountFolder(string folder)
@@ -791,7 +802,12 @@ public static class Gear
 						sounds[key] = soundsRaw[key].CreateInstance();
 						break;
 					}
-				case "mp3": melodies[key] = game.Content.Load<Song>(key); break;
+				case "mp3":
+					{
+						melodies[key] = game.Content.Load<Song>(key);
+						melodyUniqueNames[melodies[key]] = key;
+						break;
+					}
 				default: return false;
 			}
 			loadedFiles++;
@@ -1207,7 +1223,7 @@ public static class Gear
 				$"{nameof(tagAlreadyAddedError)} = {tagAlreadyAddedError.ToString().ToLower()}";
 			if (IsNullError(parameters, nameof(tag), tag, tagIsNullError, 1)) return;
 
-			if (ValueAlreadyAddedError(parameters, tags, $"{nameof(Body)}'s {nameof(tag)}", tag, tagAlreadyAddedError, 1))return;
+			if (ValueAlreadyAddedError(parameters, tags, $"{nameof(Body)}'s {nameof(tag)}", tag, tagAlreadyAddedError, 1)) return;
 
 			tags.Add(tag);
 			if (tagBodies.ContainsKey(tag))
@@ -1246,7 +1262,7 @@ public static class Gear
 					tagBodies.Remove(tag);
 				}
 			}
-			
+
 			tags.Clear();
 		}
 		public string[] GetTags()
@@ -2013,6 +2029,7 @@ public static class Gear
 			var numberStr = number.ToString();
 			var hasDot = numberStr.Contains('.');
 			var hasComma = numberStr.Contains(',');
+
 			if (hasDot || hasComma) result = number.ToString().Split(hasDot ? '.' : ',')[1].Length;
 			return result;
 		}
@@ -3338,6 +3355,78 @@ public static class Gear
 			if (KeyNotFoundError(parameters, soundCollections, nameof(collectionUniqueName), collectionUniqueName, soundNotFoundError, 2)) return true;
 
 			return false;
+		}
+	}
+	/// <summary>
+	/// Controls Melodies and holds information about them.
+	/// </summary>
+	public static class Melody
+	{
+		public static string[] GetAllUniqueNames()
+		{
+			return melodies.Keys.ToArray();
+		}
+
+		public static void Play(string uniqueName, float volumePercent = 50)
+		{
+			if (melodies.ContainsKey(uniqueName) == false) return;
+
+			volumePercent = Number.GetLimited(volumePercent, 0, 100);
+			MediaPlayer.Volume = volumePercent / 100;
+			MediaPlayer.Play(melodies[uniqueName]);
+			Signal.Create(melodyOverKey, SongDurationInSec(MediaPlayer.Queue.ActiveSong));
+		}
+		public static float GetDurationInSeconds(string name)
+		{
+			return name == null || melodies.ContainsKey(name) == false ? default : SongDurationInSec(melodies[name]);
+		}
+		public static string GetUniqueName()
+		{
+			return melodyUniqueNames[MediaPlayer.Queue.ActiveSong];
+		}
+		public static float GetProgressInSeconds()
+		{
+			return GetDurationInSeconds(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]) - Signal.GetSecondsLeft(melodyOverKey);
+		}
+		public static float GetProgressInPercent()
+		{
+			var dur = GetDurationInSeconds(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]);
+			return dur == 0 ? 0 : (dur - Signal.GetSecondsLeft(melodyOverKey)) / dur * 100;
+		}
+		public static void Pause(bool paused)
+		{
+			Signal.Pause(melodyOverKey, paused);
+			if (paused)
+			{
+				MediaPlayer.Pause();
+				return;
+			}
+			MediaPlayer.Resume();
+		}
+		public static void Stop()
+		{
+			MediaPlayer.Stop();
+		}
+
+		public static bool IsLooping()
+		{
+			return MediaPlayer.IsRepeating;
+		}
+		public static void Loop(bool looping)
+		{
+			MediaPlayer.IsRepeating = looping;
+		}
+
+		public static float GetVolume()
+		{
+			return MediaPlayer.Volume;
+		}
+
+		private static float SongDurationInSec(Song song)
+		{
+			var value = song.Duration.Hours * 3600 + song.Duration.Minutes * 60 +
+				song.Duration.Seconds + song.Duration.Milliseconds / 1000;
+			return value;
 		}
 	}
 

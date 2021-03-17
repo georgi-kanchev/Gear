@@ -6,6 +6,7 @@
 	float scrollSpeed, dodgeSpeed, shotSpeed, energy, energyRegen;
 	float[] bgScrollX = new float[3];
 	Gear.Storage<Gear.Body, int> astFrames = new Gear.Storage<Gear.Body, int>();
+	string[] ambients = new string[10];
 
 	public override Program Create() => this;
 	public override string[] LoadingScreenPrepare()
@@ -34,6 +35,7 @@
 	{
 		if (tickCount == 40)
 		{
+			Gear.Window.SetTitle("Asteroids");
 			LoadHighScore();
 			InitializeSounds();
 			RemoveLoadingPercents();
@@ -45,6 +47,8 @@
 			Gear.Signal.Create("shot-animation", 0);
 			Gear.Signal.Create("ast-animation", 0);
 			Gear.Signal.Create("asteroid-spawn", 0);
+			Gear.Melody.Play("ambient (16)", 20);
+			Gear.Melody.Play("ambient (15)", 20);
 		}
 		else if (paused == false && tickCount > 40)
 		{
@@ -99,6 +103,7 @@
 						sprite = sprite == "sound-on" ? "sound-off" : "sound-on";
 						soundOn = sprite == "sound-off";
 						AnimateButton(sprite, true, 25, width: 24, height: 25, originX: 12, originY: 12);
+						Gear.Melody.Pause(soundOn == false);
 					}
 					break;
 				}
@@ -214,12 +219,16 @@
 			}
 		}
 	}
+	public override void MelodyJustEnded(string uniqueName)
+	{
+		PlayRandomAmbient();
+	}
 
 	void LoadHighScore()
 	{
 		var raw = Gear.Text.Load("", "best", "score");
-		var highscoreStr = Gear.Text.GetDecrypted(raw, '*', true);
 		if (raw == null) return;
+		var highscoreStr = Gear.Text.GetDecrypted(raw, '*', true);
 
 		var loadedHighScore = Gear.Number.GetFromText(highscoreStr, invalidTextError: false);
 		if (loadedHighScore.Length == 0) return;
@@ -228,6 +237,11 @@
 	}
 	void InitializeSounds()
 	{
+		for (int i = 0; i < 10; i++)
+		{
+			ambients[i] = $"ambient ({i + 1})";
+		}
+
 		Gear.Sound.CreateCollection("shot");
 		Gear.Sound.AddToCollection("laser (1)", "shot");
 		Gear.Sound.AddToCollection("laser (2)", "shot");
@@ -235,6 +249,14 @@
 		Gear.Sound.CreateCollection("explosion");
 		Gear.Sound.AddToCollection("explosion (1)", "explosion");
 		Gear.Sound.AddToCollection("explosion (2)", "explosion");
+
+		Gear.Sound.CreateCollection("asteroid-miss");
+		for (int i = 1; i <= 4; i++)
+		{
+			Gear.Sound.AddToCollection($"asteroid-miss ({i})", "asteroid-miss");
+		}
+
+		PlayRandomAmbient();
 	}
 	void RemoveLoadingPercents()
 	{
@@ -262,6 +284,11 @@
 		background.DisplaySprite(backgroundSprite, width: 480, height: 270, originX: 240, originY: 135);
 		stars.DisplaySprite(starsSprite, width: 480, height: 270, originX: 240, originY: 135, o: 100);
 		meteors.DisplaySprite(meteorsSprite, width: 480, height: 270, originX: 240, originY: 135);
+	}
+	void PlayRandomAmbient()
+	{
+		var randomIndex = (int)Gear.Number.GetRandomized(0, 9);
+		Gear.Melody.Play(ambients[randomIndex]);
 	}
 
 	void CreateMenu()
@@ -433,7 +460,6 @@
 	void DisplayNumber(string uniqueName, int number)
 	{
 		var percentStr = number.ToString();
-
 		for (int i = 0; i < percentStr.Length; i++)
 		{
 			var digit = percentStr[i];
@@ -642,7 +668,15 @@
 			var pos = ast.GetPosition();
 			var ang = ast.GetAngle();
 			var sprite = $"asteroid ({Gear.Number.GetRandomized(1, 3)})";
+			var shipPos = Gear.Body.GetByUniqueName("ship").GetPosition();
+			var dist = pos.GetDistanceToPoint(shipPos);
+			shipPos.SetX(shipPos.GetX() + 50);
+
 			pos.MoveAtAngle(new Gear.Angle(180), scrollSpeed * 100);
+			if (soundOn && shipExplosion == false && dist < ast.GetSize().GetW() + 20)
+			{
+				Gear.Sound.PlayFromCollection("asteroid-miss", volumePercent: 3, pitchPercent: 100);
+			}
 			if (pos.GetX() < -canvasSize.GetW() / 2 - 100)
 			{
 				pos.SetXY(canvasSize.GetW() / 2 + Gear.Number.GetRandomized(50, 200),
@@ -650,6 +684,8 @@
 				ast.DisplaySprite(sprite, originX: 32, originY: 32);
 				var size = Gear.Number.GetRandomized(16, 72);
 				ast.SetSizeWH(size, size);
+				scrollSpeed += 0.005f;
+				dodgeSpeed += 10;
 				currScore++;
 				DisplayNumber("score-", currScore);
 			}

@@ -1,0 +1,129 @@
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Asteroids.exe
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\aim.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (1).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (10).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (3).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (4).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (5).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (6).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (7).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (8).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ambient (9).mp3
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-explosion (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-explosion (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-explosion (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-explosion (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-explosion.wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-miss (1).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-miss (2).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-miss (3).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\asteroid-miss (4).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\background (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\background (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\background (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\background (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\button.wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\cd-border.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\cd.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\empty.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\exit.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\explosion (1).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\explosion (2).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\font.spritefont
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\highscore.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\laser (1).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\laser (2).wav
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\meteors (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\meteors (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\meteors (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (0).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (5).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (6).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (7).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (8).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\number (9).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\pause-off.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\pause-on.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\paused.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\pickup.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\play-border.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\play.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\score.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (10).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (11).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (5).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (6).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (7).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (8).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\ship-explosion (9).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (5).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (6).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot (7).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot-explosion (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot-explosion (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot-explosion (3).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot-explosion (4).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\shot-explosion (5).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\sound-off.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\sound-on.png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\stars (1).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Content\stars (2).png
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Asteroids.deps.json
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Asteroids.runtimeconfig.json
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Asteroids.runtimeconfig.dev.json
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Asteroids.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\ref\Asteroids.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Asteroids.pdb
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Microsoft.CodeAnalysis.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Microsoft.CodeAnalysis.CSharp.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Microsoft.CodeAnalysis.VisualBasic.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Mono.Nat.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\MonoGame.Framework.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\NetCoreServer.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\Newtonsoft.Json.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.Direct2D1.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.Direct3D11.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.Direct3D9.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.DXGI.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.Mathematics.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.MediaFoundation.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.XAudio2.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\SharpDX.XInput.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\debian-x64\native\libuv.so
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\fedora-x64\native\libuv.so
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\opensuse-x64\native\libuv.so
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\osx\native\libuv.dylib
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\rhel-x64\native\libuv.so
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\win7-arm\native\libuv.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\win7-x64\native\libuv.dll
+D:\code\MonoGame\Gear\bin\Release\net5.0-windows7.0\runtimes\win7-x86\native\libuv.dll
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.GeneratedMSBuildEditorConfig.editorconfig
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.AssemblyInfoInputs.cache
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.AssemblyInfo.cs
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.csproj.CoreCompileInputs.cache
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.csproj.CopyComplete
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Asteroids.dll
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\ref\Asteroids.dll
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Asteroids.pdb
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.genruntimeconfig.cache
+D:\code\MonoGame\Gear\obj\Release\net5.0-windows7.0\Gear_Project.csprojAssemblyReference.cache

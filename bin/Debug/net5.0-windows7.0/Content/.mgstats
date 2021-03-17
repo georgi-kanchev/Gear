@@ -1,0 +1,89 @@
+Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
+"D:/code/MonoGame/Gear/Content/aim.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/aim.xnb","TextureProcessor","Texture2DContent",660,20821,0.2294061
+"D:/code/MonoGame/Gear/Content/ambient (1).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (1).xnb","SongProcessor","SongContent",2680895,129,1.235767
+"D:/code/MonoGame/Gear/Content/ambient (10).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (10).xnb","SongProcessor","SongContent",134924,130,0.2767921
+"D:/code/MonoGame/Gear/Content/ambient (3).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (3).xnb","SongProcessor","SongContent",1891190,129,1.0708168
+"D:/code/MonoGame/Gear/Content/ambient (4).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (4).xnb","SongProcessor","SongContent",1161698,129,0.7437195
+"D:/code/MonoGame/Gear/Content/ambient (5).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (5).xnb","SongProcessor","SongContent",1371110,129,0.7928318
+"D:/code/MonoGame/Gear/Content/ambient (6).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (6).xnb","SongProcessor","SongContent",1188754,129,0.757982
+"D:/code/MonoGame/Gear/Content/ambient (7).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (7).xnb","SongProcessor","SongContent",4242853,129,1.7298607
+"D:/code/MonoGame/Gear/Content/ambient (8).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (8).xnb","SongProcessor","SongContent",1315072,129,0.7613401
+"D:/code/MonoGame/Gear/Content/ambient (9).mp3","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ambient (9).xnb","SongProcessor","SongContent",532855,129,0.4559086
+"D:/code/MonoGame/Gear/Content/asteroid (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid (1).xnb","TextureProcessor","Texture2DContent",993,16469,0.017018
+"D:/code/MonoGame/Gear/Content/asteroid (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid (2).xnb","TextureProcessor","Texture2DContent",1017,16469,0.0165227
+"D:/code/MonoGame/Gear/Content/asteroid (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid (3).xnb","TextureProcessor","Texture2DContent",1128,16469,0.0185245
+"D:/code/MonoGame/Gear/Content/asteroid-explosion (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-explosion (1).xnb","TextureProcessor","Texture2DContent",1563,16469,0.0170203
+"D:/code/MonoGame/Gear/Content/asteroid-explosion (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-explosion (2).xnb","TextureProcessor","Texture2DContent",1317,16469,0.0174677
+"D:/code/MonoGame/Gear/Content/asteroid-explosion (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-explosion (3).xnb","TextureProcessor","Texture2DContent",963,16469,0.0178871
+"D:/code/MonoGame/Gear/Content/asteroid-explosion (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-explosion (4).xnb","TextureProcessor","Texture2DContent",480,16469,0.020584
+"D:/code/MonoGame/Gear/Content/asteroid-explosion.wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-explosion.xnb","SoundEffectProcessor","SoundEffectContent",731164,731225,0.2244989
+"D:/code/MonoGame/Gear/Content/asteroid-miss (1).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-miss (1).xnb","SoundEffectProcessor","SoundEffectContent",1353464,1353525,0.2443869
+"D:/code/MonoGame/Gear/Content/asteroid-miss (2).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-miss (2).xnb","SoundEffectProcessor","SoundEffectContent",868320,868381,0.2412791
+"D:/code/MonoGame/Gear/Content/asteroid-miss (3).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-miss (3).xnb","SoundEffectProcessor","SoundEffectContent",1375528,1375589,0.2338978
+"D:/code/MonoGame/Gear/Content/asteroid-miss (4).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/asteroid-miss (4).xnb","SoundEffectProcessor","SoundEffectContent",829632,829693,0.2187192
+"D:/code/MonoGame/Gear/Content/background (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/background (1).xnb","TextureProcessor","Texture2DContent",80046,518485,0.0437345
+"D:/code/MonoGame/Gear/Content/background (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/background (2).xnb","TextureProcessor","Texture2DContent",115437,518485,0.0353933
+"D:/code/MonoGame/Gear/Content/background (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/background (3).xnb","TextureProcessor","Texture2DContent",89145,518485,0.0371794
+"D:/code/MonoGame/Gear/Content/background (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/background (4).xnb","TextureProcessor","Texture2DContent",76407,518485,0.0386035
+"D:/code/MonoGame/Gear/Content/button.wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/button.xnb","SoundEffectProcessor","SoundEffectContent",40352,40413,0.1979844
+"D:/code/MonoGame/Gear/Content/cd.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/cd.xnb","TextureProcessor","Texture2DContent",1024,121,0.0155846
+"D:/code/MonoGame/Gear/Content/cd-border.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/cd-border.xnb","TextureProcessor","Texture2DContent",756,36565,0.0194895
+"D:/code/MonoGame/Gear/Content/empty.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/empty.xnb","TextureProcessor","Texture2DContent",69,89,0.0098451
+"D:/code/MonoGame/Gear/Content/exit.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/exit.xnb","TextureProcessor","Texture2DContent",348,2389,0.0097778
+"D:/code/MonoGame/Gear/Content/explosion (1).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/explosion (1).xnb","SoundEffectProcessor","SoundEffectContent",543416,543477,0.2201318
+"D:/code/MonoGame/Gear/Content/explosion (2).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/explosion (2).xnb","SoundEffectProcessor","SoundEffectContent",887988,888049,0.243621
+"D:/code/MonoGame/Gear/Content/font.spritefont","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/font.xnb","FontDescriptionProcessor","SpriteFontContent",2008,70690,0.1710278
+"D:/code/MonoGame/Gear/Content/highscore.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/highscore.xnb","TextureProcessor","Texture2DContent",912,12169,0.0150692
+"D:/code/MonoGame/Gear/Content/laser (1).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/laser (1).xnb","SoundEffectProcessor","SoundEffectContent",339684,339745,0.2302205
+"D:/code/MonoGame/Gear/Content/laser (2).wav","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/laser (2).xnb","SoundEffectProcessor","SoundEffectContent",339680,339741,0.2147534
+"D:/code/MonoGame/Gear/Content/meteors (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/meteors (1).xnb","TextureProcessor","Texture2DContent",6870,518485,0.0430601
+"D:/code/MonoGame/Gear/Content/meteors (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/meteors (2).xnb","TextureProcessor","Texture2DContent",6723,518485,0.0714849
+"D:/code/MonoGame/Gear/Content/meteors (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/meteors (3).xnb","TextureProcessor","Texture2DContent",8028,518485,0.0382898
+"D:/code/MonoGame/Gear/Content/number (0).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (0).xnb","TextureProcessor","Texture2DContent",330,1833,0.0121985
+"D:/code/MonoGame/Gear/Content/number (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (1).xnb","TextureProcessor","Texture2DContent",261,1833,0.0177381
+"D:/code/MonoGame/Gear/Content/number (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (2).xnb","TextureProcessor","Texture2DContent",330,1833,0.0131432
+"D:/code/MonoGame/Gear/Content/number (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (3).xnb","TextureProcessor","Texture2DContent",375,1833,0.0109114
+"D:/code/MonoGame/Gear/Content/number (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (4).xnb","TextureProcessor","Texture2DContent",294,1833,0.0102244
+"D:/code/MonoGame/Gear/Content/number (5).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (5).xnb","TextureProcessor","Texture2DContent",366,1833,0.0100317
+"D:/code/MonoGame/Gear/Content/number (6).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (6).xnb","TextureProcessor","Texture2DContent",405,1833,0.0110561
+"D:/code/MonoGame/Gear/Content/number (7).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (7).xnb","TextureProcessor","Texture2DContent",270,1833,0.0095273
+"D:/code/MonoGame/Gear/Content/number (8).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (8).xnb","TextureProcessor","Texture2DContent",381,1833,0.0101989
+"D:/code/MonoGame/Gear/Content/number (9).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/number (9).xnb","TextureProcessor","Texture2DContent",396,1833,0.0121404
+"D:/code/MonoGame/Gear/Content/paused.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/paused.xnb","TextureProcessor","Texture2DContent",765,4957,0.011883
+"D:/code/MonoGame/Gear/Content/pause-off.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/pause-off.xnb","TextureProcessor","Texture2DContent",258,2389,0.0122764
+"D:/code/MonoGame/Gear/Content/pause-on.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/pause-on.xnb","TextureProcessor","Texture2DContent",297,2389,0.0136906
+"D:/code/MonoGame/Gear/Content/pickup.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/pickup.xnb","TextureProcessor","Texture2DContent",1314,1241,0.0198026
+"D:/code/MonoGame/Gear/Content/play.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/play.xnb","TextureProcessor","Texture2DContent",1608,22237,0.0240669
+"D:/code/MonoGame/Gear/Content/play-border.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/play-border.xnb","TextureProcessor","Texture2DContent",1767,22237,0.0183428
+"D:/code/MonoGame/Gear/Content/score.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/score.xnb","TextureProcessor","Texture2DContent",255,869,0.0179737
+"D:/code/MonoGame/Gear/Content/ship (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship (1).xnb","TextureProcessor","Texture2DContent",1686,65621,0.0258832
+"D:/code/MonoGame/Gear/Content/ship (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship (2).xnb","TextureProcessor","Texture2DContent",1539,65621,0.0217736
+"D:/code/MonoGame/Gear/Content/ship (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship (3).xnb","TextureProcessor","Texture2DContent",1557,65621,0.0193484
+"D:/code/MonoGame/Gear/Content/ship (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship (4).xnb","TextureProcessor","Texture2DContent",1545,65621,0.0211762
+"D:/code/MonoGame/Gear/Content/ship-explosion (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (1).xnb","TextureProcessor","Texture2DContent",1557,65621,0.0203609
+"D:/code/MonoGame/Gear/Content/ship-explosion (10).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (10).xnb","TextureProcessor","Texture2DContent",1041,65621,0.0219911
+"D:/code/MonoGame/Gear/Content/ship-explosion (11).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (11).xnb","TextureProcessor","Texture2DContent",807,65621,0.0260192
+"D:/code/MonoGame/Gear/Content/ship-explosion (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (2).xnb","TextureProcessor","Texture2DContent",1629,65621,0.0202334
+"D:/code/MonoGame/Gear/Content/ship-explosion (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (3).xnb","TextureProcessor","Texture2DContent",1914,65621,0.0206863
+"D:/code/MonoGame/Gear/Content/ship-explosion (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (4).xnb","TextureProcessor","Texture2DContent",1923,65621,0.0233632
+"D:/code/MonoGame/Gear/Content/ship-explosion (5).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (5).xnb","TextureProcessor","Texture2DContent",1767,65621,0.0247829
+"D:/code/MonoGame/Gear/Content/ship-explosion (6).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (6).xnb","TextureProcessor","Texture2DContent",1398,65621,0.0211839
+"D:/code/MonoGame/Gear/Content/ship-explosion (7).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (7).xnb","TextureProcessor","Texture2DContent",1494,65621,0.0213185
+"D:/code/MonoGame/Gear/Content/ship-explosion (8).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (8).xnb","TextureProcessor","Texture2DContent",1479,65621,0.027023
+"D:/code/MonoGame/Gear/Content/ship-explosion (9).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/ship-explosion (9).xnb","TextureProcessor","Texture2DContent",1278,65621,0.0211261
+"D:/code/MonoGame/Gear/Content/shot (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (1).xnb","TextureProcessor","Texture2DContent",1288,16469,0.018485
+"D:/code/MonoGame/Gear/Content/shot (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (2).xnb","TextureProcessor","Texture2DContent",1557,16469,0.0181724
+"D:/code/MonoGame/Gear/Content/shot (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (3).xnb","TextureProcessor","Texture2DContent",1638,16469,0.0165547
+"D:/code/MonoGame/Gear/Content/shot (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (4).xnb","TextureProcessor","Texture2DContent",1841,16469,0.0181534
+"D:/code/MonoGame/Gear/Content/shot (5).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (5).xnb","TextureProcessor","Texture2DContent",1629,16469,0.0171416
+"D:/code/MonoGame/Gear/Content/shot (6).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (6).xnb","TextureProcessor","Texture2DContent",1491,16469,0.017829
+"D:/code/MonoGame/Gear/Content/shot (7).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot (7).xnb","TextureProcessor","Texture2DContent",1299,16469,0.0214074
+"D:/code/MonoGame/Gear/Content/shot-explosion (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot-explosion (1).xnb","TextureProcessor","Texture2DContent",660,16469,0.0193251
+"D:/code/MonoGame/Gear/Content/shot-explosion (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot-explosion (2).xnb","TextureProcessor","Texture2DContent",1841,16469,0.0184492
+"D:/code/MonoGame/Gear/Content/shot-explosion (3).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot-explosion (3).xnb","TextureProcessor","Texture2DContent",1638,16469,0.0173577
+"D:/code/MonoGame/Gear/Content/shot-explosion (4).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot-explosion (4).xnb","TextureProcessor","Texture2DContent",1557,16469,0.0202974
+"D:/code/MonoGame/Gear/Content/shot-explosion (5).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/shot-explosion (5).xnb","TextureProcessor","Texture2DContent",1288,16469,0.0195448
+"D:/code/MonoGame/Gear/Content/sound-off.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/sound-off.xnb","TextureProcessor","Texture2DContent",402,2485,0.0115516
+"D:/code/MonoGame/Gear/Content/sound-on.png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/sound-on.xnb","TextureProcessor","Texture2DContent",315,2485,0.0100739
+"D:/code/MonoGame/Gear/Content/stars (1).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/stars (1).xnb","TextureProcessor","Texture2DContent",3786,518485,0.0462858
+"D:/code/MonoGame/Gear/Content/stars (2).png","D:/code/MonoGame/Gear/bin/Debug/net5.0-windows7.0/Content/stars (2).xnb","TextureProcessor","Texture2DContent",3909,518485,0.0362071

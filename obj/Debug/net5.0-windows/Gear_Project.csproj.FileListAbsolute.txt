@@ -42,13 +42,6 @@ D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.pdb
 D:\code\MonoGame\Gear\obj\Debug\net5.0-windows\Gear_Project.genruntimeconfig.cache
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (1).mp3
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (10).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (11).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (12).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (13).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (14).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (15).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (16).mp3
-D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (2).mp3
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid (1).png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid (2).png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\asteroid (3).png
@@ -127,3 +120,10 @@ D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\paused.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\cd-border.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\cd.png
 D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\exit.png
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (3).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (4).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (5).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (6).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (7).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (8).mp3
+D:\code\MonoGame\Gear\bin\Debug\net5.0-windows\Content\ambient (9).mp3

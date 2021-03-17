@@ -1,8 +1,8 @@
 
 #----------------------------- Global Properties ----------------------------#
 
-/outputDir:..\bin\Debug\net5.0-windows\Content
-/intermediateDir:..\bin\Debug\net5.0-windows\Content
+/outputDir:..\bin\Release\net5.0-windows7.0\Content
+/intermediateDir:..\bin\Release\net5.0-windows7.0\Content
 /platform:Windows
 /config:
 /profile:Reach
@@ -37,47 +37,47 @@
 /processorParam:Quality=Best
 /build:ambient (10).mp3
 
-#begin ambient (11).mp3
+#begin ambient (3).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (11).mp3
+/build:ambient (3).mp3
 
-#begin ambient (12).mp3
+#begin ambient (4).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (12).mp3
+/build:ambient (4).mp3
 
-#begin ambient (13).mp3
+#begin ambient (5).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (13).mp3
+/build:ambient (5).mp3
 
-#begin ambient (14).mp3
+#begin ambient (6).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (14).mp3
+/build:ambient (6).mp3
 
-#begin ambient (15).mp3
+#begin ambient (7).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (15).mp3
+/build:ambient (7).mp3
 
-#begin ambient (16).mp3
+#begin ambient (8).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (16).mp3
+/build:ambient (8).mp3
 
-#begin ambient (2).mp3
+#begin ambient (9).mp3
 /importer:Mp3Importer
 /processor:SongProcessor
 /processorParam:Quality=Best
-/build:ambient (2).mp3
+/build:ambient (9).mp3
 
 #begin asteroid (1).png
 /importer:TextureImporter
