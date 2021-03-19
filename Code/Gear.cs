@@ -575,7 +575,7 @@ public static class Gear
 					var crossPoints = body.GetAllHitboxCrossPoints();
 					foreach (var point in crossPoints)
 					{
-						DrawTile(hitboxCrossPointsSprite, point - new Point(hitboxCrossPointsSize.GetW() / 2, hitboxCrossPointsSize.GetH() / 2), new Point(), 0, hitboxCrossPointsSize, new Point(), new Size(1, 1), hitboxCrossPointsColor, 0, SpriteEffects.None);
+						DrawTile(hitboxCrossPointsSprite, point + cameraOffset - new Point(hitboxCrossPointsSize.GetW() / 2, hitboxCrossPointsSize.GetH() / 2), new Point(), 0, hitboxCrossPointsSize, new Point(), new Size(1, 1), hitboxCrossPointsColor, 0, SpriteEffects.None);
 					}
 				}
 
@@ -2153,7 +2153,7 @@ public static class Gear
 		}
 
 		/// <summary>
-		/// Converts <typeparamref name="T"/> <paramref name="data"/> into a <see cref="string"/> (<paramref name="JSON"/>) and returns it. It can be converted and retrieved back to <typeparamref name="T"/> <paramref name="data"/> later with <see cref="ToDataConvert"/>.‪‪
+		/// Converts <typeparamref name="T"/> <paramref name="data"/> into a <see cref="string"/> (<paramref name="JSON"/>) and returns it. It can be converted and retrieved back to <typeparamref name="T"/> <paramref name="data"/> later with <see cref="GetFromData"/>.‪‪
 		/// </summary>
 		public static string GetFromData<T>(T data)
 		{

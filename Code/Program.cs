@@ -51,6 +51,7 @@
 			Gear.Signal.Create("ship-animation", 0);
 			Gear.Signal.Create("shot-animation", 0);
 			Gear.Signal.Create("ast-animation", 0);
+
 			Gear.Signal.Create("asteroid-spawn", 0);
 			Gear.Melody.Play("ambient (16)", 20);
 			Gear.Melody.Play("ambient (15)", 20);
@@ -62,6 +63,11 @@
 			UpdateShot();
 			UpdateAsteroids();
 			UpdateEnergy();
+
+			var camAng = Gear.Camera.GetAngle();
+			camAng.Rotate(10);
+
+			Gear.Camera.SetAngle(camAng);
 		}
 
 		if (Gear.Timer.IsIntervalOccuring("ship-animation", shipExplosion ? 0.3f : 0.05f) && paused == false)
@@ -76,6 +82,7 @@
 		{
 			AnimateAsteroids();
 		}
+
 		if (Gear.Timer.IsIntervalOccuring("asteroid-spawn", 3) && paused == false && Gear.Number.HasChance(astSpawnChance))
 		{
 			SpawnAsteroid();
@@ -183,35 +190,23 @@
 			body.SetSizeWH(size, size);
 		}
 	}
-	public override void UserJustInteractedWithMouseButton(Gear.MouseButton button, Gear.Interaction interaction)
-	{
-		if (CanShoot(interaction) == false || HudIsHovered()) return;
-
-		Shoot();
-	}
-	public override void UserJustInteractedWithKey(Gear.Key key, Gear.Interaction interaction)
-	{
-		if (CanShoot(interaction) == false) return;
-
-		Shoot();
-	}
 	public override void BodyJustCollidedWithBody(Gear.Body bodyA, Gear.Body bodyB)
 	{
 		var nameA = bodyA.GetUniqueName();
 
 		if (nameA == "ship")
 		{
-			shipExplosion = true;
-			scrollSpeed *= 0.2f;
 			if (astFrames.HasUniqueKey(bodyB) == false)
 			{
 				astFrames.Expand(0, bodyB, 1);
 			}
-			if (soundOn)
+			if (soundOn && shipExplosion == false)
 			{
 				Gear.Melody.Pause(true);
 				Gear.Sound.PlayFromCollection("explosion");
 			}
+			shipExplosion = true;
+			scrollSpeed *= 0.2f;
 		}
 		else if (nameA == "shot")
 		{
@@ -228,6 +223,18 @@
 				}
 			}
 		}
+	}
+	public override void UserJustInteractedWithMouseButton(Gear.MouseButton button, Gear.Interaction interaction)
+	{
+		if (CanShoot(interaction) == false || HudIsHovered()) return;
+
+		Shoot();
+	}
+	public override void UserJustInteractedWithKey(Gear.Key key, Gear.Interaction interaction)
+	{
+		if (CanShoot(interaction) == false) return;
+
+		Shoot();
 	}
 	public override void MelodyJustEnded(string uniqueName)
 	{
@@ -249,9 +256,9 @@
 	}
 	void LoadHighScore()
 	{
-		var raw = Gear.Text.Load("", "best", "score");
+		var raw = Gear.Text.Load(fileName: "best", fileExtension: "score");
 		if (raw == null) return;
-		var highscoreStr = Gear.Text.GetDecrypted(raw, '*', true);
+		var highscoreStr = Gear.Text.GetDecrypted(encryptedText: raw, key: '*', performedTwice: true);
 
 		var loadedHighScore = Gear.Number.GetFromText(highscoreStr, invalidTextError: false);
 		if (loadedHighScore.Length == 0) return;
@@ -381,6 +388,8 @@
 		ship.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
 		ship.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
 		ship.AddTag("game");
+		ship.DisplayHitbox();
+		ship.DisplayHitboxCrossPoints(r: 0, b: 0, w: 10, h: 10);
 
 		var paused = new Gear.Body("paused");
 		paused.AddTag("game");
@@ -518,6 +527,8 @@
 			shot.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
 			shot.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
 			shot.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
+			shot.DisplayHitbox();
+			shot.DisplayHitboxCrossPoints(r: 0, b: 0, w: 10, h: 10);
 		}
 		var asts = Gear.Body.GetAllByTag("asteroid");
 		foreach (var ast in asts)
@@ -603,8 +614,8 @@
 			if (currScore > highscore)
 			{
 				highscore = currScore;
-				var fileContent = Gear.Text.GetEncrypted($"{highscore}", '*', true);
-				Gear.Text.Save(fileContent, "", "best", "score");
+				var fileContent = Gear.Text.GetEncrypted(text: $"{highscore}", key: '*', performedTwice: true);
+				Gear.Text.Save(text: fileContent, fileName: "best", fileExtension: "score");
 			}
 			HideGame();
 			ShowMenu();
@@ -660,6 +671,7 @@
 		ast.AddTag("game");
 		ast.AddHitboxObstacle(ship);
 		ship.AddHitboxObstacle(ast);
+		ast.DisplayHitbox();
 
 		var size = Gear.Number.GetRandomized(16, 72);
 		ast.SetSizeWH(size, size);

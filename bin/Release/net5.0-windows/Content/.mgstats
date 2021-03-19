@@ -1,4 +1,0 @@
-Source File,Dest File,Processor Type,Content Type,Source File Size,Dest File Size,Build Seconds
-"D:/code/MonoGame/Gear/Content/ball.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/ball.xnb","TextureProcessor","Texture2DContent",1195,1109,0.5428901
-"D:/code/MonoGame/Gear/Content/font.spritefont","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/font.xnb","FontDescriptionProcessor","SpriteFontContent",2008,70690,0.2949476
-"D:/code/MonoGame/Gear/Content/paddle.png","D:/code/MonoGame/Gear/bin/Release/net5.0-windows/Content/paddle.xnb","TextureProcessor","Texture2DContent",1930,5717,0.0315794
