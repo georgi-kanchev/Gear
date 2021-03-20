@@ -48,11 +48,11 @@
 			CreateMenu();
 			CreateGame();
 			ShowMenu();
-			Gear.Signal.Create("ship-animation", 0);
-			Gear.Signal.Create("shot-animation", 0);
-			Gear.Signal.Create("ast-animation", 0);
+			Gear.Timer.Set("ship-animation", 0.05f);
+			Gear.Timer.Set("shot-animation", 0.02f);
+			Gear.Timer.Set("ast-animation", 0.05f);
+			Gear.Timer.Set("asteroid-spawn", 3);
 
-			Gear.Signal.Create("asteroid-spawn", 0);
 			Gear.Melody.Play("ambient (16)", 20);
 			Gear.Melody.Play("ambient (15)", 20);
 		}
@@ -63,30 +63,8 @@
 			UpdateShot();
 			UpdateAsteroids();
 			UpdateEnergy();
-
-			var camAng = Gear.Camera.GetAngle();
-			camAng.Rotate(10);
-
-			Gear.Camera.SetAngle(camAng);
 		}
 
-		if (Gear.Timer.IsIntervalOccuring("ship-animation", shipExplosion ? 0.3f : 0.05f) && paused == false)
-		{
-			AnimateShip();
-		}
-		if (Gear.Timer.IsIntervalOccuring("shot-animation", 0.02f) && paused == false)
-		{
-			AnimateShot();
-		}
-		if (Gear.Timer.IsIntervalOccuring("ast-animation", shipExplosion ? 0.8f : 0.05f) && paused == false)
-		{
-			AnimateAsteroids();
-		}
-
-		if (Gear.Timer.IsIntervalOccuring("asteroid-spawn", 3) && paused == false && Gear.Number.HasChance(astSpawnChance))
-		{
-			SpawnAsteroid();
-		}
 		AnimateShotFly();
 	}
 
@@ -196,6 +174,7 @@
 
 		if (nameA == "ship")
 		{
+			
 			if (astFrames.HasUniqueKey(bodyB) == false)
 			{
 				astFrames.Expand(0, bodyB, 1);
@@ -239,6 +218,38 @@
 	public override void MelodyJustEnded(string uniqueName)
 	{
 		PlayRandomAmbient();
+	}
+	public override void TimerTickJustOccurred(string name)
+	{
+		if (paused) return;
+
+		switch (name)
+		{
+			case "ship-animation":
+				{
+					AnimateShip();
+					Gear.Timer.SetTickTime(name, shipExplosion ? 0.3f : 0.05f);
+					break;
+				}
+			case "shot-animation":
+				{
+					AnimateShot();
+					break;
+				}
+			case "ast-animation":
+				{
+					AnimateAsteroids();
+					Gear.Timer.SetTickTime(name, shipExplosion ? 0.8f : 0.05f);
+					break;
+				}
+			case "asteroid-spawn":
+				{
+					if (Gear.Number.HasChance(astSpawnChance) == false) return;
+
+					SpawnAsteroid();
+					break;
+				}
+		}
 	}
 
 	void ShowBackground()
@@ -714,6 +725,7 @@
 	void AnimateAsteroids()
 	{
 		var indexes = astFrames.GetIndexes();
+		var ship = Gear.Body.GetByUniqueName("ship");
 		for (int i = 0; i < indexes.Length; i++)
 		{
 			var index = indexes[i];

@@ -134,10 +134,10 @@ public static class Gear
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
 	private static Dictionary<Song, string> melodyUniqueNames = new Dictionary<Song, string>();
 	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signalpauses = new Dictionary<string, bool>();
-	private static Dictionary<string, int> gateEntriesCount = new Dictionary<string, int>();
+	private static Dictionary<string, int> gateEntriesCount = new Dictionary<string, int>(), timerRepeats = new Dictionary<string, int>();
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
 	private static Dictionary<string, List<Body>> tagBodies = new Dictionary<string, List<Body>>();
-	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalStartTimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>();
+	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalStartTimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>(), timerTickSeconds = new Dictionary<string, float>();
 	private static Dictionary<Body, float> bodyCameraDistances = new Dictionary<Body, float>(), bodyCameraAngle = new Dictionary<Body, float>(), bodyCameraAngleDifferences = new Dictionary<Body, float>();
 	private static Dictionary<string, List<string>> soundCollections = new Dictionary<string, List<string>>();
 	private static Dictionary<Body, bool> bodiesLastTickHovered = new Dictionary<Body, bool>(), bodiesClicked = new Dictionary<Body, bool>();
@@ -147,7 +147,6 @@ public static class Gear
 	private static List<Body> bodiesAll = new List<Body>();
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
-
 	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
 	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole, windowIsDisplayed = true;
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time, cameraAngle;
@@ -223,6 +222,8 @@ public static class Gear
 		public virtual void UserJustInteractedWithMouseButton(MouseButton button, Interaction interaction) { }
 		public virtual void BodyJustCollidedWithBody(Body bodyA, Body bodyB) { }
 		public virtual void MelodyJustEnded(string uniqueName) { }
+		public virtual void SignalJustOccurred(string name) { }
+		public virtual void TimerTickJustOccurred(string name) { }
 
 		protected override void Initialize()
 		{
@@ -281,7 +282,7 @@ public static class Gear
 				UpdateKeys();
 				UpdateMouseButtons();
 				UpdateBodies();
-				UpdateSongOver();
+				UpdateSignalsAndTimers();
 
 				eachTickLineCall = Debug.GetCodeLine() + 1;
 				program.EachTick(tick);
@@ -424,11 +425,32 @@ public static class Gear
 				bodiesClicked.Clear();
 			}
 		}
-		private static void UpdateSongOver()
+		private static void UpdateSignalsAndTimers()
 		{
-			if (Signal.IsOccurring(melodyOverKey, false))
+			foreach (var kvp in signalDelays)
 			{
-				program.MelodyJustEnded(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]);
+				var signal = kvp.Key;
+				if (timerRepeats.ContainsKey(signal)) continue;
+
+				if (SignalIsOccurring(signal, true))
+				{
+					if (signal == melodyOverKey)
+					{
+						program.MelodyJustEnded(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]);
+					}
+					else
+					{
+						program.SignalJustOccurred(signal);
+					}
+				}
+			}
+			foreach (var kvp in timerRepeats)
+			{
+				var timer = kvp.Key;
+				if (TimerTickIsOccurring(timer, timerTickSeconds[timer], timerRepeats[timer]))
+				{
+					program.TimerTickJustOccurred(timer);
+				}
 			}
 		}
 
@@ -1139,6 +1161,11 @@ public static class Gear
 			bodiesClicked.Remove(this);
 			bodiesLastTickHovered.Remove(this);
 			RemoveAllTags();
+			foreach (var body in bodiesAll)
+			{
+				body.hitboxExceptions.Remove(this);
+				body.hitboxObstacles.Remove(this);
+			}
 			render = true;
 		}
 		public int GetTickOfCreation()
@@ -1709,7 +1736,7 @@ public static class Gear
 		}
 		public bool HitboxOverlapsObstacleLine(Body body)
 		{
-			return ignoreCollisions == false && hitboxObstacles.Contains(body) &&
+			return ignoreCollisions == false && hitboxExceptions.Contains(body) == false && hitboxObstacles.Contains(body) &&
 				GetHitboxCrossPointsWithObstacle(body).Length > 0;
 		}
 		public bool HitboxOverlapsObstacle(Body body)
@@ -2910,16 +2937,18 @@ public static class Gear
 			return keysPressed.Contains(key);
 		}
 
+		/*
 		public static bool IsPressHolding(string name, bool condition, float secondsDelay = 0.5f, float updatesPerSecond = 0.1f)
 		{
 			if (Gate.IsOpened($"{name}-gate", condition))
 			{
-				Signal.Create(name, secondsDelay);
+				Signal.Set(name, secondsDelay);
 				return true;
 			}
 			else if (Timer.IsIntervalOccuring(name, updatesPerSecond)) return condition;
 			return false;
 		}
+		*/
 	}
 	public static class Gate
 	{
@@ -2962,7 +2991,7 @@ public static class Gear
 	}
 	public static class Signal
 	{
-		public static void Create(string name, float secondsDelay)
+		public static void Set(string name, float secondsDelay)
 		{
 			if (name == null) return;
 			secondsDelay = Number.GetLimited(secondsDelay, 0, float.MaxValue);
@@ -2998,22 +3027,6 @@ public static class Gear
 		{
 			return name != null && signalEndTimes.ContainsKey(name) ? signalEndTimes[name] : 0;
 		}
-		public static bool IsOccurring(string name, bool delete)
-		{
-			if (name == null) return false;
-			if (signalDelays.ContainsKey(name) == false) return false;
-			if (signalpauses.ContainsKey(name) == true && signalpauses[name])
-			{
-				signalEndTimes[name] += ticksDeltaTime;
-				return false;
-			}
-			if (time - ticksDeltaTime >= signalEndTimes[name])
-			{
-				if (delete) Delete(name);
-				return true;
-			}
-			return false;
-		}
 		public static void Delete(string name)
 		{
 			if (name == null) return;
@@ -3025,18 +3038,19 @@ public static class Gear
 	}
 	public static class Timer
 	{
-		private static Dictionary<string, int> repeats = new Dictionary<string, int>();
-
-		public static bool IsIntervalOccuring(string name, float intervalsInSeconds, int repeats = 1000000)
+		public static void Set(string name, float intervalsInSeconds = 1, int repeats = 1000000)
 		{
-			intervalsInSeconds = Number.GetLimited(intervalsInSeconds, 0.01f, 100000);
-			if (Gate.IsOpened(name, Signal.IsOccurring(name, false), repeats))
-			{
-				Signal.Create(name, intervalsInSeconds);
-				Timer.repeats[name] = repeats;
-				return true;
-			}
-			return false;
+			Signal.Set(name, 0);
+			timerRepeats[name] = repeats;
+			timerTickSeconds[name] = intervalsInSeconds;
+		}
+		public static void SetTickTime(string name, float intervalsInSeconds = 1)
+		{
+			timerTickSeconds[name] = intervalsInSeconds;
+		}
+		public static void SetRepeats(string signalName, int repeats = 1000000)
+		{
+			timerRepeats[signalName] = repeats;
 		}
 		public static float GetSeconds(string name)
 		{
@@ -3055,7 +3069,7 @@ public static class Gear
 		}
 		public static int GetRepeats(string name)
 		{
-			return name != null && repeats.ContainsKey(name) ? repeats[name] : 0;
+			return name != null && timerRepeats.ContainsKey(name) ? timerRepeats[name] : 0;
 		}
 		public static void Restart(string name)
 		{
@@ -3374,7 +3388,7 @@ public static class Gear
 			volumePercent = Number.GetLimited(volumePercent, 0, 100);
 			MediaPlayer.Volume = volumePercent / 100;
 			MediaPlayer.Play(melodies[uniqueName]);
-			Signal.Create(melodyOverKey, SongDurationInSec(MediaPlayer.Queue.ActiveSong));
+			Signal.Set(melodyOverKey, SongDurationInSec(MediaPlayer.Queue.ActiveSong));
 		}
 		public static float GetDurationInSeconds(string name)
 		{
@@ -5098,5 +5112,33 @@ public static class Gear
 		pos = Camera.GetPosition() + dir.GetEndPoint() * bodyCameraDistances[body];
 
 		return pos;
+	}
+
+	private static bool TimerTickIsOccurring(string name, float intervalsInSeconds, int repeats = 1000000)
+	{
+		intervalsInSeconds = Number.GetLimited(intervalsInSeconds, 0.01f, 100000);
+		if (Gate.IsOpened(name, SignalIsOccurring(name, false), repeats))
+		{
+			Signal.Set(name, intervalsInSeconds);
+			timerRepeats[name] = repeats;
+			return true;
+		}
+		return false;
+	}
+	private static bool SignalIsOccurring(string name, bool delete)
+	{
+		if (name == null) return false;
+		if (signalDelays.ContainsKey(name) == false) return false;
+		if (signalpauses.ContainsKey(name) == true && signalpauses[name])
+		{
+			signalEndTimes[name] += ticksDeltaTime;
+			return false;
+		}
+		if (time - ticksDeltaTime >= signalEndTimes[name])
+		{
+			if (delete) Signal.Delete(name);
+			return true;
+		}
+		return false;
 	}
 }
