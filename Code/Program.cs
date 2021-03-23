@@ -48,13 +48,13 @@
 			CreateMenu();
 			CreateGame();
 			ShowMenu();
-			Gear.Timer.Set("ship-animation", 0.05f);
-			Gear.Timer.Set("shot-animation", 0.02f);
-			Gear.Timer.Set("ast-animation", 0.05f);
-			Gear.Timer.Set("asteroid-spawn", 3);
+			new Gear.Timer("ship-animation", 0.05f);
+			new Gear.Timer("shot-animation", 0.02f);
+			new Gear.Timer("ast-animation", 0.05f);
+			new Gear.Timer("asteroid-spawn", 3);
 
-			Gear.Melody.Play("ambient (16)", 20);
-			Gear.Melody.Play("ambient (15)", 20);
+			Gear.Music.Play("ambient (16)", 20);
+			Gear.Music.Play("ambient (15)", 20);
 		}
 		else if (paused == false && tickCount > 40)
 		{
@@ -93,10 +93,10 @@
 						sprite = sprite == "sound-on" ? "sound-off" : "sound-on";
 						soundOn = sprite == "sound-off";
 						AnimateButton(sprite, true, 25, width: 24, height: 25, originX: 12, originY: 12);
-						Gear.Melody.Pause(soundOn == false);
+						Gear.Music.Pause(soundOn == false);
 						if (shipExplosion)
 						{
-							Gear.Melody.Pause(true);
+							Gear.Music.Pause(true);
 						}
 					}
 					break;
@@ -181,7 +181,7 @@
 			}
 			if (soundOn && shipExplosion == false)
 			{
-				Gear.Melody.Pause(true);
+				Gear.Music.Pause(true);
 				Gear.Sound.PlayFromCollection("explosion");
 			}
 			shipExplosion = true;
@@ -215,11 +215,11 @@
 
 		Shoot();
 	}
-	public override void MelodyJustEnded(string uniqueName)
+	public override void MelodyJustEnded(string name)
 	{
 		PlayRandomAmbient();
 	}
-	public override void TimerTickJustOccurred(string name)
+	public override void TimerTickJustOccurred(Gear.Timer timer)
 	{
 		if (paused) return;
 
@@ -307,7 +307,7 @@
 	void PlayRandomAmbient()
 	{
 		var randomIndex = (int)Gear.Number.GetRandomized(0, 9);
-		Gear.Melody.Play(ambients[randomIndex], 25);
+		Gear.Music.Play(ambients[randomIndex], 25);
 	}
 
 	void CreateMenu()
@@ -358,7 +358,7 @@
 		ShowBackground();
 		if (soundOn)
 		{
-			Gear.Melody.Pause(false);
+			Gear.Music.Pause(false);
 		}
 	}
 
@@ -399,8 +399,6 @@
 		ship.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
 		ship.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
 		ship.AddTag("game");
-		ship.DisplayHitbox();
-		ship.DisplayHitboxCrossPoints(r: 0, b: 0, w: 10, h: 10);
 
 		var paused = new Gear.Body("paused");
 		paused.AddTag("game");
@@ -538,8 +536,6 @@
 			shot.AddHitboxLine("down", new Gear.Line(new Gear.Point(0, 10), new Gear.Point(30, 10)));
 			shot.AddHitboxLine("left", new Gear.Line(new Gear.Point(0, -10), new Gear.Point(0, 10)));
 			shot.AddHitboxLine("right", new Gear.Line(new Gear.Point(30, -10), new Gear.Point(30, 10)));
-			shot.DisplayHitbox();
-			shot.DisplayHitboxCrossPoints(r: 0, b: 0, w: 10, h: 10);
 		}
 		var asts = Gear.Body.GetAllByTag("asteroid");
 		foreach (var ast in asts)
@@ -682,7 +678,6 @@
 		ast.AddTag("game");
 		ast.AddHitboxObstacle(ship);
 		ship.AddHitboxObstacle(ast);
-		ast.DisplayHitbox();
 
 		var size = Gear.Number.GetRandomized(16, 72);
 		ast.SetSizeWH(size, size);

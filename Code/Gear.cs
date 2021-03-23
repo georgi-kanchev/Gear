@@ -133,7 +133,7 @@ public static class Gear
 	private static Dictionary<string, SoundEffect> soundsRaw = new Dictionary<string, SoundEffect>();
 	private static Dictionary<string, Song> melodies = new Dictionary<string, Song>();
 	private static Dictionary<Song, string> melodyUniqueNames = new Dictionary<Song, string>();
-	private static Dictionary<string, bool> gates = new Dictionary<string, bool>(), signalpauses = new Dictionary<string, bool>();
+	private static Dictionary<string, bool> gates = new Dictionary<string, bool>();
 	private static Dictionary<string, int> gateEntriesCount = new Dictionary<string, int>(), timerRepeats = new Dictionary<string, int>();
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
 	private static Dictionary<string, List<Body>> tagBodies = new Dictionary<string, List<Body>>();
@@ -148,7 +148,7 @@ public static class Gear
 	private static List<float> tpsAverages = new List<float>(), fpsAverages = new List<float>();
 	private static List<string> clientUniqueNames = new List<string>();
 	private static int tick, frame, frameRendered, tpsAverageIndex, fpsAverageIndex, loadingPercent, loadingScreenUpdatePerFiles = 10, loadedFiles, contentFileCount, serverPort = 1234, eachTickLineCall;
-	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole, windowIsDisplayed = true;
+	private static bool textDisplayDraw, loading = true, pauseUnfocus, render, sleepPrevented, consoleShown, clientIsConnected, serverIsRunning, networkLogMessagesToConsole, windowIsDisplayed = true, muteMelody, muteSound;
 	private static float textDisplayScale, tps, tpsAverage, fps, fpsAverage, ticksDeltaTime, framesDeltaTime, time, cameraAngle;
 	private static string textDisplayFont, textDisplayMessage, mainDir = AppDomain.CurrentDomain.BaseDirectory, consoleLog, connectToServerInfo, clientUniqueName, userErrorMessage, melodyOverKey = ";;'gosak";
 
@@ -222,8 +222,8 @@ public static class Gear
 		public virtual void UserJustInteractedWithMouseButton(MouseButton button, Interaction interaction) { }
 		public virtual void BodyJustCollidedWithBody(Body bodyA, Body bodyB) { }
 		public virtual void MelodyJustEnded(string uniqueName) { }
-		public virtual void SignalJustOccurred(string name) { }
-		public virtual void TimerTickJustOccurred(string name) { }
+		public virtual void SignalJustOccurred(Signal signal) { }
+		public virtual void TimerTickJustOccurred(Timer timer) { }
 
 		protected override void Initialize()
 		{
@@ -1910,6 +1910,96 @@ public static class Gear
 		#endregion
 		#endregion
 	}
+
+	public class Signal
+	{
+		private string uniqueName;
+		private float delayInSeconds, startTime, endTime;
+		private bool isPaused;
+
+		public Signal(string uniqueName, float delayInSeconds)
+		{
+			this.uniqueName = uniqueName;
+			this.delayInSeconds = Number.GetUnsigned(delayInSeconds);
+			startTime = Performance.GetSecondsSinceStart();
+			endTime = startTime + delayInSeconds;
+		}
+		public float GetDelayInSeconds()
+		{
+			return delayInSeconds;
+		}
+		public void Pause(bool paused)
+		{
+			isPaused = paused;
+		}
+		public float GetSecondsLeft()
+		{
+			var result = endTime - Performance.GetSecondsSinceStart();
+			return result < 0 ? 0 : result;
+		}
+		public float GetStartTime()
+		{
+			return startTime;
+		}
+		public float GetOccurTime()
+		{
+			return endTime;
+		}
+		public void Delete()
+		{
+
+		}
+	}
+	public class Timer
+	{
+		private Signal signal;
+		private string uniqueName;
+		private int repeats;
+		private float tickSeconds;
+
+		public Timer(string uniqueName, float tickTimeInSeconds = 1, int repeats = 1000000)
+		{
+			signal = new Signal(uniqueName, 0);
+			this.uniqueName = uniqueName;
+			this.repeats = repeats;
+			tickSeconds = tickTimeInSeconds;
+		}
+		public void SetTickTime(float tickTimeInSeconds)
+		{
+			tickSeconds = tickTimeInSeconds;
+		}
+		public void SetRepeats(int repeats)
+		{
+			this.repeats = repeats;
+		}
+		public float GetSeconds()
+		{
+			return GetRepeatCount() * signal.GetSecondsDelay();
+		}
+		public float GetSecondsLeft()
+		{
+			var repeats = GetRepeats();
+			var delay = signal.GetSecondsDelay();
+			var seconds = GetSeconds();
+			return repeats * delay - seconds;
+		}
+		public int GetRepeatCount()
+		{
+			return Gate.GetEntriesCount(uniqueName);
+		}
+		public int GetRepeats()
+		{
+			return repeats;
+		}
+		public void Restart()
+		{
+			Gate.RemoveEntries(uniqueName);
+		}
+		public void Delete()
+		{
+
+		}
+	}
 	/// <summary>
 	/// Controls <see cref="float"/> in different ways.
 	/// </summary>
@@ -2399,7 +2489,7 @@ public static class Gear
 		/// <summary>
 		/// - Gets the time that has passed since the start and returns it.
 		/// </summary>
-		public static float GetTime()
+		public static float GetSecondsSinceStart()
 		{
 			return time;
 		}
@@ -2407,7 +2497,7 @@ public static class Gear
 		/// - Gets the time that has passed since the last tick and returns it. <br></br><br></br>- The target tick rate can be changed via <see cref="TicksPerSecondTargetSet"/><br></br>- The current target tick rate can be checked with <see cref="TimeSinceLastTickTargetGet"/>.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="TimeSinceLastFrameGet"/>.
 		/// </summary>
-		public static float GetTimeSinceLastTick()
+		public static float GetSecondsSinceLastTick()
 		{
 			return ticksDeltaTime;
 		}
@@ -2415,7 +2505,7 @@ public static class Gear
 		/// - Gets the target time between ticks and returns it.<br></br><br></br>- The target tick rate can be changed via <see cref="TicksPerSecondTargetSet"/>.<br></br>- The current tick rate can be checked with <see cref="TimeSinceLastTickGet"/>.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last frame can be checked with <see cref="TimeSinceLastFrameGet"/>.
 		/// </summary>
-		public static float GetTargetTimeSinceLastTick()
+		public static float GetTargetSecondsSinceLastTick()
 		{
 			return (float)game.TargetElapsedTime.TotalSeconds;
 		}
@@ -2423,7 +2513,7 @@ public static class Gear
 		/// - Gets the time that has passed since the last frame and returns it.<br></br><br></br>
 		/// - The frame rate is tied to the tick rate but they are not the same. The time since last tick can be checked with <see cref="TimeSinceLastTickGet"/>.
 		/// </summary>
-		public static float GetTimeSinceLastFrame()
+		public static float GetSecondsSinceLastFrame()
 		{
 			return framesDeltaTime;
 		}
@@ -2989,6 +3079,7 @@ public static class Gear
 			return false;
 		}
 	}
+	/*
 	public static class Signal
 	{
 		public static void Set(string name, float secondsDelay)
@@ -3036,6 +3127,8 @@ public static class Gear
 			if (signalDelays.ContainsKey(name)) signalDelays.Remove(name);
 		}
 	}
+	*/
+	/*
 	public static class Timer
 	{
 		public static void Set(string name, float intervalsInSeconds = 1, int repeats = 1000000)
@@ -3076,6 +3169,7 @@ public static class Gear
 			Gate.RemoveEntries(name);
 		}
 	}
+	*/
 	public static class Console
 	{
 		public static void Display()
@@ -3190,6 +3284,9 @@ public static class Gear
 				}
 				return;
 			}
+
+			if (muteSound) return;
+
 			volumePercent = Number.GetLimited(volumePercent, 0, 100);
 			pitchPercent = Number.GetLimited(pitchPercent, 0, 100);
 			centerPercent = Number.GetLimited(centerPercent, 0, 100);
@@ -3215,7 +3312,7 @@ public static class Gear
 				kvp.Value.Resume();
 			}
 		}
-		public static void PauseCurrent(string uniqueName, bool paused)
+		public static void Pause(string uniqueName, bool paused)
 		{
 			if (sounds.ContainsKey(uniqueName) == false)
 			{
@@ -3235,13 +3332,17 @@ public static class Gear
 				kvp.Value.Stop();
 			}
 		}
-		public static void StopCurrent(string uniqueName)
+		public static void Stop(string uniqueName)
 		{
 			if (sounds.ContainsKey(uniqueName) == false)
 			{
 				return;
 			}
 			sounds[uniqueName].Stop();
+		}
+		public static void Mute(bool muted)
+		{
+			muteSound = muted;
 		}
 
 		public static void PlayFromCollection(string collectionUniqueName, float volumePercent = 50, float pitchPercent = 50, float centerPercent = 50, bool loop = false, bool ableToPlayOverSelf = false, bool soundNameIsNullError = true, bool collectionNotFoundError = true, bool collectionIsEmptyError = true)
@@ -3372,9 +3473,9 @@ public static class Gear
 		}
 	}
 	/// <summary>
-	/// Controls Melodies and holds information about them.
+	/// Controls Music and holds information about them.
 	/// </summary>
-	public static class Melody
+	public static class Music
 	{
 		public static string[] GetAllUniqueNames()
 		{
@@ -3384,6 +3485,8 @@ public static class Gear
 		public static void Play(string uniqueName, float volumePercent = 50)
 		{
 			if (melodies.ContainsKey(uniqueName) == false) return;
+
+			if (muteMelody) return;
 
 			volumePercent = Number.GetLimited(volumePercent, 0, 100);
 			MediaPlayer.Volume = volumePercent / 100;
@@ -3420,6 +3523,10 @@ public static class Gear
 		public static void Stop()
 		{
 			MediaPlayer.Stop();
+		}
+		public static void Mute(bool muted)
+		{
+			muteMelody = muted;
 		}
 
 		public static bool IsLooping()
