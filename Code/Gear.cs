@@ -138,6 +138,8 @@ public static class Gear
 	private static Dictionary<string, string> clientIDs = new Dictionary<string, string>();
 	private static Dictionary<string, List<Body>> tagBodies = new Dictionary<string, List<Body>>();
 	private static Dictionary<string, float> signalEndTimes = new Dictionary<string, float>(), signalStartTimes = new Dictionary<string, float>(), signalDelays = new Dictionary<string, float>(), timerTickSeconds = new Dictionary<string, float>();
+	private static Dictionary<string, Timer> timers = new Dictionary<string, Timer>();
+	private static Dictionary<string, Signal> signals = new Dictionary<string, Signal>();
 	private static Dictionary<Body, float> bodyCameraDistances = new Dictionary<Body, float>(), bodyCameraAngle = new Dictionary<Body, float>(), bodyCameraAngleDifferences = new Dictionary<Body, float>();
 	private static Dictionary<string, List<string>> soundCollections = new Dictionary<string, List<string>>();
 	private static Dictionary<Body, bool> bodiesLastTickHovered = new Dictionary<Body, bool>(), bodiesClicked = new Dictionary<Body, bool>();
@@ -427,14 +429,15 @@ public static class Gear
 		}
 		private static void UpdateSignalsAndTimers()
 		{
-			foreach (var kvp in signalDelays)
+			foreach (var kvp in signals)
 			{
-				var signal = kvp.Key;
-				if (timerRepeats.ContainsKey(signal)) continue;
+				var key = kvp.Key;
+				var signal = kvp.Value;
+				if (timerRepeats.ContainsKey(key)) continue;
 
-				if (SignalIsOccurring(signal, true))
+				if (SignalIsOccurring(key, true))
 				{
-					if (signal == melodyOverKey)
+					if (key == melodyOverKey)
 					{
 						program.MelodyJustEnded(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]);
 					}
@@ -444,10 +447,11 @@ public static class Gear
 					}
 				}
 			}
-			foreach (var kvp in timerRepeats)
+			foreach (var kvp in timers)
 			{
-				var timer = kvp.Key;
-				if (TimerTickIsOccurring(timer, timerTickSeconds[timer], timerRepeats[timer]))
+				var key = kvp.Key;
+				var timer = kvp.Value;
+				if (TimerTickIsOccurring(key, timerTickSeconds[key], timerRepeats[key]))
 				{
 					program.TimerTickJustOccurred(timer);
 				}
@@ -1923,6 +1927,7 @@ public static class Gear
 			this.delayInSeconds = Number.GetUnsigned(delayInSeconds);
 			startTime = Performance.GetSecondsSinceStart();
 			endTime = startTime + delayInSeconds;
+			signals[uniqueName] = this;
 		}
 		public float GetDelayInSeconds()
 		{
@@ -1931,6 +1936,10 @@ public static class Gear
 		public void Pause(bool paused)
 		{
 			isPaused = paused;
+		}
+		public bool IsPaused()
+		{
+			return isPaused;
 		}
 		public float GetSecondsLeft()
 		{
@@ -1974,12 +1983,12 @@ public static class Gear
 		}
 		public float GetSeconds()
 		{
-			return GetRepeatCount() * signal.GetSecondsDelay();
+			return GetRepeatCount() * signal.GetDelayInSeconds();
 		}
 		public float GetSecondsLeft()
 		{
 			var repeats = GetRepeats();
-			var delay = signal.GetSecondsDelay();
+			var delay = signal.GetDelayInSeconds();
 			var seconds = GetSeconds();
 			return repeats * delay - seconds;
 		}
@@ -3491,7 +3500,7 @@ public static class Gear
 			volumePercent = Number.GetLimited(volumePercent, 0, 100);
 			MediaPlayer.Volume = volumePercent / 100;
 			MediaPlayer.Play(melodies[uniqueName]);
-			Signal.Set(melodyOverKey, SongDurationInSec(MediaPlayer.Queue.ActiveSong));
+			new Signal(melodyOverKey, SongDurationInSec(MediaPlayer.Queue.ActiveSong));
 		}
 		public static float GetDurationInSeconds(string name)
 		{
@@ -3503,16 +3512,17 @@ public static class Gear
 		}
 		public static float GetProgressInSeconds()
 		{
-			return GetDurationInSeconds(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]) - Signal.GetSecondsLeft(melodyOverKey);
+			return GetDurationInSeconds(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]) -
+				signals[melodyOverKey].GetSecondsLeft();
 		}
 		public static float GetProgressInPercent()
 		{
 			var dur = GetDurationInSeconds(melodyUniqueNames[MediaPlayer.Queue.ActiveSong]);
-			return dur == 0 ? 0 : (dur - Signal.GetSecondsLeft(melodyOverKey)) / dur * 100;
+			return dur == 0 ? 0 : (dur - signals[melodyOverKey].GetSecondsLeft()) / dur * 100;
 		}
 		public static void Pause(bool paused)
 		{
-			Signal.Pause(melodyOverKey, paused);
+			signals[melodyOverKey].Pause(paused);
 			if (paused)
 			{
 				MediaPlayer.Pause();
@@ -5226,7 +5236,7 @@ public static class Gear
 		intervalsInSeconds = Number.GetLimited(intervalsInSeconds, 0.01f, 100000);
 		if (Gate.IsOpened(name, SignalIsOccurring(name, false), repeats))
 		{
-			Signal.Set(name, intervalsInSeconds);
+			new Signal(name, intervalsInSeconds);
 			timerRepeats[name] = repeats;
 			return true;
 		}
@@ -5236,14 +5246,14 @@ public static class Gear
 	{
 		if (name == null) return false;
 		if (signalDelays.ContainsKey(name) == false) return false;
-		if (signalpauses.ContainsKey(name) == true && signalpauses[name])
+		if (signals[name].IsPaused() == true)
 		{
 			signalEndTimes[name] += ticksDeltaTime;
 			return false;
 		}
 		if (time - ticksDeltaTime >= signalEndTimes[name])
 		{
-			if (delete) Signal.Delete(name);
+			if (delete) signals[name].Delete();
 			return true;
 		}
 		return false;
